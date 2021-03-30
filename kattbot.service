@@ -1,0 +1,11 @@
+[Unit]
+Description=Kattbot
+
+[Service]
+Type=notify
+ExecStart=/usr/kattbot/Kattbot
+WorkingDirectory=/usr/kattbot
+Environment=DOTNET_ENVIRONMENT=Production
+
+[Install]
+WantedBy=multi-user.target
