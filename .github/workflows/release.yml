@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      updateDatabase:
+        description: 'Update database (allowed values: no, auto, manual)'
+        required: false
+        default: 'no'
+        
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+
+    - name: Replace tokens in appsettings
+      uses: cschleiden/replace-tokens@v1
+      with:
+        tokenPrefix: '__'
+        tokenSuffix: '__'
+        files: 'Kattbot/appsettings.Production.json'
+      env:
+        CONNECTION_STRING: ${{secrets.DB_CONNECTION_STRING}}
+        BOT_TOKEN: ${{secrets.BOT_TOKEN}}
+    
+    - name: Publish
+      run: dotnet publish -c Release -r linux-x64 -o deploy --self-contained false
+
+    - name: Generate database migration script
+      if: github.event.inputs.updateDatabase == 'auto' || github.event.inputs.updateDatabase == 'manual'
+      run: |
+        dotnet tool install --global dotnet-ef
+        dotnet tool restore
+        dotnet ef migrations script --idempotent -p Kattbot.Data.Migrations -o deploy/database_migration.sql
+      env:
+        DOTNET_ENVIRONMENT: Production
+    
+    - name: Copy files to remote dir
+      uses: appleboy/scp-action@master
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.VPS_USER}}
+        password: ${{secrets.VPS_PASSWORD}}        
+        source: "/home/runner/work/Kattbot/Kattbot/deploy/"
+        target: "/usr/kattbot-deploy"
+        rm: true
+    
+    - name: Deploy - Stop service
+      uses: appleboy/ssh-action@master
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.VPS_USER}}
+        password: ${{secrets.VPS_PASSWORD}}      
+        script: sudo systemctl stop kattbot
+    
+    - name: Deploy - Run deploy script
+      uses: appleboy/ssh-action@master
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.VPS_USER}}
+        password: ${{secrets.VPS_PASSWORD}}      
+        script: sudo /usr/kattbot-deploy.sh
+ 
+    - name: Deploy - Change Kattbot permission
+      uses: appleboy/ssh-action@master
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.VPS_USER}}
+        password: ${{secrets.VPS_PASSWORD}}      
+        script: sudo chmod 777 /usr/kattbot/Kattbot
+
+    - name: Deploy - Backup database
+      if: github.event.inputs.updateDatabase == 'auto' || github.event.inputs.updateDatabase == 'manual'
+      uses: appleboy/ssh-action@master
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.VPS_USER}}
+        password: ${{secrets.VPS_PASSWORD}}      
+        script: sudo /usr/kattbot-backup-db.sh
+ 
+    - name: Deploy - Run database migration script
+      if: github.event.inputs.updateDatabase == 'auto'
+      uses: appleboy/ssh-action@master
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.VPS_USER}}
+        password: ${{secrets.VPS_PASSWORD}}      
+        script: sudo psql -U postgres -d kattbot -q -f /usr/kattbot/database_migration.sql
+ 
+    - name: Deploy - Start service
+      if: github.event.inputs.updateDatabase == 'no' || github.event.inputs.updateDatabase == 'auto'
+      uses: appleboy/ssh-action@master
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.VPS_USER}}
+        password: ${{secrets.VPS_PASSWORD}}      
+        script: sudo systemctl start kattbot
