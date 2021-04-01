@@ -30,7 +30,7 @@ jobs:
         BOT_TOKEN: ${{secrets.BOT_TOKEN}}
     
     - name: Test
-      run: dotnet test --verbosity normal
+      run: dotnet test
     
     - name: Publish
       run: dotnet publish -c Release -r linux-x64 -o deploy --self-contained false
