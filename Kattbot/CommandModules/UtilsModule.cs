@@ -75,21 +75,15 @@ namespace Kattbot.CommandModules
         [Command("role-id")]
         public async Task GetRoleId(CommandContext ctx, string roleName)
         {
-            var guildId = ctx.Guild.Id;
+            var result = DiscordRoleResolver.TryResolveByName(ctx.Guild, roleName, out var discordRole);
 
-            var guild = _client.Guilds[guildId];
-
-            var role = guild.Roles.
-                FirstOrDefault(kv => kv.Value.Name.Equals(roleName, StringComparison.OrdinalIgnoreCase));
-
-            if (role.Equals(default(KeyValuePair<ulong, DiscordRole>)))
+            if (!result.Resolved)
             {
-                await ctx.RespondAsync($"Role {roleName} doesn't exist");
+                await ctx.RespondAsync(result.ErrorMessage);
+                return;
             }
-            else
-            {
-                await ctx.RespondAsync($"Role {roleName} has id: {role.Value.Id}");
-            }
+
+            await ctx.RespondAsync($"Role {roleName} has id {discordRole.Id}");
         }
     }
 }
