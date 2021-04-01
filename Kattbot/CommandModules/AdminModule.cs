@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace Kattbot.CommandModules
 {
-    [RequireOwner]
+    [BaseCommandCheck, RequireOwner]
     [Group("admin")]
     [ModuleLifespan(ModuleLifespan.Transient)]
     public class AdminModule : BaseCommandModule

@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Kattbot.Attributes;
 using Kattbot.Helpers;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace Kattbot.CommandModules
 {
+    [BaseCommandCheck]
     [Group("prep")]
     public class PrepModule : BaseCommandModule
     {

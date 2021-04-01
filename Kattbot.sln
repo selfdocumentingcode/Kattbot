@@ -10,6 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2D6F1BD9-5D5D-4C85-B254-B773679A5AF9}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
 		kattbot-backup-db.sh = kattbot-backup-db.sh
 		kattbot-deploy.sh = kattbot-deploy.sh
 		kattbot.service = kattbot.service

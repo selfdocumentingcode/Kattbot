@@ -1,10 +1,12 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using Kattbot.Attributes;
 using System;
 using System.Threading.Tasks;
 
 namespace Kattbot.CommandModules
 {
+    [BaseCommandCheck]
     public class RandomModule : BaseCommandModule
     {
         [Command("meow")]

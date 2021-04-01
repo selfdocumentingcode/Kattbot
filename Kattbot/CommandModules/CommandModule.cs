@@ -1,5 +1,6 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using Kattbot.Attributes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using System.Text;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Kattbot.CommandModules
 {
+    [BaseCommandCheck]
     public class CommandModule : BaseCommandModule
     {
         private readonly BotOptions _options;

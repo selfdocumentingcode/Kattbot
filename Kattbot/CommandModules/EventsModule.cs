@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 
 namespace Kattbot.CommandModules
 {
+    [BaseCommandCheck]
     [Group("sc")]
     [ModuleLifespan(ModuleLifespan.Transient)]
     public class EventsModule : BaseCommandModule

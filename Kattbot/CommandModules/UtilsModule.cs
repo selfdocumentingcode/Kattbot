@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 
 namespace Kattbot.CommandModules
 {
+    [BaseCommandCheck]
     [Group("utils")]
     public class UtilsModule : BaseCommandModule
     {

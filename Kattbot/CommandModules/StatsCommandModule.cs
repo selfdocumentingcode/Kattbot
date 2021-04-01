@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Kattbot.Attributes;
 using Kattbot.CommandModules.TypeReaders;
 using Kattbot.Common.Models;
 using Kattbot.Common.Models.Emotes;
@@ -21,6 +22,7 @@ using System.Threading.Tasks;
 
 namespace Kattbot.CommandModules
 {
+    [BaseCommandCheck]
     [Group("stats")]
     [ModuleLifespan(ModuleLifespan.Transient)]
     public class StatsCommandModule : BaseCommandModule
