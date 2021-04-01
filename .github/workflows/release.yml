@@ -29,6 +29,9 @@ jobs:
         CONNECTION_STRING: ${{secrets.DB_CONNECTION_STRING}}
         BOT_TOKEN: ${{secrets.BOT_TOKEN}}
     
+    - name: Test
+      run: dotnet test --verbosity normal
+    
     - name: Publish
       run: dotnet publish -c Release -r linux-x64 -o deploy --self-contained false
 
