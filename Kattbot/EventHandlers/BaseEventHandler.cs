@@ -8,7 +8,7 @@ namespace Kattbot.EventHandlers
 {
     public abstract class BaseEventHandler
     {
-         /// <summary>
+        /// <summary>
         /// Don't care about about private messages
         /// </summary>
         /// <param name="channel"></param>

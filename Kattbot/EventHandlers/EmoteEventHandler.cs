@@ -22,17 +22,20 @@ namespace Kattbot.EventHandlers
         private readonly DiscordClient _client;
         private readonly ILogger<CommandEventHandler> _logger;
         private readonly EmoteCommandQueue _emoteCommandQueue;
+        private readonly DiscordErrorLogger _discordErrorLogger;
         private readonly BotOptions _options;
 
         public EmoteEventHandler(
             DiscordClient client,
             ILogger<CommandEventHandler> logger,
             EmoteCommandQueue emoteCommandQueue,
-            IOptions<BotOptions> options)
+            IOptions<BotOptions> options,
+            DiscordErrorLogger discordErrorLogger)
         {
             _client = client;
             _logger = logger;
             _emoteCommandQueue = emoteCommandQueue;
+            _discordErrorLogger = discordErrorLogger;
             _options = options.Value;
         }
 
@@ -80,10 +83,11 @@ namespace Kattbot.EventHandlers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "OnMessageReceived");
+                await _discordErrorLogger.LogDiscordError(ex.ToString());
             }
         }
 
-        private Task OnMessageUpdated(DiscordClient client, MessageUpdateEventArgs eventArgs)
+        private async Task OnMessageUpdated(DiscordClient client, MessageUpdateEventArgs eventArgs)
         {
             try
             {
@@ -92,10 +96,10 @@ namespace Kattbot.EventHandlers
                 var guild = eventArgs.Guild;
 
                 if (!IsReleventMessage(message))
-                    return Task.CompletedTask;
+                    return;
 
                 if (IsPrivateMessageChannel(channel))
-                    return Task.CompletedTask;
+                    return;
 
                 var todoMessage = new MessageCommandPayload(message, guild);
 
@@ -106,12 +110,11 @@ namespace Kattbot.EventHandlers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "OnMessageReceived");
+                await _discordErrorLogger.LogDiscordError(ex.ToString());
             }
-
-            return Task.CompletedTask;
         }
 
-        private Task OnMessageDeleted(DiscordClient client, MessageDeleteEventArgs eventArgs)
+        private async Task OnMessageDeleted(DiscordClient client, MessageDeleteEventArgs eventArgs)
         {
             try
             {
@@ -120,7 +123,7 @@ namespace Kattbot.EventHandlers
                 var guild = eventArgs.Guild;
 
                 if (IsPrivateMessageChannel(channel))
-                    return Task.CompletedTask;
+                    return;
 
                 var messageId = message.Id;
 
@@ -133,12 +136,11 @@ namespace Kattbot.EventHandlers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "OnMessageDeleted");
+                await _discordErrorLogger.LogDiscordError(ex.ToString());
             }
-
-            return Task.CompletedTask;
         }
 
-        private Task OnMessageReactionAdded(DiscordClient client, MessageReactionAddEventArgs eventArgs)
+        private async Task OnMessageReactionAdded(DiscordClient client, MessageReactionAddEventArgs eventArgs)
         {
             try
             {
@@ -149,10 +151,10 @@ namespace Kattbot.EventHandlers
                 var user = eventArgs.User;
 
                 if (IsPrivateMessageChannel(channel))
-                    return Task.CompletedTask;
+                    return;
 
                 if (!IsRelevantReaction(user))
-                    return Task.CompletedTask;
+                    return;
 
                 var todoReaction = new ReactionCommandPayload(message, emoji, user, guild);
 
@@ -163,12 +165,11 @@ namespace Kattbot.EventHandlers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "OnReactionAdded");
+                await _discordErrorLogger.LogDiscordError(ex.ToString());
             }
-
-            return Task.CompletedTask;
         }
 
-        private Task OnMessageReactionRemoved(DiscordClient client, MessageReactionRemoveEventArgs eventArgs)
+        private async Task OnMessageReactionRemoved(DiscordClient client, MessageReactionRemoveEventArgs eventArgs)
         {
             try
             {
@@ -179,10 +180,10 @@ namespace Kattbot.EventHandlers
                 var user = eventArgs.User;
 
                 if (IsPrivateMessageChannel(channel))
-                    return Task.CompletedTask;
+                    return;
 
                 if (!IsRelevantReaction(user))
-                    return Task.CompletedTask;
+                    return;
 
                 var todoReaction = new ReactionCommandPayload(message, emoji, user, guild);
 
@@ -193,9 +194,8 @@ namespace Kattbot.EventHandlers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "OnReactionRemoved");
+                await _discordErrorLogger.LogDiscordError(ex.ToString());
             }
-
-            return Task.CompletedTask;
         }
     }
 }
