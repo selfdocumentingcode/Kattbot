@@ -182,9 +182,6 @@ namespace Kattbot.EventHandlers
                 if (IsPrivateMessageChannel(channel))
                     return;
 
-                if (!IsRelevantReaction(user))
-                    return;
-
                 var todoReaction = new ReactionCommandPayload(message, emoji, user, guild);
 
                 var command = new DeleteReactionCommand(todoReaction);
