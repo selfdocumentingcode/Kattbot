@@ -1,5 +1,6 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
 using Kattbot.Attributes;
 using System;
 using System.Threading.Tasks;
@@ -29,6 +30,12 @@ namespace Kattbot.CommandModules
                 return ctx.RespondAsync("Voff!\r\nOi.. Fytti katta... mjau? :grimacing:");
 
             return ctx.RespondAsync("Mjau!");
+        }
+
+        [Command("big")]
+        public Task BigEmote(CommandContext ctx, DiscordEmoji emoji)
+        {
+            return ctx.RespondAsync(emoji.Url);
         }
     }
 

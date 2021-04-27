@@ -27,19 +27,20 @@ namespace Kattbot.CommandModules
 
             var commandPrefix = _options.CommandPrefix;
 
-            sb.AppendLine($"`{commandPrefix}stats user [username] [?interval] [?page]`");
             sb.AppendLine($"`{commandPrefix}stats me [?interval] [?page]`");
             sb.AppendLine($"`{commandPrefix}stats best [?interval] [?page]`");
-            sb.AppendLine($"`{commandPrefix}stats worst [?interval] [?page]`");
             sb.AppendLine($"`{commandPrefix}stats emote [emote] [?interval]`");
+            sb.AppendLine($"`{commandPrefix}stats help`");
+
+            sb.AppendLine();
+            sb.AppendLine("Other commands");
             sb.AppendLine($"`{commandPrefix}prep me`");
             sb.AppendLine($"`{commandPrefix}prep user [username]`");
             sb.AppendLine($"`{commandPrefix}meow`");
-            sb.AppendLine($"(\"?\" denotes an optional parameter)");
-            sb.AppendLine();
-            sb.AppendLine($"Help commands");
-            sb.AppendLine($"`{commandPrefix}stats help`");
+            sb.AppendLine($"`{commandPrefix}big [emote]`");
             sb.AppendLine($"`{commandPrefix}sc help (speaking club)`");
+
+            sb.AppendLine($"*(\"?\" denotes an optional parameter)*");
 
             var result = FormattedResultHelper.BuildMessage($"Commands", sb.ToString());
 
