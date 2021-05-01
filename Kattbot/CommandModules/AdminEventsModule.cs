@@ -25,8 +25,8 @@ namespace Kattbot.CommandModules
         private readonly EventsRepository _eventsRepo;
 
         public AdminEventsModule(
-            IOptions<BotOptions> options, 
-            DateTimeProvider dateTimeProvider, 
+            IOptions<BotOptions> options,
+            DateTimeProvider dateTimeProvider,
             EventsRepository eventsRepo)
         {
             _options = options.Value;
@@ -146,7 +146,7 @@ namespace Kattbot.CommandModules
                 await ctx.RespondAsync("Event canceled");
             }
         }
-        
+
         [RequireOwnerOrFriend]
         [Command("ping-attendees")]
         public async Task PingEventAttendees(CommandContext ctx)
@@ -163,7 +163,10 @@ namespace Kattbot.CommandModules
 
             var currentDateTimeUtc = _dateTimeProvider.GetCurrentUtcDateTime();
 
-            var upcomingEvent = await _eventsRepo.GetUpcomingEvent(eventTemplate.Id, currentDateTimeUtc);
+            // Fetch event even if it's been schedule 2 hours back
+            var timeAdjustedForDuration = currentDateTimeUtc.AddHours(-2);
+
+            var upcomingEvent = await _eventsRepo.GetUpcomingEvent(eventTemplate.Id, timeAdjustedForDuration);
 
             if (upcomingEvent == null)
             {
@@ -175,12 +178,21 @@ namespace Kattbot.CommandModules
 
             var sb = new StringBuilder();
 
-            sb.AppendLine($"Speaking club is about to start soon");
+            if (currentDateTimeUtc > upcomingEvent.DateTime)
+            {
+                sb.AppendLine($"We're waiting for you");
+            }
+            else
+            {
+                sb.AppendLine($"Speaking club is about to start soon");
+            }
 
             var attendeeMentions = new List<string>();
 
             if (attendees.Count > 0)
             {
+                var memberVoiceChannel = ctx.Member.VoiceState.Channel;
+
                 foreach (var attendee in attendees)
                 {
                     DiscordMember user;
@@ -203,7 +215,14 @@ namespace Kattbot.CommandModules
 
                     if (user != null)
                     {
-                        attendeeMentions.Add(user.Mention);
+                        if (memberVoiceChannel == null)
+                        {
+                            attendeeMentions.Add(user.Mention);
+                        }
+                        else if (user.VoiceState.Channel == null || user.VoiceState.Channel.Id != memberVoiceChannel?.Id)
+                        {
+                            attendeeMentions.Add(user.Mention);
+                        }
                     }
                 }
 
