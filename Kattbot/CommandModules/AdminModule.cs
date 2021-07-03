@@ -99,7 +99,7 @@ namespace Kattbot.CommandModules
         public async Task SetBotChannel(CommandContext ctx, DiscordChannel channel)
         {
             var channelId = channel.Id;
-            var guildId = channel.GuildId;
+            var guildId = channel.GuildId!.Value;
 
             await _guildSettingsService.SetBotChannel(guildId, channelId);
 
