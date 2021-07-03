@@ -1,4 +1,5 @@
 ﻿using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.Entities;
 using Kattbot.Attributes;
@@ -125,6 +126,12 @@ namespace Kattbot.EventHandlers
                 else if (failedCheck is RequireOwnerOrFriend)
                 {
                     errorMessage = "You do not have permission to do that.";
+                }
+                else if(failedCheck is CooldownAttribute)
+                {
+                    var cdAttribute = (CooldownAttribute)failedCheck;
+
+                    errorMessage = $"Please wait {cdAttribute.Reset.TotalSeconds} seconds";
                 }
                 else
                 {
