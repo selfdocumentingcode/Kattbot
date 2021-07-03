@@ -43,7 +43,7 @@ namespace Kattbot.CommandModules
 
         private string GetRandomPrep()
         {
-            var preps = new string[] { "På", "For", "Av", "Til", "Om", "I" };
+            var preps = new string[] { "På", "For", "Av", "Til", "Om", "I", "Mot" };
 
             var prepIdx = new Random().Next(0, preps.Length);
 
@@ -52,7 +52,7 @@ namespace Kattbot.CommandModules
 
         private string GetRandomScale()
         {
-            var scaleLimit = new string[] { "Helvete", "Kva faen", "Kjempebra" };
+            var scaleLimit = new string[] { "Helvete", "Kva faen", "Kjempebra", "Uff a meg" };
 
             var scaleLimitIdx = new Random().Next(0, scaleLimit.Length);
 

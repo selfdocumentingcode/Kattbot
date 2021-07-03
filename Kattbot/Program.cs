@@ -49,7 +49,6 @@ namespace Kattbot
 
                     services.AddTransient<EmotesRepository>();
                     services.AddTransient<EmoteStatsRepository>();
-                    services.AddTransient<EventsRepository>();
                     services.AddTransient<BotUserRolesRepository>();
                     services.AddTransient<GuildSettingsRepository>();
 

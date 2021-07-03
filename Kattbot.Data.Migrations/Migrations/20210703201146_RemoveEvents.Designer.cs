@@ -3,15 +3,17 @@ using System;
 using Kattbot.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Kattbot.Data.Migrations
 {
     [DbContext(typeof(KattbotContext))]
-    partial class KattbotContextModelSnapshot : ModelSnapshot
+    [Migration("20210703201146_RemoveEvents")]
+    partial class RemoveEvents
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -21,7 +21,7 @@ namespace Kattbot.Tests
             var emotes = _sut.ExtractEmotesFromMessage(testMessage);
 
             Assert.AreEqual(emotes.Count, 1);
-            Assert.AreEqual(emotes[0], "<:emoji_1:123123123>");
+            Assert.AreEqual(emotes[0], "<:emoji_1:123123123>"); 
         }
 
         [TestMethod]
