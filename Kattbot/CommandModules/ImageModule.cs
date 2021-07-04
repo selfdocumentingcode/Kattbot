@@ -55,7 +55,7 @@ namespace Kattbot.CommandModules
                 int newWidth = image.Width * 2;
                 int newHeight = image.Height * 2;
 
-                image.Mutate(i => i.Resize(newWidth, newHeight));
+                image.Mutate(i => i.Resize(newWidth, newHeight, KnownResamplers.Hermite));
 
                 var outputStream = new MemoryStream();
 
