@@ -8,17 +8,15 @@ using Kattbot.Common.Models.Emotes;
 using Kattbot.Data;
 using Kattbot.Helper;
 using Kattbot.Helpers;
-using Kattbot.Models;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static Kattbot.CommandHandlers.EmoteStats.GetEmoteStats;
+using static Kattbot.CommandHandlers.EmoteStats.GetGuildEmoteStats;
+using static Kattbot.CommandHandlers.EmoteStats.GetUserEmoteStats;
 
 namespace Kattbot.CommandModules
 {
@@ -27,17 +25,15 @@ namespace Kattbot.CommandModules
     [ModuleLifespan(ModuleLifespan.Transient)]
     public class StatsCommandModule : BaseCommandModule
     {
-        private const int ResultsPerPage = 10;
-
         private readonly BotOptions _options;
-        private readonly EmoteStatsRepository _emoteStatsRepo;
+        private readonly CommandQueue _commandQueue;
 
         public StatsCommandModule(
             IOptions<BotOptions> options,
-            EmoteStatsRepository emoteStatsRepo)
+            CommandQueue commandQueue)
         {
             _options = options.Value;
-            _emoteStatsRepo = emoteStatsRepo;
+            _commandQueue = commandQueue;
         }
 
         [Command("best")]
@@ -64,95 +60,23 @@ namespace Kattbot.CommandModules
 
         private async Task GetRankedEmotes(CommandContext ctx, SortDirection direction, int page, string interval, IReadOnlyDictionary<ulong, DiscordEmoji> guildEmotes)
         {
-            var guildId = ctx.Guild.Id;
+            var parsed = TryGetDateFromInterval(IntervalValue.Parse(interval), out var fromDate);
 
-            DateTime? fromDate;
-
-            try
-            {
-                var intervalValue = IntervalValue.Parse(interval);
-
-                fromDate = GetDateFromInterval(intervalValue);
-            }
-            catch (ArgumentException)
+            if (!parsed)
             {
                 await ctx.RespondAsync("Invalid interval");
                 return;
             }
 
-            int pageOffset = page - 1;
-
-            var mappedGuildEmotes = guildEmotes.Select(kv => new TempEmote()
+            var request = new GetGuildEmoteStatsRequest(ctx)
             {
-                Id = kv.Key,
-                Name = kv.Value.Name,
-                Animated = kv.Value.IsAnimated
-            }).ToList();
+                SortDirection = direction,
+                Page = page,
+                FromDate = fromDate,
+                GuildEmojis = guildEmotes
+            };
 
-            var emoteUsageResult = await _emoteStatsRepo.GetGuildEmoteStats(guildId, direction, mappedGuildEmotes, pageOffset: pageOffset, perPage: ResultsPerPage, fromDate: fromDate);
-
-            var emoteUsageItems = emoteUsageResult.Items;
-            var safePageOffset = emoteUsageResult.PageOffset;
-            var pageCount = emoteUsageResult.PageCount;
-            var totalCount = emoteUsageResult.TotalCount;
-
-            if (emoteUsageItems.Count == 0)
-            {
-                await ctx.RespondAsync("No stats yet");
-                return;
-            }
-
-            var bestOrWorst = direction == SortDirection.ASC ? "worst" : "best";
-
-            string rangeText;
-
-            if (safePageOffset == 0)
-            {
-                rangeText = ResultsPerPage.ToString();
-            }
-            else
-            {
-                var rangeMin = ResultsPerPage * safePageOffset + 1;
-                var rangeMax = Math.Min(ResultsPerPage * safePageOffset + ResultsPerPage, totalCount);
-                rangeText = $"{rangeMin} - {rangeMax}";
-            }
-
-            var title = $"Top {rangeText} {bestOrWorst} emotes";
-
-            if (fromDate != null)
-            {
-                title += $" from {fromDate.Value:yyyy-MM-dd}";
-            }
-
-            var rankOffset = safePageOffset * ResultsPerPage;
-
-            var lines = FormattedResultHelper.FormatEmoteStats(emoteUsageItems, rankOffset);
-
-            var body = FormattedResultHelper.BuildBody(lines);
-
-            var result = new StringBuilder();
-
-            result.AppendLine(title);
-            result.AppendLine();
-            result.AppendLine(body);
-
-            if (pageCount > 1)
-            {
-                result.AppendLine();
-
-                var pagingText = $"Page {safePageOffset + 1}/{pageCount}";
-
-                if (safePageOffset + 1 < pageCount)
-                {
-                    pagingText += $" (use -p {safePageOffset + 2} to view next page)";
-                }
-
-                result.AppendLine(pagingText);
-            }
-
-            var formattedResultMessage = $"`{result}`";
-
-            await ctx.RespondAsync(formattedResultMessage);
+            _commandQueue.Enqueue(request);
         }
 
         [Command("me")]
@@ -183,96 +107,23 @@ namespace Kattbot.CommandModules
 
         private async Task GetBestEmotesUser(CommandContext ctx, ulong userId, string mention, int page, string interval)
         {
-            var guildId = ctx.Guild.Id;
+            var parsed = TryGetDateFromInterval(IntervalValue.Parse(interval), out var fromDate);
 
-            DateTime? fromDate;
-
-            try
-            {
-                var intervalValue = IntervalValue.Parse(interval);
-
-                fromDate = GetDateFromInterval(intervalValue);
-            }
-            catch (ArgumentException)
+            if (!parsed)
             {
                 await ctx.RespondAsync("Invalid interval");
                 return;
             }
 
-            int pageOffset = page - 1;
-
-            var emoteUsageResult = await _emoteStatsRepo.GetBestEmotesForUser(guildId, userId, pageOffset, ResultsPerPage, fromDate);
-
-            var emoteUsageItems = emoteUsageResult.Items;
-            var safePageOffset = emoteUsageResult.PageOffset;
-            var pageCount = emoteUsageResult.PageCount;
-            var totalCount = emoteUsageResult.TotalCount;
-
-            var emoteUsageList = emoteUsageItems
-                .Select(r => new ExtendedEmoteStats()
-                {
-                    EmoteCode = EmoteHelper.BuildEmoteCode(r.EmoteId, r.IsAnimated),
-                    Usage = r.Usage,
-                    PercentageOfTotal = (double)r.Usage / r.TotalUsage
-
-                })
-                .ToList();
-
-            if (emoteUsageList.Count == 0)
+            var request = new GetUserEmoteStatsRequest(ctx)
             {
-                await ctx.RespondAsync("No stats yet");
-                return;
-            }
+                UserId = userId,
+                Mention = mention,
+                Page = page,
+                FromDate = fromDate,
+            };
 
-            string rangeText;
-
-            if (safePageOffset == 0)
-            {
-                rangeText = ResultsPerPage.ToString();
-            }
-            else
-            {
-                var rangeMin = ResultsPerPage * safePageOffset + 1;
-                var rangeMax = Math.Min(ResultsPerPage * safePageOffset + ResultsPerPage, totalCount);
-                rangeText = $"{rangeMin} - {rangeMax}";
-            }
-
-            var title = $"Top {rangeText} emotes for {mention}";
-
-            if (fromDate != null)
-            {
-                title += $" from {fromDate.Value:yyyy-MM-dd}";
-            }
-
-            var rankOffset = safePageOffset * ResultsPerPage;
-
-            var lines = FormattedResultHelper.FormatExtendedEmoteStats(emoteUsageList, rankOffset);
-
-            var body = FormattedResultHelper.BuildBody(lines);
-
-            var result = new StringBuilder();
-
-            result.AppendLine(title);
-            result.AppendLine();
-            result.AppendLine(body);
-
-            if (pageCount > 1)
-            {
-                result.AppendLine();
-
-                var pagingText = $"Page {safePageOffset + 1}/{pageCount}";
-
-                if (safePageOffset + 1 < pageCount)
-                {
-                    pagingText += $" (use -p {safePageOffset + 2} to view next page)";
-                }
-
-                result.AppendLine(pagingText);
-            }
-
-            var formattedResultMessage = $"`{result}`";
-
-            await ctx.RespondAsync(formattedResultMessage);
+            _commandQueue.Enqueue(request);
         }
 
         [Command("emote")]
@@ -296,7 +147,6 @@ namespace Kattbot.CommandModules
         private async Task GetEmoteStats(CommandContext ctx, TempEmote emote, string interval)
         {
             var guild = ctx.Guild;
-            var guildId = guild.Id;
 
             var isValidEmote = IsValidMessageEmote(emote.Id, guild);
 
@@ -306,103 +156,21 @@ namespace Kattbot.CommandModules
                 return;
             }
 
-            DateTime? fromDate;
+            var parsed = TryGetDateFromInterval(IntervalValue.Parse(interval), out var fromDate);
 
-            try
-            {
-                var intervalValue = IntervalValue.Parse(interval);
-
-                fromDate = GetDateFromInterval(intervalValue);
-            }
-            catch (ArgumentException)
+            if(!parsed)
             {
                 await ctx.RespondAsync("Invalid interval");
                 return;
             }
 
-            // Maybe replace with pagination
-            const int maxUserCount = 10;
-
-            var emoteUsageResult = await _emoteStatsRepo.GetSingleEmoteStats(guildId, emote, maxUserCount, fromDate);
-
-            if (emoteUsageResult == null)
+            var request = new GetEmoteStatsRequest(ctx)
             {
-                await ctx.RespondAsync("No stats yet");
-                return;
-            }
+                Emote = emote,
+                FromDate = fromDate
+            };
 
-            var emoteStats = emoteUsageResult.EmoteStats;
-            var emoteUsers = emoteUsageResult.EmoteUsers;
-
-            var emoteCode = EmoteHelper.BuildEmoteCode(emoteStats.EmoteId, emoteStats.IsAnimated);
-            var totalUsage = emoteStats.Usage;
-
-            var title = $"Stats for `{emoteCode}`";
-
-            if (fromDate != null)
-            {
-                title += $" from {fromDate.Value:yyyy-MM-dd}";
-            }
-
-            var result = new StringBuilder();
-
-            result.AppendLine(title);
-            result.AppendLine($"Total usage: {totalUsage}");
-
-            if (emoteUsers.Count > 0)
-            {
-                var extendedEmoteUsers = emoteUsers
-                                        .Select(r => new ExtendedEmoteUser()
-                                        {
-                                            UserId = r.UserId,
-                                            Usage = r.Usage,
-                                            PercentageOfTotal = (double)r.Usage / totalUsage
-
-                                        })
-                                        .ToList();
-
-                // Resolve display names
-                foreach (var emoteUser in extendedEmoteUsers)
-                {
-                    DiscordMember user;
-
-                    if (ctx.Guild.Members.ContainsKey(emoteUser.UserId))
-                    {
-                        user = ctx.Guild.Members[emoteUser.UserId];
-                    }
-                    else
-                    {
-                        try
-                        {
-                            user = await ctx.Guild.GetMemberAsync(emoteUser.UserId);
-                        }
-                        catch
-                        {
-                            user = null!;
-                        }
-                    }
-
-                    if (user != null)
-                    {
-                        emoteUser.DisplayName = user.GetNicknameOrUsername();
-                    }
-                    else
-                    {
-                        emoteUser.DisplayName = "Unknown user";
-                    }
-                }
-
-                result.AppendLine();
-                result.AppendLine("Top users");
-
-                var lines = FormattedResultHelper.FormatExtendedEmoteUsers(extendedEmoteUsers, 0);
-
-                lines.ForEach(l => result.AppendLine(l));
-            }
-
-            var formattedResultMessage = $"`{result}`";
-
-            await ctx.RespondAsync(formattedResultMessage);
+            _commandQueue.Enqueue(request);
         }
 
 
@@ -428,6 +196,7 @@ namespace Kattbot.CommandModules
             sb.AppendLine($"`{commandPrefix}stats worst --page 2`");
             sb.AppendLine($"`{commandPrefix}stats user User#1234 --interval 3m`");
             sb.AppendLine($"`{commandPrefix}stats me -p 2 -i 2w`");
+            sb.AppendLine($"`{commandPrefix}stats emote :a_server_emote:`");
 
 
             var result = FormattedResultHelper.BuildMessage($"Shows server-wide emote stats-or for a specific user", sb.ToString());
@@ -435,12 +204,15 @@ namespace Kattbot.CommandModules
             return ctx.RespondAsync(result);
         }
 
-        private DateTime? GetDateFromInterval(IntervalValue interval)
+        private bool TryGetDateFromInterval(IntervalValue interval, out DateTime? dateTime)
         {
             if (interval.IsLifetime)
-                return null;
+            {
+                dateTime = null;
+                return true;
+            }               
 
-            var date = DateTime.UtcNow;
+            var dateResult = DateTime.UtcNow;
 
             var unit = interval.Unit;
             var value = interval.NumericValue;
@@ -448,17 +220,19 @@ namespace Kattbot.CommandModules
             switch (unit)
             {
                 case "m":
-                    date = date.AddMonths(-value);
+                    dateResult = dateResult.AddMonths(-value);
                     break;
                 case "w":
-                    date = date.AddDays(-value * 7);
+                    dateResult = dateResult.AddDays(-value * 7);
                     break;
                 case "d":
-                    date = date.AddDays(-value);
+                    dateResult = dateResult.AddDays(-value);
                     break;
             }
 
-            return date;
+            dateTime = dateResult;
+
+            return true;
         }
 
         /// <summary>

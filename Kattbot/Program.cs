@@ -3,7 +3,6 @@ using Kattbot.Data;
 using Kattbot.Data.Repositories;
 using Kattbot.EventHandlers;
 using Kattbot.Helpers;
-using Kattbot.Models.Commands;
 using Kattbot.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using MediatR;
+using Kattbot.CommandHandlers;
 
 namespace Kattbot
 {
@@ -32,10 +33,16 @@ namespace Kattbot
                 {
                     services.Configure<BotOptions>(hostContext.Configuration.GetSection(BotOptions.OptionsKey));
 
+                    services.AddMediatR(typeof(Program));
+
+                    services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));                   
+
                     services.AddHostedService<BotWorker>();
                     services.AddHostedService<EmoteCommandQueueWorker>();
+                    services.AddHostedService<CommandQueueWorker>();
 
                     services.AddSingleton<EmoteCommandQueue>();
+                    services.AddSingleton<CommandQueue>();
                     services.AddSingleton<SharedCache>();
 
                     services.AddTransient<EmoteEntityBuilder>();

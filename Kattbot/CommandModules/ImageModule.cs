@@ -63,8 +63,6 @@ namespace Kattbot.CommandModules
 
                 await image.SaveAsync(outputStream, encoder);
 
-                var size = outputStream.Length;
-
                 outputStream.Position = 0;
 
                 await outputStream.FlushAsync();
@@ -94,15 +92,12 @@ namespace Kattbot.CommandModules
 
         private IImageEncoder GetImageEncoderByFileType(string fileType)
         {
-            switch (fileType.ToLower())
+            return fileType.ToLower() switch
             {
-                case "png":
-                    return new PngEncoder();
-                case "gif":
-                    return new GifEncoder() { ColorTableMode = GifColorTableMode.Local };
-            }
-
-            throw new ArgumentException($"Unknown filetype: {fileType}");
+                "png" => new PngEncoder(),
+                "gif" => new GifEncoder() { ColorTableMode = GifColorTableMode.Local },
+                _ => throw new ArgumentException($"Unknown filetype: {fileType}"),
+            };
         }
 
         private string GetExternalEmojiImageUrl(string code)
