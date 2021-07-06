@@ -14,6 +14,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Kattbot
 {
+    public class EmoteCommandQueue : ConcurrentQueue<EmoteCommand>
+    {
+
+    }
+
     public class EmoteCommandQueueWorker : BackgroundService
     {
         private const int IdleDelay = 1000;

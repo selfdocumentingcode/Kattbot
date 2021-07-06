@@ -127,11 +127,9 @@ namespace Kattbot.EventHandlers
                 {
                     errorMessage = "You do not have permission to do that.";
                 }
-                else if(failedCheck is CooldownAttribute)
+                else if(failedCheck is CooldownAttribute cooldDownAttribute)
                 {
-                    var cdAttribute = (CooldownAttribute)failedCheck;
-
-                    errorMessage = $"Please wait {cdAttribute.Reset.TotalSeconds} seconds";
+                    errorMessage = $"Please wait {cooldDownAttribute.Reset.TotalSeconds} seconds";
                 }
                 else
                 {
