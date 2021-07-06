@@ -33,6 +33,8 @@ namespace Kattbot
                 {
                     services.Configure<BotOptions>(hostContext.Configuration.GetSection(BotOptions.OptionsKey));
 
+                    services.AddHttpClient();
+
                     services.AddMediatR(typeof(Program));
 
                     services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));                   
@@ -51,6 +53,7 @@ namespace Kattbot
                     services.AddTransient<DateTimeProvider>();
                     services.AddTransient<EmoteParser>();
                     services.AddTransient<GuildSettingsService>();
+                    services.AddTransient<ImageService>();
 
                     services.AddTransient<DiscordErrorLogger>();
 
