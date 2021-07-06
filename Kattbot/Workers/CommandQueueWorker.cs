@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Kattbot.CommandHandlers;
@@ -59,7 +60,10 @@ namespace Kattbot
                         nextDelay = BusyDelay;
                     }
                 }
-                catch(TaskCanceledException) { }
+                catch (Exception ex) when (!(ex is TaskCanceledException))
+                {
+                    _logger.LogError(ex, "CommandQueueWorker");
+                }
 
                 await Task.Delay(nextDelay, stoppingToken);
             }

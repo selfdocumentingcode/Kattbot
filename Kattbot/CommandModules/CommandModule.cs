@@ -42,6 +42,9 @@ namespace Kattbot.CommandModules
 
             sb.AppendLine($"*(\"?\" denotes an optional parameter)*");
 
+            sb.AppendLine();
+            sb.AppendLine("Kattbot source code: github.com/selfdocumentingcode/Kattbot");
+
             var result = FormattedResultHelper.BuildMessage($"Commands", sb.ToString());
 
             return ctx.RespondAsync(result);
