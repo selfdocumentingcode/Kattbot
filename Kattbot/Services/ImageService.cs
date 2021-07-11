@@ -48,9 +48,28 @@ namespace Kattbot.Services
 
             await image.SaveAsync(outputStream, encoder);
 
+            await outputStream.FlushAsync();
+
             outputStream.Position = 0;
 
+            return (outputStream, extensionName);
+        }
+
+        public async Task<(MemoryStream, string)> GetImageStream(byte[] sourceImageBytes)
+        {
+            using var image = Image.Load(sourceImageBytes, out var format);
+
+            var extensionName = format.Name.ToLower();
+
+            var outputStream = new MemoryStream();
+
+            var encoder = GetImageEncoderByFileType(extensionName);
+
+            await image.SaveAsync(outputStream, encoder);
+
             await outputStream.FlushAsync();
+
+            outputStream.Position = 0;
 
             return (outputStream, extensionName);
         }

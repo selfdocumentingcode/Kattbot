@@ -7,7 +7,7 @@ using MediatR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Kattbot
+namespace Kattbot.Workers
 {
     public class CommandQueue : ConcurrentQueue<CommandRequest>
     {
@@ -19,12 +19,12 @@ namespace Kattbot
         private const int IdleDelay = 1000;
         private const int BusyDelay = 10;
 
-        private readonly ILogger<EmoteCommandQueueWorker> _logger;
+        private readonly ILogger<CommandQueueWorker> _logger;
         private readonly CommandQueue _commandQueue;
         private readonly IMediator _mediator;
 
         public CommandQueueWorker(
-                ILogger<EmoteCommandQueueWorker> logger,
+                ILogger<CommandQueueWorker> logger,
                 CommandQueue emoteCommandQueue,
                 IMediator mediator
             )
@@ -60,9 +60,12 @@ namespace Kattbot
                         nextDelay = BusyDelay;
                     }
                 }
-                catch (Exception ex) when (!(ex is TaskCanceledException))
+                catch (Exception ex)
                 {
-                    _logger.LogError(ex, "CommandQueueWorker");
+                    if(!(ex is TaskCanceledException))
+                    {
+                        _logger.LogError(ex, typeof(CommandQueueWorker).Name);
+                    }                    
                 }
 
                 await Task.Delay(nextDelay, stoppingToken);

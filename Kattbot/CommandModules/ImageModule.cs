@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Kattbot.Attributes;
+using Kattbot.Workers;
 using System.Threading.Tasks;
 using static Kattbot.CommandHandlers.Images.GetBigEmote;
 

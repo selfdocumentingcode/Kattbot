@@ -8,6 +8,7 @@ using Kattbot.Common.Models.Emotes;
 using Kattbot.Data;
 using Kattbot.Helper;
 using Kattbot.Helpers;
+using Kattbot.Workers;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;

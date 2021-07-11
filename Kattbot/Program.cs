@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using MediatR;
 using Kattbot.CommandHandlers;
+using Kattbot.Workers;
 
 namespace Kattbot
 {
@@ -36,16 +37,16 @@ namespace Kattbot
                     services.AddHttpClient();
 
                     services.AddMediatR(typeof(Program));
+                    services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
 
-                    services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));                   
+                    services.AddSingleton<SharedCache>();
 
                     services.AddHostedService<BotWorker>();
-                    services.AddHostedService<EmoteCommandQueueWorker>();
                     services.AddHostedService<CommandQueueWorker>();
+                    services.AddHostedService<EmoteCommandQueueWorker>();
 
-                    services.AddSingleton<EmoteCommandQueue>();
                     services.AddSingleton<CommandQueue>();
-                    services.AddSingleton<SharedCache>();
+                    services.AddSingleton<EmoteCommandQueue>();                   
 
                     services.AddTransient<EmoteEntityBuilder>();
                     services.AddTransient<EmoteMessageService>();

@@ -3,8 +3,8 @@ using DSharpPlus.Entities;
 using Kattbot.Services;
 using MediatR;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,28 +40,39 @@ namespace Kattbot.CommandHandlers.Images
 
                 string url = GetEmojiImageUrl(emoji);
 
+                byte[] imageBytes;
+
+                try
+                {
+                    imageBytes = await _imageService.DownloadImageToBytes(url);
+                }
+                catch (HttpRequestException)
+                {
+                    throw new Exception("Couldn't download image");
+                }
+
+                (MemoryStream, string) imageResult;
+
                 if (hasScaleFactor)
                 {
-                    var scaleFactor = request.ScaleFactor!.Value;
-
-                    var imageBytes = await _imageService.DownloadImageToBytes(url);
-
-                    var doubledImageResult = await _imageService.ScaleImage(imageBytes, scaleFactor);
-
-                    var imageStream = doubledImageResult.Item1;
-                    var fileExtension = doubledImageResult.Item2;
-
-                    var responseBuilder = new DiscordMessageBuilder();
-
-                    responseBuilder
-                        .WithFile($"bigger.{fileExtension}", imageStream);
-
-                    await ctx.RespondAsync(responseBuilder);
+                    imageResult = await _imageService.ScaleImage(imageBytes, request.ScaleFactor!.Value);
                 }
                 else
                 {
-                    await ctx.RespondAsync(url);
+                    imageResult = await _imageService.GetImageStream(imageBytes);
                 }
+
+                var imageStream = imageResult.Item1;
+                var fileExtension = imageResult.Item2;
+
+                var responseBuilder = new DiscordMessageBuilder();
+
+                var fileName = hasScaleFactor ? "bigger" : "big";
+
+                responseBuilder
+                    .WithFile($"{fileName}.{fileExtension}", imageStream);
+
+                await ctx.RespondAsync(responseBuilder);
             }
 
             private string GetEmojiImageUrl(DiscordEmoji emoji)
