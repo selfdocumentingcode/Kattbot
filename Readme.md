@@ -39,4 +39,8 @@ Bot token
 
 ## Credits
 
-Kattbot is built on top of [DSharp+](https://dsharpplus.github.io/index.html)
+* [DSharp+](https://github.com/DSharpPlus/DSharpPlus) .net discord wrapper
+* [ImageSharp](https://github.com/SixLabors/ImageSharp) used for image manipulation
+* [CommandLineParser](https://github.com/j-maly/CommandLineParser) used for parsing bot command arguments
+* [MediatR](https://github.com/jbogard/MediatR) used in CQRS pattern implementation
+* [Npgsql](https://github.com/npgsql/npgsql) .net data provider for PostgreSQL
