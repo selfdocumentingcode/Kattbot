@@ -66,8 +66,7 @@ namespace Kattbot.CommandHandlers
                 await ctx.Message.CreateReactionAsync(DiscordEmoji.FromUnicode(EmojiMap.RedX));
             }
 
-            var escapedError = DiscordErrorLogger.ReplaceTicks(ex.ToString());
-            await _discordErrorLogger.LogDiscordError($"`{escapedError}`");
+            await _discordErrorLogger.LogDiscordError(ctx, ex.ToString());            
 
             _logger.LogError(ex, nameof(HandeCommandRequestException));
         }

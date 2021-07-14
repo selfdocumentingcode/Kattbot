@@ -2,14 +2,10 @@
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Kattbot.Attributes;
-using Kattbot.CommandModules.TypeReaders;
-using Kattbot.Common.Models;
 using Kattbot.Common.Models.BotRoles;
-using Kattbot.Data;
 using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
 using Kattbot.Services;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;

@@ -77,9 +77,6 @@ namespace Kattbot
                     if(!(ex is TaskCanceledException))
                     {
                         _logger.LogError(ex, "EmoteCommandQueueWorker");
-
-                        var escapedError = DiscordErrorLogger.ReplaceTicks(ex.ToString());
-                        await _discordErrorLogger.LogDiscordError($"`{escapedError}`");
                     }
                 }
 

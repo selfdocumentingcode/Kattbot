@@ -179,9 +179,7 @@ namespace Kattbot.EventHandlers
 
             if (shouldLogDiscordError)
             {
-                var escapedError = DiscordErrorLogger.ReplaceTicks(exception.ToString());
-                var escapedMessage = DiscordErrorLogger.ReplaceTicks(message.Content);
-                await _discordErrorLogger.LogDiscordError($"Message: `{escapedMessage}`\r\nCommand failed: `{escapedError}`)");
+                await _discordErrorLogger.LogDiscordError(ctx, exception.ToString());
             }
 
             _logger.LogWarning($"Message: {message.Content}\r\nCommand failed: {exception})");

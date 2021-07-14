@@ -1,18 +1,11 @@
 ﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using Kattbot.Models;
 using Kattbot.Models.Commands;
 using Kattbot.Services;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Kattbot.EventHandlers
@@ -53,14 +46,10 @@ namespace Kattbot.EventHandlers
         {
             try
             {
-                var commandPrefix = _options.CommandPrefix;
-                var altCommandPrefix = _options.AlternateCommandPrefix;
-
                 var socketMessage = eventArgs.Message;
                 var guild = eventArgs.Guild;
 
-                if (socketMessage.Content.StartsWith(commandPrefix, StringComparison.OrdinalIgnoreCase)
-                    || socketMessage.Content.StartsWith(altCommandPrefix, StringComparison.OrdinalIgnoreCase))
+                if (MessageIsCommand(socketMessage.Content))
                     return;
 
                 if (!IsReleventMessage(socketMessage))
@@ -82,8 +71,18 @@ namespace Kattbot.EventHandlers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "OnMessageReceived");
-                await _discordErrorLogger.LogDiscordError(ex.ToString());
+                _logger.LogError(ex, nameof(OnMessageCreated));
+
+                var eventContextError = new EventErrorContext()
+                {
+                    EventName = nameof(OnMessageCreated),
+                    User = eventArgs.Author,
+                    Channel = eventArgs.Channel,
+                    Guild = eventArgs.Guild,
+                    Message = eventArgs.Message
+                };
+
+                await _discordErrorLogger.LogDiscordError(eventContextError, ex.ToString());
             }
         }
 
@@ -109,8 +108,18 @@ namespace Kattbot.EventHandlers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "OnMessageReceived");
-                await _discordErrorLogger.LogDiscordError(ex.ToString());
+                _logger.LogError(ex, nameof(OnMessageUpdated));
+
+                var eventContextError = new EventErrorContext()
+                {
+                    EventName = nameof(OnMessageUpdated),
+                    User = eventArgs.Author,
+                    Channel = eventArgs.Channel,
+                    Guild = eventArgs.Guild,
+                    Message = eventArgs.Message
+                };
+
+                await _discordErrorLogger.LogDiscordError(eventContextError, ex.ToString());
             }
         }
 
@@ -135,8 +144,17 @@ namespace Kattbot.EventHandlers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "OnMessageDeleted");
-                await _discordErrorLogger.LogDiscordError(ex.ToString());
+                _logger.LogError(ex, nameof(OnMessageDeleted));
+
+                var eventContextError = new EventErrorContext()
+                {
+                    EventName = nameof(OnMessageDeleted),
+                    User = null,
+                    Channel = eventArgs.Channel,
+                    Guild = eventArgs.Guild
+                };
+
+                await _discordErrorLogger.LogDiscordError(eventContextError, ex.ToString());
             }
         }
 
@@ -164,8 +182,17 @@ namespace Kattbot.EventHandlers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "OnReactionAdded");
-                await _discordErrorLogger.LogDiscordError(ex.ToString());
+                _logger.LogError(ex, nameof(OnMessageReactionAdded));
+
+                var eventContextError = new EventErrorContext()
+                {
+                    EventName = nameof(OnMessageReactionAdded),
+                    User = eventArgs.User,
+                    Channel = eventArgs.Channel,
+                    Guild = eventArgs.Guild
+                };
+
+                await _discordErrorLogger.LogDiscordError(eventContextError, ex.ToString());
             }
         }
 
@@ -190,9 +217,27 @@ namespace Kattbot.EventHandlers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "OnReactionRemoved");
-                await _discordErrorLogger.LogDiscordError(ex.ToString());
+                _logger.LogError(ex, nameof(OnMessageReactionRemoved));
+
+                var eventContextError = new EventErrorContext()
+                {
+                    EventName = nameof(OnMessageReactionRemoved),
+                    User = eventArgs.User,
+                    Channel = eventArgs.Channel,
+                    Guild = eventArgs.Guild
+                };
+
+                await _discordErrorLogger.LogDiscordError(eventContextError, ex.ToString());
             }
+        }
+
+        private bool MessageIsCommand(string command)
+        {
+            var commandPrefix = _options.CommandPrefix;
+            var altCommandPrefix = _options.AlternateCommandPrefix;
+
+            return command.StartsWith(commandPrefix, StringComparison.OrdinalIgnoreCase)
+                || command.StartsWith(altCommandPrefix, StringComparison.OrdinalIgnoreCase);
         }
     }
 }
