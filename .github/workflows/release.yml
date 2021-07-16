@@ -52,17 +52,17 @@ jobs:
         username: ${{secrets.VPS_USER}}
         password: ${{secrets.VPS_PASSWORD}}        
         source: "/home/runner/work/Kattbot/Kattbot/deploy/"
-        target: "/usr/kattbot-deploy"
+        target: "/home/kattbot-user/kattbot-deploy"
         rm: true
     
-    - name: Deploy - Stop service
-      uses: appleboy/ssh-action@master
-      with:  
-        host: ${{secrets.VPS_HOST}}
-        port: ${{secrets.VPS_PORT}}
-        username: ${{secrets.VPS_USER}}
-        password: ${{secrets.VPS_PASSWORD}}      
-        script: sudo systemctl stop kattbot
+    #- name: Deploy - Stop service
+    #  uses: appleboy/ssh-action@master
+    #  with:  
+    #    host: ${{secrets.VPS_HOST}}
+    #    port: ${{secrets.VPS_PORT}}
+    #    username: ${{secrets.VPS_USER}}
+    #    password: ${{secrets.VPS_PASSWORD}}      
+    #    script: sudo systemctl stop kattbot
     
     - name: Deploy - Run deploy script
       uses: appleboy/ssh-action@master
@@ -71,7 +71,7 @@ jobs:
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.VPS_USER}}
         password: ${{secrets.VPS_PASSWORD}}      
-        script: sudo /usr/kattbot-deploy.sh
+        script: sudo /home/kattbot-user/kattbot-deploy.sh
  
     - name: Deploy - Change Kattbot permission
       uses: appleboy/ssh-action@master
@@ -80,7 +80,7 @@ jobs:
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.VPS_USER}}
         password: ${{secrets.VPS_PASSWORD}}      
-        script: sudo chmod 777 /usr/kattbot/Kattbot
+        script: sudo chmod 777 /home/kattbot-user/kattbot/Kattbot
 
     - name: Deploy - Backup database
       if: github.event.inputs.updateDatabase == 'auto' || github.event.inputs.updateDatabase == 'manual'
@@ -90,7 +90,7 @@ jobs:
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.VPS_USER}}
         password: ${{secrets.VPS_PASSWORD}}      
-        script: sudo /usr/kattbot-backup-db.sh
+        script: sudo /home/kattbot-user/kattbot-backup-db.sh
  
     - name: Deploy - Run database migration script
       if: github.event.inputs.updateDatabase == 'auto'
@@ -100,7 +100,7 @@ jobs:
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.VPS_USER}}
         password: ${{secrets.VPS_PASSWORD}}      
-        script: sudo psql -U postgres -d kattbot -q -f /usr/kattbot/database_migration.sql
+        script: sudo psql -U postgres -d kattbot -q -f /home/kattbot-user/kattbot/database_migration.sql
  
     - name: Deploy - Start service
       if: github.event.inputs.updateDatabase == 'no' || github.event.inputs.updateDatabase == 'auto'
@@ -108,6 +108,6 @@ jobs:
       with:  
         host: ${{secrets.VPS_HOST}}
         port: ${{secrets.VPS_PORT}}
-        username: ${{secrets.VPS_USER}}
-        password: ${{secrets.VPS_PASSWORD}}      
-        script: sudo systemctl start kattbot
+        username: ${{secrets.KATTBOT_USER}}
+        password: ${{secrets.KATTBOT_PASSWORD}}
+        script: systemctl --user start kattbot

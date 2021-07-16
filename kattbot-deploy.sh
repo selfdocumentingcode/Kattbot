@@ -1,10 +1,10 @@
 #! /bin/bash
 
 # empty directory
-rm -r /usr/kattbot
+rm -r /home/kattbot-user/kattbot
 
 # recreate it
-mkdir -p /usr/kattbot
+mkdir -p /home/kattbot-user/kattbot
 
 # copy files from deploy to app directory
-cp -r /usr/kattbot-deploy/github/workspace/deploy/. /usr/kattbot
+cp -r /home/kattbot-user/kattbot-deploy/github/workspace/deploy/. /home/kattbot-user/kattbot

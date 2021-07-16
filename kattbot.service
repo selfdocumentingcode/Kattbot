@@ -3,8 +3,8 @@ Description=Kattbot
 
 [Service]
 Type=notify
-ExecStart=/usr/kattbot/Kattbot
-WorkingDirectory=/usr/kattbot
+ExecStart=/home/kattbot-user/kattbot/Kattbot
+WorkingDirectory=/home/kattbot-user/kattbot
 Environment=DOTNET_ENVIRONMENT=Production
 
 [Install]
