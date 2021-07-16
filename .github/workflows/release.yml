@@ -55,14 +55,14 @@ jobs:
         target: "/home/kattbot-user/kattbot-deploy"
         rm: true
     
-    #- name: Deploy - Stop service
-    #  uses: appleboy/ssh-action@master
-    #  with:  
-    #    host: ${{secrets.VPS_HOST}}
-    #    port: ${{secrets.VPS_PORT}}
-    #    username: ${{secrets.VPS_USER}}
-    #    password: ${{secrets.VPS_PASSWORD}}      
-    #    script: sudo systemctl stop kattbot
+    - name: Deploy - Stop service
+      uses: appleboy/ssh-action@master
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.KATTBOT_USER}}
+        password: ${{secrets.KATTBOT_PASSWORD}}
+        script: systemctl --user stop kattbot
     
     - name: Deploy - Run deploy script
       uses: appleboy/ssh-action@master
