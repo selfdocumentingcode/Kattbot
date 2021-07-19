@@ -4,9 +4,6 @@ using DSharpPlus.Entities;
 using Kattbot.Models;
 using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Kattbot.Services
@@ -42,15 +39,17 @@ namespace Kattbot.Services
 
         public async Task LogDiscordError(EventErrorContext ctx, string errorMessage)
         {
-            var user = ctx.User != null ? $"{ctx.User.Username}#{ctx.User.Discriminator}" : string.Empty;
+            var user = ctx.User != null ? $"{ctx.User.Username}#{ctx.User.Discriminator}" : "Unknown user";
             var channelName = ctx.Channel?.Name ?? string.Empty;
             var guildName = ctx.Guild?.Name ?? string.Empty;
             var eventName = ctx.EventName;
             var message = ctx.Message != null ? EscapeTicks(ctx.Message.Content) : string.Empty;
 
             var contextMessage = $"**Failed event** `{eventName}` by `{user}` in `{channelName}`(`{guildName}`)";
+
             if (!string.IsNullOrWhiteSpace(message)) 
                 contextMessage += $"{Environment.NewLine}Message: `{message}`";
+
             var escapedErrorMesssage = $"`{EscapeTicks(errorMessage)}`";
 
             var fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMesssage}";

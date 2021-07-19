@@ -27,19 +27,16 @@ namespace Kattbot
         private readonly ILogger<EmoteCommandQueueWorker> _logger;
         private readonly EmoteCommandQueue _emoteCommandQueue;
         private readonly IServiceProvider _serviceProvider;
-        private readonly DiscordErrorLogger _discordErrorLogger;
 
         public EmoteCommandQueueWorker(
-                ILogger<EmoteCommandQueueWorker> logger,               
+                ILogger<EmoteCommandQueueWorker> logger,
                 EmoteCommandQueue emoteCommandQueue,
-                IServiceProvider serviceProvider,
-                DiscordErrorLogger discordErrorLogger
+                IServiceProvider serviceProvider
             )
         {
             _logger = logger;
             _emoteCommandQueue = emoteCommandQueue;
             _serviceProvider = serviceProvider;
-            _discordErrorLogger = discordErrorLogger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -74,7 +71,7 @@ namespace Kattbot
                 }
                 catch (Exception ex)
                 {
-                    if(!(ex is TaskCanceledException))
+                    if (!(ex is TaskCanceledException))
                     {
                         _logger.LogError(ex, "EmoteCommandQueueWorker");
                     }
