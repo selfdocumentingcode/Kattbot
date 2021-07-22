@@ -17,6 +17,7 @@ namespace Kattbot.CommandHandlers.Images
         {
             public DiscordEmoji Emoji { get; set; } = null!;
             public uint? ScaleFactor { get; set; }
+            public bool Deepfry { get; set; } = false;
 
             public GetBigEmoteRequest(CommandContext ctx) : base(ctx)
             {
@@ -37,6 +38,7 @@ namespace Kattbot.CommandHandlers.Images
                 var ctx = request.Ctx;
                 var emoji = request.Emoji;
                 var hasScaleFactor = request.ScaleFactor.HasValue;
+                var deepfry = request.Deepfry;
 
                 string url = GetEmojiImageUrl(emoji);
 
@@ -53,13 +55,21 @@ namespace Kattbot.CommandHandlers.Images
 
                 (MemoryStream, string) imageResult;
 
-                if (hasScaleFactor)
+                if (deepfry)
                 {
-                    imageResult = await _imageService.ScaleImage(imageBytes, request.ScaleFactor!.Value);
+                    var scaleFactor = request.ScaleFactor.HasValue ? request.ScaleFactor.Value : 2;
+                    imageResult = await _imageService.DeepfryImage(imageBytes, scaleFactor);
                 }
                 else
                 {
-                    imageResult = await _imageService.GetImageStream(imageBytes);
+                    if (hasScaleFactor)
+                    {
+                        imageResult = await _imageService.ScaleImage(imageBytes, request.ScaleFactor!.Value);
+                    }
+                    else
+                    {
+                        imageResult = await _imageService.GetImageStream(imageBytes);
+                    }
                 }
 
                 var imageStream = imageResult.Item1;

@@ -19,6 +19,7 @@ namespace Kattbot.CommandModules
         }
 
         [Command("big")]
+        [Cooldown(5, 10, CooldownBucketType.Global)]
         public Task BigEmote(CommandContext ctx, DiscordEmoji emoji)
         {
             var request = new GetBigEmoteRequest(ctx)
@@ -39,6 +40,22 @@ namespace Kattbot.CommandModules
             {
                 Emoji = emoji,
                 ScaleFactor = 2
+            };
+
+            _commandQueue.Enqueue(request);
+
+            return Task.CompletedTask;
+        }
+
+        [Command("deepfry")]
+        [Cooldown(5, 10, CooldownBucketType.Global)]
+        public Task DeepfryEmote(CommandContext ctx, DiscordEmoji emoji)
+        {
+            var request = new GetBigEmoteRequest(ctx)
+            {
+                Emoji = emoji,
+                ScaleFactor = 2,
+                Deepfry = true
             };
 
             _commandQueue.Enqueue(request);
