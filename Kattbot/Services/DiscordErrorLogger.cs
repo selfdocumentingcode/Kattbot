@@ -40,8 +40,8 @@ namespace Kattbot.Services
         public async Task LogDiscordError(EventErrorContext ctx, string errorMessage)
         {
             var user = ctx.User != null ? $"{ctx.User.Username}#{ctx.User.Discriminator}" : "Unknown user";
-            var channelName = ctx.Channel?.Name ?? string.Empty;
-            var guildName = ctx.Guild?.Name ?? string.Empty;
+            var channelName = ctx.Channel?.Name ?? "Unknown channel";
+            var guildName = ctx.Guild?.Name ?? "Unknown guild";
             var eventName = ctx.EventName;
             var message = ctx.Message != null ? EscapeTicks(ctx.Message.Content) : string.Empty;
 
@@ -57,7 +57,7 @@ namespace Kattbot.Services
             await LogDiscordError(fullErrorMessage);
         }
 
-        private async Task LogDiscordError(string error)
+        public async Task LogDiscordError(string error)
         {
             var errorLogGuilId = _options.ErrorLogGuildId;
             var errorLogChannelId = _options.ErrorLogChannelId;

@@ -29,6 +29,10 @@ namespace Kattbot.EventHandlers
         /// <returns></returns>
         protected bool IsReleventMessage(DiscordMessage message)
         {
+            // This seems to happen because of the newly introduced Threads feature
+            if (message.Author == null)
+                return false;
+
             // Only care about messages from users
             if (message.Author.IsBot || (message.Author.IsSystem ?? false))
             {

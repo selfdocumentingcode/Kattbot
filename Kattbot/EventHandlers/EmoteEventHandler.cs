@@ -46,22 +46,20 @@ namespace Kattbot.EventHandlers
         {
             try
             {
-                var socketMessage = eventArgs.Message;
+                var message = eventArgs.Message;
                 var guild = eventArgs.Guild;
 
-                if (MessageIsCommand(socketMessage.Content))
+                if (MessageIsCommand(message.Content))
                     return;
 
-                if (!IsReleventMessage(socketMessage))
+                if (!IsReleventMessage(message))
                     return;
 
-                if (IsPrivateMessageChannel(socketMessage.Channel))
+                if (IsPrivateMessageChannel(message.Channel))
                 {
-                    await socketMessage.Channel.SendMessageAsync("https://cdn.discordapp.com/emojis/740563346599968900.png?v=1");
+                    await message.Channel.SendMessageAsync("https://cdn.discordapp.com/emojis/740563346599968900.png?v=1");
                     return;
                 }
-
-                var message = socketMessage;
 
                 var todoMessage = new MessageCommandPayload(message, guild);
 
@@ -93,6 +91,55 @@ namespace Kattbot.EventHandlers
                 var message = eventArgs.Message;
                 var channel = eventArgs.Channel;
                 var guild = eventArgs.Guild;
+
+                if (message == null)
+                    throw new Exception($"{nameof(eventArgs.Message)} is null");
+
+                #region Debug issues cause by Thread feature
+                if (message.Author == null)
+                {
+                    await _discordErrorLogger.LogDiscordError("messsage.Author is null");
+
+                    if (eventArgs.Author != null)
+                        await _discordErrorLogger.LogDiscordError("message.Author is null but eventArgs.Author has value");
+                }
+                else
+                {
+                    try
+                    {
+                        _ = message.Author!.IsBot;
+                    }
+                    catch (Exception ex)
+                    {
+                        await _discordErrorLogger.LogDiscordError($"message.Author.IsBot threw: {ex}");
+                    }
+
+                    try
+                    {
+                        _ = message.Author!.IsSystem;
+                    }
+                    catch (Exception ex)
+                    {
+                        await _discordErrorLogger.LogDiscordError($"message.Author.IsSystem threw: {ex}");
+                    }
+                }
+
+                if (message.Content == null)
+                    await _discordErrorLogger.LogDiscordError("messsage.Content is null");
+
+                if (message.Channel == null)
+                    await _discordErrorLogger.LogDiscordError("messsage.Channel is null");
+
+                if (eventArgs.Author == null)
+                    await _discordErrorLogger.LogDiscordError("eventArgs.Author is null");
+
+                if (eventArgs.Channel == null)
+                    await _discordErrorLogger.LogDiscordError("eventArgs.Channel is null");
+
+                if (eventArgs.Guild == null)
+                    await _discordErrorLogger.LogDiscordError("eventArgs.Guild is null");
+
+                #endregion
 
                 if (!IsReleventMessage(message))
                     return;
