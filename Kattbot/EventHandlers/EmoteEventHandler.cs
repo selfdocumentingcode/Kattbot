@@ -95,52 +95,10 @@ namespace Kattbot.EventHandlers
                 if (message == null)
                     throw new Exception($"{nameof(eventArgs.Message)} is null");
 
-                #region Debug issues cause by Thread feature
-                if (message.Author == null)
-                {
-                    await _discordErrorLogger.LogDiscordError("messsage.Author is null");
-
-                    if (eventArgs.Author != null)
-                        await _discordErrorLogger.LogDiscordError("message.Author is null but eventArgs.Author has value");
-                }
-                else
-                {
-                    try
-                    {
-                        _ = message.Author!.IsBot;
-                    }
-                    catch (Exception ex)
-                    {
-                        await _discordErrorLogger.LogDiscordError($"message.Author.IsBot threw: {ex}");
-                    }
-
-                    try
-                    {
-                        _ = message.Author!.IsSystem;
-                    }
-                    catch (Exception ex)
-                    {
-                        await _discordErrorLogger.LogDiscordError($"message.Author.IsSystem threw: {ex}");
-                    }
-                }
-
-                if (message.Content == null)
-                    await _discordErrorLogger.LogDiscordError("messsage.Content is null");
-
-                if (message.Channel == null)
-                    await _discordErrorLogger.LogDiscordError("messsage.Channel is null");
-
-                if (eventArgs.Author == null)
-                    await _discordErrorLogger.LogDiscordError("eventArgs.Author is null");
-
-                if (eventArgs.Channel == null)
-                    await _discordErrorLogger.LogDiscordError("eventArgs.Channel is null");
-
-                if (eventArgs.Guild == null)
-                    await _discordErrorLogger.LogDiscordError("eventArgs.Guild is null");
-
-                #endregion
-
+                // issues caused by Threads feature
+                if (message.Author == null)                
+                    return;
+                    
                 if (!IsReleventMessage(message))
                     return;
 
