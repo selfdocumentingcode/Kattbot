@@ -39,6 +39,8 @@ namespace Kattbot.CommandModules
             sb.AppendLine($"`{commandPrefix}meow`");
             sb.AppendLine($"`{commandPrefix}big [emote]`");
             sb.AppendLine($"`{commandPrefix}bigger [emote]`");
+            sb.AppendLine($"`{commandPrefix}deepfry [emote]`");
+            sb.AppendLine($"`{commandPrefix}oilpaint [emote]`");
 
             sb.AppendLine($"*(\"?\" denotes an optional parameter)*");
 
