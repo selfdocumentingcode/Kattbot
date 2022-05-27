@@ -49,13 +49,29 @@ namespace Kattbot.CommandModules
 
         [Command("deepfry")]
         [Cooldown(5, 10, CooldownBucketType.Global)]
-        public Task DeepfryEmote(CommandContext ctx, DiscordEmoji emoji)
+        public Task DeepFryEmote(CommandContext ctx, DiscordEmoji emoji)
         {
             var request = new GetBigEmoteRequest(ctx)
             {
                 Emoji = emoji,
                 ScaleFactor = 2,
-                Deepfry = true
+                Effect = EffectDeepFry
+            };
+
+            _commandQueue.Enqueue(request);
+
+            return Task.CompletedTask;
+        }
+
+        [Command("oilpaint")]
+        [Cooldown(5, 10, CooldownBucketType.Global)]
+        public Task OilPaintEmote(CommandContext ctx, DiscordEmoji emoji)
+        {
+            var request = new GetBigEmoteRequest(ctx)
+            {
+                Emoji = emoji,
+                ScaleFactor = 2,
+                Effect = EffectOilPaint
             };
 
             _commandQueue.Enqueue(request);

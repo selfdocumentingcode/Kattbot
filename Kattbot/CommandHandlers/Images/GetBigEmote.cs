@@ -13,11 +13,15 @@ namespace Kattbot.CommandHandlers.Images
 {
     public class GetBigEmote
     {
+        public static string EffectDeepFry = "deepfry";
+        public static string EffectOilPaint = "oilpaint";
+
         public class GetBigEmoteRequest : CommandRequest
         {
             public DiscordEmoji Emoji { get; set; } = null!;
             public uint? ScaleFactor { get; set; }
-            public bool Deepfry { get; set; } = false;
+            public string? Effect { get; set; }
+
 
             public GetBigEmoteRequest(CommandContext ctx) : base(ctx)
             {
@@ -38,7 +42,7 @@ namespace Kattbot.CommandHandlers.Images
                 var ctx = request.Ctx;
                 var emoji = request.Emoji;
                 var hasScaleFactor = request.ScaleFactor.HasValue;
-                var deepfry = request.Deepfry;
+                var effect = request.Effect;
 
                 string url = GetEmojiImageUrl(emoji);
 
@@ -53,12 +57,17 @@ namespace Kattbot.CommandHandlers.Images
                     throw new Exception("Couldn't download image");
                 }
 
-                (MemoryStream, string) imageResult;
+                MutateImageResult imageResult;
 
-                if (deepfry)
+                if (effect == EffectDeepFry)
                 {
                     var scaleFactor = request.ScaleFactor.HasValue ? request.ScaleFactor.Value : 2;
-                    imageResult = await _imageService.DeepfryImage(imageBytes, scaleFactor);
+                    imageResult = await _imageService.DeepFryImage(imageBytes, scaleFactor);
+                }
+                else if (effect == EffectOilPaint)
+                {
+                    var scaleFactor = request.ScaleFactor.HasValue ? request.ScaleFactor.Value : 2;
+                    imageResult = await _imageService.OilPaintImage(imageBytes, scaleFactor);
                 }
                 else
                 {
@@ -72,8 +81,8 @@ namespace Kattbot.CommandHandlers.Images
                     }
                 }
 
-                var imageStream = imageResult.Item1;
-                var fileExtension = imageResult.Item2;
+                var imageStream = imageResult.MemoryStream;
+                var fileExtension = imageResult.FileExtension;
 
                 var responseBuilder = new DiscordMessageBuilder();
 
