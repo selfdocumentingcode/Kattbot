@@ -25,10 +25,10 @@
 ## Publish
 
 ### Publish windows release
-`dotnet publish -c Release -r win10-x64 --self-contained false`
+`dotnet publish -c Release -r win10-x64 --no-self-contained`
 
 ### Publish linux release
-`dotnet publish -c Release -r linux-x64 --self-contained false`
+`dotnet publish -c Release -r linux-x64 --no-self-contained`
 
 ## User secrets
 
