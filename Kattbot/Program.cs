@@ -44,9 +44,11 @@ namespace Kattbot
                     services.AddHostedService<BotWorker>();
                     services.AddHostedService<CommandQueueWorker>();
                     services.AddHostedService<EmoteCommandQueueWorker>();
+                    services.AddHostedService<CommandBagWorker>();
 
                     services.AddSingleton<CommandQueue>();
-                    services.AddSingleton<EmoteCommandQueue>();                   
+                    services.AddSingleton<EmoteCommandQueue>();
+                    services.AddSingleton<CommandBag>();
 
                     services.AddTransient<EmoteEntityBuilder>();
                     services.AddTransient<EmoteMessageService>();

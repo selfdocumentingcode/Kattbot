@@ -9,28 +9,28 @@ using Microsoft.Extensions.Logging;
 
 namespace Kattbot.Workers
 {
-    public class CommandQueue : ConcurrentQueue<CommandRequest>
+    public class CommandBag : ConcurrentBag<CommandRequest>
     {
 
     }
 
-    public class CommandQueueWorker : BackgroundService
+    public class CommandBagWorker : BackgroundService
     {
         private const int IdleDelay = 1000;
         private const int BusyDelay = 10;
 
-        private readonly ILogger<CommandQueueWorker> _logger;
-        private readonly CommandQueue _commandQueue;
+        private readonly ILogger<CommandBagWorker> _logger;
+        private readonly CommandBag _commandBag;
         private readonly IMediator _mediator;
 
-        public CommandQueueWorker(
-                ILogger<CommandQueueWorker> logger,
-                CommandQueue commandQueue,
+        public CommandBagWorker(
+                ILogger<CommandBagWorker> logger,
+                CommandBag commandBag,
                 IMediator mediator
             )
         {
             _logger = logger;
-            _commandQueue = commandQueue;
+            _commandBag = commandBag;
             _mediator = mediator;
         }
 
@@ -42,30 +42,30 @@ namespace Kattbot.Workers
 
                 try
                 {
-                    if (_commandQueue.Count == 0)
+                    if (_commandBag.Count == 0)
                     {
                         await Task.Delay(nextDelay, stoppingToken);
 
                         continue;
                     }
 
-                    _commandQueue.TryDequeue(out var command);
+                    _commandBag.TryTake(out var command);
 
                     if (command != null)
                     {
-                        _logger.LogDebug($"Dequeued command. {_commandQueue.Count} left in queue");
+                        _logger.LogDebug($"Grabbed command. {_commandBag.Count} left in the bag");
 
-                        await _mediator.Send(command);
+                        _ = Task.Run(() => _mediator.Send(command));
 
                         nextDelay = BusyDelay;
                     }
                 }
                 catch (Exception ex)
                 {
-                    if(!(ex is TaskCanceledException))
+                    if (!(ex is TaskCanceledException))
                     {
                         _logger.LogError(ex, typeof(CommandQueueWorker).Name);
-                    }                    
+                    }
                 }
 
                 await Task.Delay(nextDelay, stoppingToken);
