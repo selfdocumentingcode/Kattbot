@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Kattbot.Attributes;
+using Kattbot.CommandHandlers.Images;
 using Kattbot.Workers;
 using System.Threading.Tasks;
 using static Kattbot.CommandHandlers.Images.GetBigEmote;
@@ -73,6 +74,17 @@ namespace Kattbot.CommandModules
                 ScaleFactor = 2,
                 Effect = EffectOilPaint
             };
+
+            _commandQueue.Enqueue(request);
+
+            return Task.CompletedTask;
+        }
+
+        [Command("dalle")]
+        [Cooldown(1, 60, CooldownBucketType.Global)]
+        public Task Dalle(CommandContext ctx, [RemainingText] string prompt)
+        {
+            var request = new DallePromptCommand(ctx, prompt);
 
             _commandQueue.Enqueue(request);
 
