@@ -81,7 +81,7 @@ namespace Kattbot.CommandModules
         }
 
         [Command("dalle")]
-        [Cooldown(5, 10, CooldownBucketType.Global)]
+        [Cooldown(1, 60, CooldownBucketType.Global)]
         public Task Dalle(CommandContext ctx, [RemainingText] string prompt)
         {
             var request = new DallePromptCommand(ctx, prompt);

@@ -8,6 +8,8 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using System.Linq;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Kattbot.Services
 {
@@ -92,6 +94,47 @@ namespace Kattbot.Services
             if (format == null) throw new InvalidOperationException("Invalid image format");
 
             return await GetMutatedImageStream(image, format);
+        }
+
+        public async Task<MutateImageResult> CombineImages(string[] base64Images)
+        {
+            var bytesImages = base64Images.Select(Convert.FromBase64String);
+
+            IImageFormat? format = null;
+
+            var images = bytesImages.Select(x => Image.Load(x, out format)).ToList();
+
+            if (format == null) throw new InvalidOperationException("Something went wrong");
+
+            // Assume all images have the same size. If this turns out to not be true,
+            // might have to upscale/downscale them to get them to be the same size.
+
+            var imageWidth = images.First().Width;
+            var imageHeight = images.First().Height;            
+
+            var gridSize = (int)Math.Ceiling(Math.Sqrt(images.Count));
+
+            var canvasWidth = imageWidth * gridSize;
+            var canvasHeight = imageHeight * gridSize;            
+
+            var outputImage = new Image<Rgba32>(canvasWidth, canvasHeight);
+
+            for (int i = 0; i < images.Count; i++)
+            {
+                int x = i % gridSize;
+                int y = i / gridSize;
+
+                var image = images[i];
+
+                var positionX = imageWidth * x;
+                var positionY = imageHeight * y;
+
+                outputImage.Mutate(x => x.DrawImage(image, new Point(positionX, positionY), 1f));
+            }
+
+            var outputImageStream = await GetMutatedImageStream(outputImage, format);
+
+            return outputImageStream;
         }
 
         private async Task<MutateImageResult> GetMutatedImageStream(Image image, IImageFormat format)
