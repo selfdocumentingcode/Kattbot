@@ -60,7 +60,8 @@ namespace Kattbot.CommandHandlers.Images
 
             var combinedImage = await _imageService.CombineImages(searchResponse.Images.ToArray());
 
-            var fileName = $"{request.Prompt.Replace(" ", "_")}.{combinedImage.FileExtension}";
+            var safeFileName = new string(request.Prompt.Select(c => char.IsLetterOrDigit(c) ? c : '_').ToArray());
+            var fileName = $"{safeFileName}.{combinedImage.FileExtension}";
 
             var eb = new DiscordEmbedBuilder()
                 .WithTitle(request.Prompt)
