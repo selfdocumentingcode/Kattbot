@@ -35,7 +35,7 @@ namespace Kattbot.CommandModules
             sb.AppendLine();
             sb.AppendLine("Other commands");
             sb.AppendLine($"`{commandPrefix}prep me`");
-            sb.AppendLine($"`{commandPrefix}prep user [username]`");
+            sb.AppendLine($"`{commandPrefix}prep [username]`");
             sb.AppendLine($"`{commandPrefix}meow`");
             sb.AppendLine($"`{commandPrefix}big [emote]`");
             sb.AppendLine($"`{commandPrefix}bigger [emote]`");

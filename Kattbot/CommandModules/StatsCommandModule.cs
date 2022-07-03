@@ -93,7 +93,7 @@ namespace Kattbot.CommandModules
             await GetBestEmotesUser(ctx, userId, mention, args.Page, args.Interval);
         }
 
-        [Command("user")]
+        [GroupCommand]
         [Description("Return best emotes for user")]
         public async Task GetBestEmotesOtherUser(CommandContext ctx, DiscordUser user, [RemainingText] StatsCommandArgs? args = null)
         {
@@ -127,7 +127,7 @@ namespace Kattbot.CommandModules
             _commandQueue.Enqueue(request);
         }
 
-        [Command("emote")]
+        [GroupCommand]
         [Description("Return specific emote stats")]
         public async Task GetEmoteStats(CommandContext ctx, string emoteString, [RemainingText] StatsCommandArgs? args = null)
         {
@@ -195,9 +195,9 @@ namespace Kattbot.CommandModules
             sb.AppendLine($"Usage examples:");
             sb.AppendLine($"`{commandPrefix}stats best`");
             sb.AppendLine($"`{commandPrefix}stats worst --page 2`");
-            sb.AppendLine($"`{commandPrefix}stats user User#1234 --interval 3m`");
+            sb.AppendLine($"`{commandPrefix}stats User#1234 --interval 3m`");
             sb.AppendLine($"`{commandPrefix}stats me -p 2 -i 2w`");
-            sb.AppendLine($"`{commandPrefix}stats emote :a_server_emote:`");
+            sb.AppendLine($"`{commandPrefix}stats :a_server_emote:`");
 
 
             var result = FormattedResultHelper.BuildMessage($"Shows server-wide emote stats-or for a specific user", sb.ToString());

@@ -27,7 +27,7 @@ namespace Kattbot.CommandModules
             return ctx.RespondAsync(message);
         }
 
-        [Command("user")]
+        [GroupCommand]
         public Task GetRandomPrep(CommandContext ctx, DiscordUser user)
         {
             var prep = GetRandomPrep();
