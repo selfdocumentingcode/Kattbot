@@ -71,7 +71,7 @@ namespace Kattbot.EventHandlers
             {
                 _logger.LogError(ex, nameof(OnMessageCreated));
 
-                var eventContextError = new EventErrorContext()
+                var eventContextError = new EventContext()
                 {
                     EventName = nameof(OnMessageCreated),
                     User = eventArgs.Author,
@@ -115,7 +115,7 @@ namespace Kattbot.EventHandlers
             {
                 _logger.LogError(ex, nameof(OnMessageUpdated));
 
-                var eventContextError = new EventErrorContext()
+                var eventContextError = new EventContext()
                 {
                     EventName = nameof(OnMessageUpdated),
                     User = eventArgs.Author,
@@ -151,7 +151,7 @@ namespace Kattbot.EventHandlers
             {
                 _logger.LogError(ex, nameof(OnMessageDeleted));
 
-                var eventContextError = new EventErrorContext()
+                var eventContextError = new EventContext()
                 {
                     EventName = nameof(OnMessageDeleted),
                     User = null,
@@ -189,7 +189,7 @@ namespace Kattbot.EventHandlers
             {
                 _logger.LogError(ex, nameof(OnMessageReactionAdded));
 
-                var eventContextError = new EventErrorContext()
+                var eventContextError = new EventContext()
                 {
                     EventName = nameof(OnMessageReactionAdded),
                     User = eventArgs.User,
@@ -224,7 +224,7 @@ namespace Kattbot.EventHandlers
             {
                 _logger.LogError(ex, nameof(OnMessageReactionRemoved));
 
-                var eventContextError = new EventErrorContext()
+                var eventContextError = new EventContext()
                 {
                     EventName = nameof(OnMessageReactionRemoved),
                     User = eventArgs.User,

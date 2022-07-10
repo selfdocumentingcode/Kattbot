@@ -9,28 +9,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Kattbot.Workers
 {
-    public class CommandBag : ConcurrentBag<CommandRequest>
-    {
+    public class CommandParallelQueue : ConcurrentQueue<CommandRequest> { }
 
-    }
-
-    public class CommandBagWorker : BackgroundService
+    public class CommandParallelQueueWorker : BackgroundService
     {
         private const int IdleDelay = 1000;
         private const int BusyDelay = 10;
 
-        private readonly ILogger<CommandBagWorker> _logger;
-        private readonly CommandBag _commandBag;
+        private readonly ILogger<CommandQueueWorker> _logger;
+        private readonly CommandParallelQueue _commandQueue;
         private readonly IMediator _mediator;
 
-        public CommandBagWorker(
-                ILogger<CommandBagWorker> logger,
-                CommandBag commandBag,
-                IMediator mediator
-            )
+        public CommandParallelQueueWorker(ILogger<CommandQueueWorker> logger, CommandParallelQueue commandQueue, IMediator mediator)
         {
             _logger = logger;
-            _commandBag = commandBag;
+            _commandQueue = commandQueue;
             _mediator = mediator;
         }
 
@@ -42,18 +35,18 @@ namespace Kattbot.Workers
 
                 try
                 {
-                    if (_commandBag.Count == 0)
+                    if (_commandQueue.Count == 0)
                     {
                         await Task.Delay(nextDelay, stoppingToken);
 
                         continue;
                     }
 
-                    _commandBag.TryTake(out var command);
+                    _commandQueue.TryDequeue(out var command);
 
                     if (command != null)
                     {
-                        _logger.LogDebug($"Grabbed command. {_commandBag.Count} left in the bag");
+                        _logger.LogDebug($"Dequeued (parallel) command. {_commandQueue.Count} left in queue");
 
                         _ = Task.Run(() => _mediator.Send(command));
 
@@ -64,7 +57,7 @@ namespace Kattbot.Workers
                 {
                     if (!(ex is TaskCanceledException))
                     {
-                        _logger.LogError(ex, typeof(CommandQueueWorker).Name);
+                        _logger.LogError(ex, typeof(CommandParallelQueueWorker).Name);
                     }
                 }
 

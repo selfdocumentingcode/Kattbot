@@ -2,7 +2,7 @@
 
 namespace Kattbot.Models
 {
-    public class EventErrorContext
+    public class EventContext
     {
         public string EventName { get; set; } = string.Empty;
         public DiscordUser? User { get; set; }

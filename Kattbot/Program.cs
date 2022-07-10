@@ -23,11 +23,6 @@ namespace Kattbot
             CreateHostBuilder(args).Build().Run();
         }
 
-        // TODO Create command argument reader for IEmote/Emote
-        // TODO Set correct summary attribute on command and make help commmand(s) use those value
-        //      or rethink help message templates
-        // TODO Consider update command result if user edits message 
-
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
@@ -38,17 +33,20 @@ namespace Kattbot
 
                     services.AddMediatR(typeof(Program));
                     services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
+                    services.AddSingleton<NotificationPublisher>();
 
                     services.AddSingleton<SharedCache>();
 
                     services.AddHostedService<BotWorker>();
                     services.AddHostedService<CommandQueueWorker>();
+                    services.AddHostedService<CommandParallelQueueWorker>();
+                    services.AddHostedService<EventQueueWorker>();
                     services.AddHostedService<EmoteCommandQueueWorker>();
-                    services.AddHostedService<CommandBagWorker>();
 
                     services.AddSingleton<CommandQueue>();
+                    services.AddSingleton<CommandParallelQueue>();
+                    services.AddSingleton<EventQueue>();
                     services.AddSingleton<EmoteCommandQueue>();
-                    services.AddSingleton<CommandBag>();
 
                     services.AddTransient<EmoteEntityBuilder>();
                     services.AddTransient<EmoteMessageService>();

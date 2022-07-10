@@ -37,7 +37,7 @@ namespace Kattbot.CommandHandlers
                 if (request is CommandRequest commandRequest)
                 {
                     await HandeCommandRequestException(commandRequest, ex);
-                    return default(TResponse)!;
+                    return default!;
                 }
                 else
                 {

@@ -12,11 +12,11 @@ namespace Kattbot.CommandModules
     [BaseCommandCheck]
     public class ImageModule : BaseCommandModule
     {
-        private readonly CommandBag _commandBag;
+        private readonly CommandParallelQueue _commandParallelQueue;
 
-        public ImageModule(CommandBag commandBag)
+        public ImageModule(CommandParallelQueue commandParallelQueue)
         {
-            _commandBag = commandBag;
+            _commandParallelQueue = commandParallelQueue;
         }
 
         [Command("big")]
@@ -28,7 +28,7 @@ namespace Kattbot.CommandModules
                 Emoji = emoji
             };
 
-            _commandBag.Add(request);
+            _commandParallelQueue.Enqueue(request);
 
             return Task.CompletedTask;
         }
@@ -43,7 +43,7 @@ namespace Kattbot.CommandModules
                 ScaleFactor = 2
             };
 
-            _commandBag.Add(request);
+            _commandParallelQueue.Enqueue(request);
 
             return Task.CompletedTask;
         }
@@ -59,7 +59,7 @@ namespace Kattbot.CommandModules
                 Effect = EffectDeepFry
             };
 
-            _commandBag.Add(request);
+            _commandParallelQueue.Enqueue(request);
 
             return Task.CompletedTask;
         }
@@ -75,7 +75,7 @@ namespace Kattbot.CommandModules
                 Effect = EffectOilPaint
             };
 
-            _commandBag.Add(request);
+            _commandParallelQueue.Enqueue(request);
 
             return Task.CompletedTask;
         }
@@ -86,7 +86,7 @@ namespace Kattbot.CommandModules
         {
             var request = new DallePromptCommand(ctx, prompt);
 
-            _commandBag.Add(request);
+            _commandParallelQueue.Enqueue(request);
 
             return Task.CompletedTask;
         }

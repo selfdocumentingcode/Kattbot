@@ -13,10 +13,7 @@ namespace Kattbot.Services
         private readonly DiscordClient _client;
         private readonly BotOptions _options;
 
-        public DiscordErrorLogger(
-            DiscordClient client,
-            IOptions<BotOptions> options
-            )
+        public DiscordErrorLogger(DiscordClient client, IOptions<BotOptions> options)
         {
             _client = client;
             _options = options.Value;
@@ -37,7 +34,7 @@ namespace Kattbot.Services
             await LogDiscordError(fullErrorMessage);
         }
 
-        public async Task LogDiscordError(EventErrorContext ctx, string errorMessage)
+        public async Task LogDiscordError(EventContext ctx, string errorMessage)
         {
             var user = ctx.User != null ? $"{ctx.User.Username}#{ctx.User.Discriminator}" : "Unknown user";
             var channelName = ctx.Channel?.Name ?? "Unknown channel";
@@ -47,7 +44,7 @@ namespace Kattbot.Services
 
             var contextMessage = $"**Failed event** `{eventName}` by `{user}` in `{channelName}`(`{guildName}`)";
 
-            if (!string.IsNullOrWhiteSpace(message)) 
+            if (!string.IsNullOrWhiteSpace(message))
                 contextMessage += $"{Environment.NewLine}Message: `{message}`";
 
             var escapedErrorMesssage = $"`{EscapeTicks(errorMessage)}`";

@@ -83,14 +83,6 @@ namespace Kattbot.CommandModules
             await ctx.RespondAsync($"{username} is no longer a friend of Kattbot's");
         }
 
-        [Command("error-test")]
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        public async Task ErrorTest(CommandContext ctx)
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
-        {
-            throw new Exception("Test error");
-        }
-
         [Command("set-bot-channel")]
         public async Task SetBotChannel(CommandContext ctx, DiscordChannel channel)
         {

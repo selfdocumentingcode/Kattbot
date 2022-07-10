@@ -9,10 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Kattbot.Workers
 {
-    public class CommandQueue : ConcurrentQueue<CommandRequest>
-    {
-
-    }
+    public class CommandQueue : ConcurrentQueue<CommandRequest> { }
 
     public class CommandQueueWorker : BackgroundService
     {
@@ -23,11 +20,7 @@ namespace Kattbot.Workers
         private readonly CommandQueue _commandQueue;
         private readonly IMediator _mediator;
 
-        public CommandQueueWorker(
-                ILogger<CommandQueueWorker> logger,
-                CommandQueue commandQueue,
-                IMediator mediator
-            )
+        public CommandQueueWorker(ILogger<CommandQueueWorker> logger, CommandQueue commandQueue, IMediator mediator)
         {
             _logger = logger;
             _commandQueue = commandQueue;
@@ -62,10 +55,10 @@ namespace Kattbot.Workers
                 }
                 catch (Exception ex)
                 {
-                    if(!(ex is TaskCanceledException))
+                    if (!(ex is TaskCanceledException))
                     {
                         _logger.LogError(ex, typeof(CommandQueueWorker).Name);
-                    }                    
+                    }
                 }
 
                 await Task.Delay(nextDelay, stoppingToken);
