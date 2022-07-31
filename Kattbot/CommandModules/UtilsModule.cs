@@ -126,7 +126,7 @@ namespace Kattbot.CommandModules
 
             _eventQueue.Enqueue(new ErrorTestNotification(eventCtx, "Error 2", 2000));
 
-            //_eventQueue.Enqueue(new ErrorTestNotification(eventCtx, "Error 3", 0));
+            _eventQueue.Enqueue(new ErrorTestNotification(eventCtx, "Error 3", 0));
 
             return Task.CompletedTask;
         }

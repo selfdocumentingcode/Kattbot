@@ -22,7 +22,7 @@ namespace Kattbot
     public class EmoteCommandQueueWorker : BackgroundService
     {
         private const int IdleDelay = 1000;
-        private const int BusyDelay = 10;
+        private const int BusyDelay = 0;
 
         private readonly ILogger<EmoteCommandQueueWorker> _logger;
         private readonly EmoteCommandQueue _emoteCommandQueue;

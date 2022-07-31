@@ -14,7 +14,7 @@ namespace Kattbot.Workers
     public class CommandParallelQueueWorker : BackgroundService
     {
         private const int IdleDelay = 1000;
-        private const int BusyDelay = 10;
+        private const int BusyDelay = 0;
 
         private readonly ILogger<CommandQueueWorker> _logger;
         private readonly CommandParallelQueue _commandQueue;

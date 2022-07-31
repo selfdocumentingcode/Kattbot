@@ -15,7 +15,7 @@ namespace Kattbot.Workers
     public class EventQueueWorker : BackgroundService
     {
         private const int IdleDelay = 1000;
-        private const int BusyDelay = 10;
+        private const int BusyDelay = 0;
 
         private readonly ILogger<EventQueueWorker> _logger;
         private readonly EventQueue _eventQueue;
@@ -47,7 +47,7 @@ namespace Kattbot.Workers
                         continue;
                     }
 
-                    if (!_eventQueue.TryDequeue(out @event!))
+                    if (!_eventQueue.TryDequeue(out @event))
                         continue;
 
                     _logger.LogDebug($"Dequeued event. {_eventQueue.Count} left in queue");
