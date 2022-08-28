@@ -1,0 +1,17 @@
+name: Restart
+
+on:
+  workflow_dispatch
+  
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+    steps: 
+    - name: Restart service
+      uses: appleboy/ssh-action@master
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.KATTBOT_USER}}
+        password: ${{secrets.KATTBOT_PASSWORD}}      
+        script: systemctl --user restart kattbot
