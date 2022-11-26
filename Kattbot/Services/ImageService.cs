@@ -10,6 +10,7 @@ using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using System.Linq;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Formats.Webp;
 
 namespace Kattbot.Services
 {
@@ -61,7 +62,6 @@ namespace Kattbot.Services
                 i.Brightness(1.5f);// This works
                 i.GaussianSharpen(5f);
                 i.Saturate(5f);
-                //i.Dither(KnownDitherings.StevensonArce); 
             });
 
             return await GetMutatedImageStream(image, format);
@@ -166,6 +166,7 @@ namespace Kattbot.Services
                 "jpeg" => new JpegEncoder(),
                 "png" => new PngEncoder(),
                 "gif" => new GifEncoder() { ColorTableMode = GifColorTableMode.Local },
+                "webp" => new WebpEncoder(),
                 _ => throw new ArgumentException($"Unknown filetype: {fileType}"),
             };
         }
