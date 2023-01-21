@@ -12,12 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 6.0.x
+    - uses: actions/checkout@v3
 
     - name: Replace tokens in appsettings
       uses: cschleiden/replace-tokens@v1
@@ -29,6 +24,11 @@ jobs:
         CONNECTION_STRING: ${{secrets.DB_CONNECTION_STRING}}
         BOT_TOKEN: ${{secrets.BOT_TOKEN}}
     
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+
     - name: Test
       run: dotnet test
     

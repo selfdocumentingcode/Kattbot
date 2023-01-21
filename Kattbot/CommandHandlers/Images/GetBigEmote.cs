@@ -88,8 +88,7 @@ namespace Kattbot.CommandHandlers.Images
 
                 var fileName = hasScaleFactor ? "bigger" : "big";
 
-                responseBuilder
-                    .WithFile($"{fileName}.{fileExtension}", imageStream);
+                responseBuilder.AddFile($"{fileName}.{fileExtension}", imageStream);
 
                 await ctx.RespondAsync(responseBuilder);
             }
