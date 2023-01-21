@@ -30,10 +30,13 @@ jobs:
         dotnet-version: 6.0.x
 
     - name: Restore dependencies
-      run: dotnet restore --verbosity detailed
+      run: dotnet restore --verbosity normal
+
+    - name: Build
+      run: dotnet build --no-restore
 
     - name: Test
-      run: dotnet test --no-restore
+      run: dotnet test --no-build
     
     - name: Publish
       run: dotnet publish -c Release -r linux-x64 -o deploy --no-self-contained --no-restore
