@@ -70,7 +70,7 @@ namespace Kattbot.CommandHandlers.Images
                 .WithUrl("https://www.craiyon.com/");
 
             var mb = new DiscordMessageBuilder()
-            .WithFile(fileName, combinedImage.MemoryStream)
+            .AddFile(fileName, combinedImage.MemoryStream)
             .WithEmbed(eb)
             .WithContent($"There you go {request.Ctx.Member?.Mention ?? "Unknown user"}");
 
