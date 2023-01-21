@@ -29,17 +29,11 @@ jobs:
       with:
         dotnet-version: 6.0.x
 
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build
-      run: dotnet build --no-restore
-
     - name: Test
-      run: dotnet test --no-build
+      run: dotnet test
     
     - name: Publish
-      run: dotnet publish -c Release -r linux-x64 -o deploy --no-self-contained --no-restore
+      run: dotnet publish -c Release -r linux-x64 -o deploy --no-self-contained
 
     - name: Generate database migration script
       if: github.event.inputs.updateDatabase == 'auto' || github.event.inputs.updateDatabase == 'manual'
