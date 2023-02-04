@@ -29,7 +29,7 @@ namespace Kattbot.CommandModules
 
             sb.AppendLine($"`{commandPrefix}stats me [?interval] [?page]`");
             sb.AppendLine($"`{commandPrefix}stats best [?interval] [?page]`");
-            sb.AppendLine($"`{commandPrefix}stats emote [emote] [?interval]`");
+            sb.AppendLine($"`{commandPrefix}stats [emote] [?interval]`");
             sb.AppendLine($"`{commandPrefix}stats help`");
 
             sb.AppendLine();
@@ -50,6 +50,6 @@ namespace Kattbot.CommandModules
             var result = FormattedResultHelper.BuildMessage($"Commands", sb.ToString());
 
             return ctx.RespondAsync(result);
-        }        
+        }
     }
 }
