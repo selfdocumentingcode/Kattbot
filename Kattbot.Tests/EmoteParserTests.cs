@@ -1,3 +1,4 @@
+using Kattbot.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Kattbot.Tests

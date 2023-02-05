@@ -1,108 +1,106 @@
-﻿using Kattbot.Common.Models.Emotes;
-using Kattbot.Helper;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Kattbot.Common.Models.Emotes;
+using Kattbot.Helpers;
 
-namespace Kattbot.CommandModules
+namespace Kattbot.CommandModules.ResultFormatters;
+
+public static class FormattedResultHelper
 {
-    public static class FormattedResultHelper
+    public static List<string> FormatEmoteStats(List<EmoteStats> emoteStats, int rankOffset)
     {
-        public static List<string> FormatEmoteStats(List<EmoteStats> emoteStats, int rankOffset)
+        int rankPadding = emoteStats.Count.ToString().Length;
+        int largestUsage = emoteStats.Max(e => e.Usage);
+        int usagePadding = largestUsage.ToString().Length;
+
+        int rank = 1 + rankOffset;
+
+        var textLines = new List<string>();
+
+        foreach (EmoteStats emoteUsage in emoteStats)
         {
-            var rankPadding = emoteStats.Count.ToString().Length;
-            var largestUsage = emoteStats.Max(e => e.Usage);
-            var usagePadding = largestUsage.ToString().Length;
+            string formattedRank = rank.ToString().PadLeft(rankPadding, ' ');
+            string formattedUsage = emoteUsage.Usage.ToString().PadLeft(usagePadding, ' ');
 
-            var rank = 1 + rankOffset;
+            string emoteCode = EmoteHelper.BuildEmoteCode(emoteUsage.EmoteId, emoteUsage.IsAnimated);
 
-            var textLines = new List<string>();
+            textLines.Add($"{formattedRank}.`{emoteCode}`:{formattedUsage}");
 
-            foreach (var emoteUsage in emoteStats)
-            {
-                var formattedRank = rank.ToString().PadLeft(rankPadding, ' ');
-                var formattedUsage = emoteUsage.Usage.ToString().PadLeft(usagePadding, ' ');
-
-                var emoteCode = EmoteHelper.BuildEmoteCode(emoteUsage.EmoteId, emoteUsage.IsAnimated);
-
-                textLines.Add($"{formattedRank}.`{emoteCode}`:{formattedUsage}");
-
-                rank++;
-            }
-
-            return textLines;
+            rank++;
         }
 
-        public static List<string> FormatExtendedEmoteStats(List<ExtendedEmoteStats> emoteStats, int rankOffset)
+        return textLines;
+    }
+
+    public static List<string> FormatExtendedEmoteStats(List<ExtendedEmoteStats> emoteStats, int rankOffset)
+    {
+        int rankPadding = emoteStats.Count.ToString().Length;
+        int usagePadding = emoteStats.Max(e => e.Usage.ToString().Length);
+        int percentagePadding = emoteStats.Max(e => e.PercentageOfTotal.ToString("P").Length);
+
+        int rank = 1 + rankOffset;
+
+        var textLines = new List<string>();
+
+        foreach (ExtendedEmoteStats emoteUsage in emoteStats)
         {
-            var rankPadding = emoteStats.Count.ToString().Length;
-            var usagePadding = emoteStats.Max(e => e.Usage.ToString().Length);
-            var percentagePadding = emoteStats.Max(e => e.PercentageOfTotal.ToString("P").Length);
+            string formattedRank = rank.ToString().PadLeft(rankPadding);
+            string formattedUsage = emoteUsage.Usage.ToString().PadLeft(usagePadding);
+            string formattedPercentage = emoteUsage.PercentageOfTotal.ToString("P").PadLeft(percentagePadding);
 
-            var rank = 1 + rankOffset;
+            textLines.Add($"{formattedRank}.`{emoteUsage.EmoteCode}`:{formattedUsage} ({formattedPercentage})");
 
-            var textLines = new List<string>();
-
-            foreach (var emoteUsage in emoteStats)
-            {
-                var formattedRank = rank.ToString().PadLeft(rankPadding);
-                var formattedUsage = emoteUsage.Usage.ToString().PadLeft(usagePadding);
-                var formattedPercentage = emoteUsage.PercentageOfTotal.ToString("P").PadLeft(percentagePadding);
-
-                textLines.Add($"{formattedRank}.`{emoteUsage.EmoteCode}`:{formattedUsage} ({formattedPercentage})");
-
-                rank++;
-            }
-
-            return textLines;
+            rank++;
         }
 
-        public static List<string> FormatExtendedEmoteUsers(List<ExtendedEmoteUser> emoteUsers, int rankOffset)
+        return textLines;
+    }
+
+    public static List<string> FormatExtendedEmoteUsers(List<ExtendedEmoteUser> emoteUsers, int rankOffset)
+    {
+        int rankPadding = emoteUsers.Count.ToString().Length;
+        int displayNamePadding = emoteUsers.Max(e => e.DisplayName.ToString().Length);
+        int usagePadding = emoteUsers.Max(e => e.Usage.ToString().Length);
+        int percentagePadding = emoteUsers.Max(e => e.PercentageOfTotal.ToString("P").Length);
+
+        int rank = 1 + rankOffset;
+
+        var textLines = new List<string>();
+
+        foreach (ExtendedEmoteUser emoteUser in emoteUsers)
         {
-            var rankPadding = emoteUsers.Count.ToString().Length;
-            var displayNamePadding = emoteUsers.Max(e => e.DisplayName.ToString().Length);
-            var usagePadding = emoteUsers.Max(e => e.Usage.ToString().Length);
-            var percentagePadding = emoteUsers.Max(e => e.PercentageOfTotal.ToString("P").Length);
+            string formattedRank = rank.ToString().PadLeft(rankPadding);
+            string formattedDisplayName = emoteUser.DisplayName.ToString().PadRight(displayNamePadding);
+            string formattedUsage = emoteUser.Usage.ToString().PadLeft(usagePadding);
+            string formattedPercentage = emoteUser.PercentageOfTotal.ToString("P").PadLeft(percentagePadding);
 
-            var rank = 1 + rankOffset;
+            textLines.Add($"{formattedRank}. {formattedDisplayName}: {formattedUsage} ({formattedPercentage})");
 
-            var textLines = new List<string>();
-
-            foreach (var emoteUser in emoteUsers)
-            {
-                var formattedRank = rank.ToString().PadLeft(rankPadding);
-                var formattedDisplayName = emoteUser.DisplayName.ToString().PadRight(displayNamePadding);
-                var formattedUsage = emoteUser.Usage.ToString().PadLeft(usagePadding);
-                var formattedPercentage = emoteUser.PercentageOfTotal.ToString("P").PadLeft(percentagePadding);
-
-                textLines.Add($"{formattedRank}. {formattedDisplayName}: {formattedUsage} ({formattedPercentage})");
-
-                rank++;
-            }
-
-            return textLines;
+            rank++;
         }
 
-        public static string BuildBody(List<string> allLines)
-        {
-            var sb = new StringBuilder();
+        return textLines;
+    }
 
-            allLines
-                .SkipLast(1)
-                .ToList()
-                .ForEach((l) => sb.AppendLine(l));
+    public static string BuildBody(List<string> allLines)
+    {
+        var sb = new StringBuilder();
 
-            sb.Append(allLines.Last());
+        allLines
+            .SkipLast(1)
+            .ToList()
+            .ForEach((l) => sb.AppendLine(l));
 
-            return sb.ToString();
-        }
+        sb.Append(allLines.Last());
 
-        public static string BuildMessage(string title, string message)
-        {
-            string result = $"{title}\r\n{message}";
+        return sb.ToString();
+    }
 
-            return result;
-        }
+    public static string BuildMessage(string title, string message)
+    {
+        string result = $"{title}\r\n{message}";
+
+        return result;
     }
 }

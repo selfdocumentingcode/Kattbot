@@ -1,135 +1,125 @@
-﻿using DSharpPlus.CommandsNext;
-using DSharpPlus.Entities;
-using Kattbot.CommandModules;
-using Kattbot.Common.Models.Emotes;
-using Kattbot.Data;
-using Kattbot.Helper;
-using Kattbot.Helpers;
-using MediatR;
-using Microsoft.Extensions.Options;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
+using Kattbot.CommandModules.ResultFormatters;
+using Kattbot.Common.Models.Emotes;
+using Kattbot.Data;
+using Kattbot.Helpers;
+using MediatR;
 
-namespace Kattbot.CommandHandlers.EmoteStats
+namespace Kattbot.CommandHandlers.EmoteStats;
+
+public class GetEmoteStats
 {
-    public class GetEmoteStats
+    public class GetEmoteStatsRequest : CommandRequest
     {
-        public class GetEmoteStatsRequest : CommandRequest
-        {
-            public TempEmote Emote { get; set; } = null!;
-            public DateTime? FromDate { get; set; }
+        public TempEmote Emote { get; set; } = null!;
 
-            public GetEmoteStatsRequest(CommandContext ctx) : base(ctx)
-            {
-            }
+        public DateTime? FromDate { get; set; }
+
+        public GetEmoteStatsRequest(CommandContext ctx)
+            : base(ctx)
+        {
+        }
+    }
+
+    public class GetEmoteStatsHandler : AsyncRequestHandler<GetEmoteStatsRequest>
+    {
+        private const int _maxUserCount = 10;
+
+        private readonly EmoteStatsRepository _emoteStatsRepo;
+
+        public GetEmoteStatsHandler(
+            EmoteStatsRepository emoteStatsRepo)
+        {
+            _emoteStatsRepo = emoteStatsRepo;
         }
 
-        public class GetEmoteStatsHandler : AsyncRequestHandler<GetEmoteStatsRequest>
+        protected override async Task Handle(GetEmoteStatsRequest request, CancellationToken cancellationToken)
         {
-            private const int MaxUserCount = 10;
+            CommandContext ctx = request.Ctx;
+            TempEmote emote = request.Emote;
+            DateTime? fromDate = request.FromDate;
 
-            private readonly EmoteStatsRepository _emoteStatsRepo;
+            ulong guildId = ctx.Guild.Id;
 
-            public GetEmoteStatsHandler(
-                EmoteStatsRepository emoteStatsRepo
-                )
+            EmoteUsageResult emoteUsageResult = await _emoteStatsRepo.GetSingleEmoteStats(guildId, emote, _maxUserCount, fromDate);
+
+            if (emoteUsageResult == null)
             {
-                _emoteStatsRepo = emoteStatsRepo;
+                await ctx.RespondAsync("No stats yet");
+                return;
             }
 
-            protected override async Task Handle(GetEmoteStatsRequest request, CancellationToken cancellationToken)
+            Common.Models.Emotes.EmoteStats emoteStats = emoteUsageResult.EmoteStats;
+            List<EmoteUser> emoteUsers = emoteUsageResult.EmoteUsers;
+
+            string emoteCode = EmoteHelper.BuildEmoteCode(emoteStats.EmoteId, emoteStats.IsAnimated);
+            int totalUsage = emoteStats.Usage;
+
+            string title = $"Stats for `{emoteCode}`";
+
+            if (fromDate != null)
             {
-                var ctx = request.Ctx;
-                var emote = request.Emote;
-                var fromDate = request.FromDate;
+                title += $" from {fromDate.Value:yyyy-MM-dd}";
+            }
 
-                var guildId = ctx.Guild.Id;
+            StringBuilder result = new();
 
-                var emoteUsageResult = await _emoteStatsRepo.GetSingleEmoteStats(guildId, emote, MaxUserCount, fromDate);
+            result.AppendLine(title);
+            result.AppendLine($"Total usage: {totalUsage}");
 
-                if (emoteUsageResult == null)
+            if (emoteUsers.Count > 0)
+            {
+                var extendedEmoteUsers = emoteUsers
+                                        .Select(r => new ExtendedEmoteUser()
+                                        {
+                                            UserId = r.UserId,
+                                            Usage = r.Usage,
+                                            PercentageOfTotal = (double)r.Usage / totalUsage,
+                                        })
+                                        .ToList();
+
+                // Resolve display names
+                foreach (ExtendedEmoteUser? emoteUser in extendedEmoteUsers)
                 {
-                    await ctx.RespondAsync("No stats yet");
-                    return;
-                }
+                    DiscordMember user;
 
-                var emoteStats = emoteUsageResult.EmoteStats;
-                var emoteUsers = emoteUsageResult.EmoteUsers;
-
-                var emoteCode = EmoteHelper.BuildEmoteCode(emoteStats.EmoteId, emoteStats.IsAnimated);
-                var totalUsage = emoteStats.Usage;
-
-                var title = $"Stats for `{emoteCode}`";
-
-                if (fromDate != null)
-                {
-                    title += $" from {fromDate.Value:yyyy-MM-dd}";
-                }
-
-                var result = new StringBuilder();
-
-                result.AppendLine(title);
-                result.AppendLine($"Total usage: {totalUsage}");
-
-                if (emoteUsers.Count > 0)
-                {
-                    var extendedEmoteUsers = emoteUsers
-                                            .Select(r => new ExtendedEmoteUser()
-                                            {
-                                                UserId = r.UserId,
-                                                Usage = r.Usage,
-                                                PercentageOfTotal = (double)r.Usage / totalUsage
-
-                                            })
-                                            .ToList();
-
-                    // Resolve display names
-                    foreach (var emoteUser in extendedEmoteUsers)
+                    if (ctx.Guild.Members.ContainsKey(emoteUser.UserId))
                     {
-                        DiscordMember user;
-
-                        if (ctx.Guild.Members.ContainsKey(emoteUser.UserId))
+                        user = ctx.Guild.Members[emoteUser.UserId];
+                    }
+                    else
+                    {
+                        try
                         {
-                            user = ctx.Guild.Members[emoteUser.UserId];
+                            user = await ctx.Guild.GetMemberAsync(emoteUser.UserId);
                         }
-                        else
+                        catch
                         {
-                            try
-                            {
-                                user = await ctx.Guild.GetMemberAsync(emoteUser.UserId);
-                            }
-                            catch
-                            {
-                                user = null!;
-                            }
-                        }
-
-                        if (user != null)
-                        {
-                            emoteUser.DisplayName = user.GetNicknameOrUsername();
-                        }
-                        else
-                        {
-                            emoteUser.DisplayName = "Unknown user";
+                            user = null!;
                         }
                     }
 
-                    result.AppendLine();
-                    result.AppendLine("Top users");
-
-                    var lines = FormattedResultHelper.FormatExtendedEmoteUsers(extendedEmoteUsers, 0);
-
-                    lines.ForEach(l => result.AppendLine(l));
+                    emoteUser.DisplayName = user != null ? user.GetNicknameOrUsername() : "Unknown user";
                 }
 
-                var formattedResultMessage = $"`{result}`";
+                result.AppendLine();
+                result.AppendLine("Top users");
 
-                await ctx.RespondAsync(formattedResultMessage);
+                List<string> lines = FormattedResultHelper.FormatExtendedEmoteUsers(extendedEmoteUsers, 0);
+
+                lines.ForEach(l => result.AppendLine(l));
             }
+
+            string formattedResultMessage = $"`{result}`";
+
+            await ctx.RespondAsync(formattedResultMessage);
         }
     }
 }

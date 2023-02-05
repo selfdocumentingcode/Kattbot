@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Kattbot.NotificationHandlers;
@@ -8,76 +7,60 @@ using MediatR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Kattbot.Workers
+namespace Kattbot.Workers;
+
+public class EventQueueWorker : BackgroundService
 {
-    public class EventQueue : ConcurrentQueue<INotification> { }
+    private readonly ILogger<EventQueueWorker> _logger;
+    private readonly EventQueueChannel _channel;
+    private readonly NotificationPublisher _publisher;
+    private readonly DiscordErrorLogger _discordErrorLogger;
 
-    public class EventQueueWorker : BackgroundService
+    public EventQueueWorker(ILogger<EventQueueWorker> logger, EventQueueChannel channel, NotificationPublisher publisher, DiscordErrorLogger discordErrorLogger)
     {
-        private const int IdleDelay = 1000;
-        private const int BusyDelay = 0;
+        _logger = logger;
+        _channel = channel;
+        _publisher = publisher;
+        _discordErrorLogger = discordErrorLogger;
+    }
 
-        private readonly ILogger<EventQueueWorker> _logger;
-        private readonly EventQueue _eventQueue;
-        private readonly NotificationPublisher _publisher;
-        private readonly DiscordErrorLogger _discordErrorLogger;
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        INotification? @event = null;
 
-        public EventQueueWorker(ILogger<EventQueueWorker> logger, EventQueue eventQueue, NotificationPublisher publisher, DiscordErrorLogger discordErrorLogger)
+        try
         {
-            _logger = logger;
-            _eventQueue = eventQueue;
-            _publisher = publisher;
-            _discordErrorLogger = discordErrorLogger;
-        }
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            while (!stoppingToken.IsCancellationRequested)
+            await foreach (INotification notification in _channel.Reader.ReadAllAsync(stoppingToken))
             {
-                var nextDelay = IdleDelay;
+                @event = notification;
 
-                INotification? @event = null;
-
-                try
+                if (@event != null)
                 {
-                    if (_eventQueue.Count == 0)
-                    {
-                        await Task.Delay(nextDelay, stoppingToken);
-
-                        continue;
-                    }
-
-                    if (!_eventQueue.TryDequeue(out @event))
-                        continue;
-
-                    _logger.LogDebug($"Dequeued event. {_eventQueue.Count} left in queue");
+                    _logger.LogDebug("Dequeued event. {RemainingMessageCount} left in queue", _channel.Reader.Count);
 
                     await _publisher.Publish(@event, stoppingToken);
-
-                    nextDelay = BusyDelay;
                 }
-                catch (AggregateException ex)
-                {
-                    foreach (var innerEx in ex.InnerExceptions)
-                    {
-                        if (@event != null && @event is EventNotification notification)
-                        {
-                            await _discordErrorLogger.LogDiscordError(notification.Ctx, innerEx.Message);
-                        }
-
-                        _logger.LogError(innerEx, nameof(EventQueueWorker));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    if (ex is not TaskCanceledException)
-                    { 
-                        _logger.LogError(ex, nameof(EventQueueWorker));
-                    }
-                }
-
-                await Task.Delay(nextDelay, stoppingToken);
             }
+        }
+        catch (TaskCanceledException)
+        {
+            _logger.LogDebug("{Worker} execution is being cancelled", nameof(EventQueueWorker));
+        }
+        catch (AggregateException ex)
+        {
+            foreach (Exception innerEx in ex.InnerExceptions)
+            {
+                if (@event is not null and EventNotification notification)
+                {
+                    _discordErrorLogger.LogDiscordError(notification.Ctx, innerEx.Message);
+                }
+
+                _logger.LogError(innerEx, nameof(EventQueueWorker));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, nameof(EventQueueWorker));
         }
     }
 }

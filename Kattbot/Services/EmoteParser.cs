@@ -1,27 +1,22 @@
-﻿using DSharpPlus.Entities;
-using Kattbot.Helper;
-using Kattbot.Models;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
+using Kattbot.Helpers;
 
-namespace Kattbot
+namespace Kattbot.Services;
+
+public class EmoteParser
 {
-    public class EmoteParser
+    public EmoteParser()
     {
-        public EmoteParser()
-        {
+    }
 
-        }
+    public List<string> ExtractEmotesFromMessage(string messageText)
+    {
+        MatchCollection result = EmoteHelper.EmoteRegex.Matches(messageText);
 
-        public List<string> ExtractEmotesFromMessage(string messageText)
-        {
-            var result = EmoteHelper.EmoteRegex.Matches(messageText);
+        var emojiStrings = result.Select(m => m.Value).ToList();
 
-            var emojiStrings = result.Select(m => m.Value).ToList();
-
-            return emojiStrings;
-        }
+        return emojiStrings;
     }
 }

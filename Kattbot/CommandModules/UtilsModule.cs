@@ -1,134 +1,76 @@
-﻿using DSharpPlus;
+﻿using System.Text;
+using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Kattbot.Attributes;
-using Kattbot.CommandHandlers;
-using Kattbot.Helper;
 using Kattbot.Helpers;
-using Kattbot.Models;
-using Kattbot.NotificationHandlers;
-using Kattbot.Workers;
-using Microsoft.Extensions.Logging;
-using System.Text;
-using System.Threading.Tasks;
+using Kattbot.Services;
 
-namespace Kattbot.CommandModules
+namespace Kattbot.CommandModules;
+
+[BaseCommandCheck]
+[Group("utils")]
+public class UtilsModule : BaseCommandModule
 {
-    [BaseCommandCheck]
-    [Group("utils")]
-    public class UtilsModule : BaseCommandModule
+    private readonly DiscordErrorLogger _discordErrorLogger;
+
+    public UtilsModule(DiscordErrorLogger discordErrorLogger)
     {
-        private readonly ILogger<UtilsModule> _logger;
-        private readonly DiscordClient _client;
-        private readonly CommandQueue _commandQueue;
-        private readonly CommandParallelQueue _commandParallelQueue;
-        private readonly EventQueue _eventQueue;
+        _discordErrorLogger = discordErrorLogger;
+    }
 
-        public UtilsModule(ILogger<UtilsModule> logger, DiscordClient client, CommandQueue commandQueue, CommandParallelQueue commandParallelQueue, EventQueue eventQueue)
+    [Command("emoji-code")]
+    public Task GetEmojiCode(CommandContext ctx, DiscordEmoji emoji)
+    {
+        bool isUnicodeEmoji = emoji.Id == 0;
+
+        if (isUnicodeEmoji)
         {
-            _logger = logger;
-            _client = client;
-            _commandQueue = commandQueue;
-            _commandParallelQueue = commandParallelQueue;
-            _eventQueue = eventQueue;
-        }
+            var unicodeEncoding = new UnicodeEncoding(true, false);
 
-        [Command("emoji-code")]
-        public async Task GetEmojiCode(CommandContext ctx, DiscordEmoji emoji)
-        {
-            var isUnicodeEmoji = emoji.Id == 0;
+            byte[] bytes = unicodeEncoding.GetBytes(emoji.Name);
 
-            if (isUnicodeEmoji)
+            var sb = new StringBuilder();
+            for (int i = 0; i < bytes.Length; i++)
             {
-                var unicodeEncoding = new UnicodeEncoding(true, false);
-
-                var bytes = unicodeEncoding.GetBytes(emoji.Name);
-
-                var sb = new StringBuilder();
-                for (int i = 0; i < bytes.Length; i++)
-                {
-                    sb.AppendFormat("{0:X2}", bytes[i]);
-                }
-
-                var bytesAsString = sb.ToString();
-
-                var formattedSb = new StringBuilder();
-
-                for (int i = 0; i < sb.Length; i += 4)
-                {
-                    formattedSb.Append($"\\u{bytesAsString.Substring(i, 4)}");
-                }
-
-                var result = formattedSb.ToString();
-
-                await ctx.RespondAsync($"`{result}`");
-            }
-            else
-            {
-                var result = EmoteHelper.BuildEmoteCode(emoji.Id, emoji.Name, emoji.IsAnimated);
-
-                await ctx.RespondAsync($"`{result}`");
-            }
-        }
-
-        [Command("role-id")]
-        public async Task GetRoleId(CommandContext ctx, string roleName)
-        {
-            var result = DiscordRoleResolver.TryResolveByName(ctx.Guild, roleName, out var discordRole);
-
-            if (!result.Resolved)
-            {
-                await ctx.RespondAsync(result.ErrorMessage);
-                return;
+                sb.AppendFormat("{0:X2}", bytes[i]);
             }
 
-            await ctx.RespondAsync($"Role {roleName} has id {discordRole.Id}");
-        }
+            string bytesAsString = sb.ToString();
 
-        [Command("test-queue-error")]
-        public Task TestError(CommandContext ctx)
-        {
-            _commandQueue.Enqueue(new ErrorTestCommand(ctx, "Error 1", 0));
+            var formattedSb = new StringBuilder();
 
-            _commandQueue.Enqueue(new ErrorTestCommand(ctx, "Error 2", 2000));
-
-            _commandQueue.Enqueue(new ErrorTestCommand(ctx, "Error 3", 0));
-
-            return Task.CompletedTask;
-        }
-
-        [Command("test-parallel-error")]
-        public Task TestError3(CommandContext ctx)
-        {
-            _commandParallelQueue.Enqueue(new ErrorTestCommand(ctx, "Error 1", 0));
-
-            _commandParallelQueue.Enqueue(new ErrorTestCommand(ctx, "Error 2", 2000));
-
-            _commandParallelQueue.Enqueue(new ErrorTestCommand(ctx, "Error 3", 0));
-
-            return Task.CompletedTask;
-        }
-
-        [Command("test-event-error")]
-        public Task TestError2(CommandContext ctx)
-        {
-            var eventCtx = new EventContext()
+            for (int i = 0; i < sb.Length; i += 4)
             {
-                EventName = nameof(TestError2),
-                Channel = ctx.Channel,
-                Guild = ctx.Guild,
-                Message = ctx.Message,
-                User = ctx.User
-            };
+                formattedSb.Append($"\\u{bytesAsString.Substring(i, 4)}");
+            }
 
-            _eventQueue.Enqueue(new ErrorTestNotification(eventCtx, "Error 1", 0));
+            string result = formattedSb.ToString();
 
-            _eventQueue.Enqueue(new ErrorTestNotification(eventCtx, "Error 2", 2000));
-
-            _eventQueue.Enqueue(new ErrorTestNotification(eventCtx, "Error 3", 0));
-
-            return Task.CompletedTask;
+            return ctx.RespondAsync($"`{result}`");
         }
+        else
+        {
+            string result = EmoteHelper.BuildEmoteCode(emoji.Id, emoji.Name, emoji.IsAnimated);
+
+            return ctx.RespondAsync($"`{result}`");
+        }
+    }
+
+    [Command("role-id")]
+    public Task GetRoleId(CommandContext ctx, string roleName)
+    {
+        TryResolveResult result = DiscordRoleResolver.TryResolveByName(ctx.Guild, roleName, out DiscordRole? discordRole);
+
+        return !result.Resolved ? ctx.RespondAsync(result.ErrorMessage) : (Task)ctx.RespondAsync($"Role {roleName} has id {discordRole.Id}");
+    }
+
+    [Command("test-log-sync")]
+    public Task TestLogSync(CommandContext ctx)
+    {
+        _discordErrorLogger.LogDiscordError("Test error sync");
+
+        return Task.CompletedTask;
     }
 }

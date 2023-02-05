@@ -1,74 +1,74 @@
-﻿using DSharpPlus.Entities;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
 using Kattbot.Helpers;
 using Kattbot.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace Kattbot.CommandHandlers
+namespace Kattbot.CommandHandlers;
+
+public class CommandRequestPipelineBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : IRequest<TResponse>
 {
-    public class CommandRequestPipelineBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : IRequest<TResponse>
+    private readonly ILogger<CommandRequestPipelineBehaviour<TRequest, TResponse>> _logger;
+    private readonly DiscordErrorLogger _discordErrorLogger;
+    private readonly GuildSettingsService _guildSettingsService;
+
+    public CommandRequestPipelineBehaviour(
+        ILogger<CommandRequestPipelineBehaviour<TRequest, TResponse>> logger,
+        DiscordErrorLogger discordErrorLogger,
+        GuildSettingsService guildSettingsService)
     {
-        private readonly ILogger<CommandRequestPipelineBehaviour<TRequest, TResponse>> _logger;
-        private readonly DiscordErrorLogger _discordErrorLogger;
-        private readonly GuildSettingsService _guildSettingsService;
+        _logger = logger;
+        _discordErrorLogger = discordErrorLogger;
+        _guildSettingsService = guildSettingsService;
+    }
 
-        public CommandRequestPipelineBehaviour(
-            ILogger<CommandRequestPipelineBehaviour<TRequest, TResponse>> logger,
-            DiscordErrorLogger discordErrorLogger,
-            GuildSettingsService guildSettingsService
-            )
+    public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
+    {
+        try
         {
-            _logger = logger;
-            _discordErrorLogger = discordErrorLogger;
-            _guildSettingsService = guildSettingsService;
+            return await next().ConfigureAwait(false);
         }
-
-        public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
+        catch (Exception ex)
         {
-            try
+            if (request is CommandRequest commandRequest)
             {
-                return await next().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                if (request is CommandRequest commandRequest)
-                {
-                    await HandeCommandRequestException(commandRequest, ex);
-                    return default!;
-                }
-                else
-                {
-                    throw;
-                }
-            }
-        }
-
-        private async Task HandeCommandRequestException(CommandRequest request, Exception ex)
-        {
-            var ctx = request.Ctx;
-
-            var guildId = ctx.Guild.Id;
-            var channelId = ctx.Channel.Id;
-
-            var botChannelId = await _guildSettingsService.GetBotChannelId(guildId);
-
-            var isCommandInBotChannel = botChannelId != null && botChannelId.Value == channelId;
-
-            if (isCommandInBotChannel)
-            {
-                await ctx.RespondAsync(ex.Message);
+                await HandeCommandRequestException(commandRequest, ex);
+                return default!;
             }
             else
             {
-                await ctx.Message.CreateReactionAsync(DiscordEmoji.FromUnicode(EmojiMap.RedX));
+                throw;
             }
-
-            await _discordErrorLogger.LogDiscordError(ctx, ex.ToString());            
-
-            _logger.LogError(ex, nameof(HandeCommandRequestException));
         }
+    }
+
+    private async Task HandeCommandRequestException(CommandRequest request, Exception ex)
+    {
+        CommandContext ctx = request.Ctx;
+
+        ulong guildId = ctx.Guild.Id;
+        ulong channelId = ctx.Channel.Id;
+
+        ulong? botChannelId = await _guildSettingsService.GetBotChannelId(guildId);
+
+        bool isCommandInBotChannel = botChannelId != null && botChannelId.Value == channelId;
+
+        if (isCommandInBotChannel)
+        {
+            await ctx.RespondAsync(ex.Message);
+        }
+        else
+        {
+            await ctx.Message.CreateReactionAsync(DiscordEmoji.FromUnicode(EmojiMap.RedX));
+        }
+
+        _discordErrorLogger.LogDiscordError(ctx, ex.ToString());
+
+        _logger.LogError(ex, nameof(HandeCommandRequestException));
     }
 }
