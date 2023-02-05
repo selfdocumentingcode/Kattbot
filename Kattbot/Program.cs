@@ -43,47 +43,62 @@ public class Program
 
                 AddChannels(services);
 
+                AddBotEventHandlers(services);
+
                 AddInternalServices(services);
 
                 AddRepositories(services);
 
-                services.AddDbContext<KattbotContext>(
-                    builder =>
-                    {
-                        string dbConnString = hostContext.Configuration.GetValue<string>("Kattbot:ConnectionString");
-                        string logLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
+                AddDbContext(hostContext, services);
 
-                        builder.EnableSensitiveDataLogging(logLevel == "Debug");
-
-                        builder.UseNpgsql(dbConnString);
-                    },
-                    ServiceLifetime.Transient,
-                    ServiceLifetime.Singleton);
-
-                services.AddSingleton((_) =>
-                {
-                    string defaultLogLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
-                    string botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken");
-
-                    LogLevel logLevel = Enum.Parse<LogLevel>(defaultLogLevel);
-
-                    var socketConfig = new DiscordConfiguration
-                    {
-                        MinimumLogLevel = logLevel,
-                        TokenType = TokenType.Bot,
-                        Token = botToken,
-                        Intents = DiscordIntents.All,
-                    };
-
-                    var client = new DiscordClient(socketConfig);
-
-                    return client;
-                });
-
-                services.AddSingleton<CommandEventHandler>();
-                services.AddSingleton<EmoteEventHandler>();
+                AddDiscordClient(hostContext, services);
             })
         .UseSystemd();
+    }
+
+    private static void AddDiscordClient(HostBuilderContext hostContext, IServiceCollection services)
+    {
+        services.AddSingleton((_) =>
+        {
+            string defaultLogLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
+            string botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken");
+
+            LogLevel logLevel = Enum.Parse<LogLevel>(defaultLogLevel);
+
+            var socketConfig = new DiscordConfiguration
+            {
+                MinimumLogLevel = logLevel,
+                TokenType = TokenType.Bot,
+                Token = botToken,
+                Intents = DiscordIntents.All,
+            };
+
+            var client = new DiscordClient(socketConfig);
+
+            return client;
+        });
+    }
+
+    private static void AddDbContext(HostBuilderContext hostContext, IServiceCollection services)
+    {
+        services.AddDbContext<KattbotContext>(
+                            builder =>
+                            {
+                                string dbConnString = hostContext.Configuration.GetValue<string>("Kattbot:ConnectionString");
+                                string logLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
+
+                                builder.EnableSensitiveDataLogging(logLevel == "Debug");
+
+                                builder.UseNpgsql(dbConnString);
+                            },
+                            ServiceLifetime.Transient,
+                            ServiceLifetime.Singleton);
+    }
+
+    private static void AddBotEventHandlers(IServiceCollection services)
+    {
+        services.AddSingleton<CommandEventHandler>();
+        services.AddSingleton<EmoteEventHandler>();
     }
 
     private static void AddInternalServices(IServiceCollection services)
@@ -106,10 +121,10 @@ public class Program
 
     private static void AddWorkers(IServiceCollection services)
     {
-        services.AddHostedService<BotWorker>();
         services.AddHostedService<CommandQueueWorker>();
         services.AddHostedService<CommandParallelQueueWorker>();
         services.AddHostedService<EventQueueWorker>();
+        services.AddHostedService<BotWorker>();
     }
 
     private static void AddChannels(IServiceCollection services)

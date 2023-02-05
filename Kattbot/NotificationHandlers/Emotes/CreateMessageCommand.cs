@@ -16,9 +16,9 @@ namespace Kattbot.NotificationHandlers.Emotes;
 /// If message contains emotes, save each emote
 /// Do save emote if it does not belong to guild.
 /// </summary>
-public record CreateMessageCommand : EmoteEventNotification
+public record CreateMessageCommand : EventNotification
 {
-    public CreateMessageCommand(EmoteEventContext ctx, DiscordMessage message)
+    public CreateMessageCommand(EventContext ctx, DiscordMessage message)
         : base(ctx)
     {
         Message = message;
@@ -42,7 +42,7 @@ public class CreateMessageCommandHandler : INotificationHandler<CreateMessageCom
 
     public async Task Handle(CreateMessageCommand request, CancellationToken cancellationToken)
     {
-        EmoteEventContext ctx = request.Ctx;
+        EventContext ctx = request.Ctx;
 
         DiscordMessage message = request.Message;
         DiscordGuild guild = ctx.Guild;

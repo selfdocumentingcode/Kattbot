@@ -47,18 +47,17 @@ public class EmoteEventHandler : BaseEventHandler
 
     private Task OnMessageCreated(DiscordClient client, MessageCreateEventArgs eventArgs)
     {
-        EmoteEventContext? eventContext = null;
+        EventContext? eventContext = null;
 
         try
         {
-            eventContext = new EmoteEventContext()
+            eventContext = new EventContext()
             {
                 EventName = nameof(OnMessageCreated),
                 User = eventArgs.Author,
                 Channel = eventArgs.Channel,
                 Guild = eventArgs.Guild,
                 Message = eventArgs.Message,
-                Source = EmoteSource.Message,
             };
 
             DiscordMessage message = eventArgs.Message;
@@ -93,18 +92,17 @@ public class EmoteEventHandler : BaseEventHandler
 
     private Task OnMessageUpdated(DiscordClient client, MessageUpdateEventArgs eventArgs)
     {
-        EmoteEventContext? eventContext = null;
+        EventContext? eventContext = null;
 
         try
         {
-            eventContext = new EmoteEventContext()
+            eventContext = new EventContext()
             {
                 EventName = nameof(OnMessageUpdated),
                 User = eventArgs.Author,
                 Channel = eventArgs.Channel,
                 Guild = eventArgs.Guild,
-                Message = eventArgs.Message,
-                Source = EmoteSource.Message,
+                Message = eventArgs.Message
             };
 
             DiscordMessage message = eventArgs.Message;
@@ -146,17 +144,16 @@ public class EmoteEventHandler : BaseEventHandler
 
     private Task OnMessageDeleted(DiscordClient client, MessageDeleteEventArgs eventArgs)
     {
-        EmoteEventContext? eventContext = null;
+        EventContext? eventContext = null;
 
         try
         {
-            eventContext = new EmoteEventContext()
+            eventContext = new EventContext()
             {
                 EventName = nameof(OnMessageDeleted),
                 User = null,
                 Channel = eventArgs.Channel,
                 Guild = eventArgs.Guild,
-                Source = EmoteSource.Message,
             };
 
             DiscordChannel channel = eventArgs.Channel;
@@ -168,7 +165,7 @@ public class EmoteEventHandler : BaseEventHandler
                 return Task.CompletedTask;
             }
 
-            var messageId = message.Id;
+            ulong messageId = message.Id;
 
             var command = new DeleteMessageCommand(eventContext, messageId);
 
@@ -184,17 +181,16 @@ public class EmoteEventHandler : BaseEventHandler
 
     private Task OnMessageReactionAdded(DiscordClient client, MessageReactionAddEventArgs eventArgs)
     {
-        EmoteEventContext? eventContext = null;
+        EventContext? eventContext = null;
 
         try
         {
-            eventContext = new EmoteEventContext()
+            eventContext = new EventContext()
             {
                 EventName = nameof(OnMessageReactionAdded),
                 User = eventArgs.User,
                 Channel = eventArgs.Channel,
                 Guild = eventArgs.Guild,
-                Source = EmoteSource.Reaction,
             };
 
             DiscordChannel channel = eventArgs.Channel;
@@ -227,17 +223,16 @@ public class EmoteEventHandler : BaseEventHandler
 
     private Task OnMessageReactionRemoved(DiscordClient client, MessageReactionRemoveEventArgs eventArgs)
     {
-        EmoteEventContext? eventContext = null;
+        EventContext? eventContext = null;
 
         try
         {
-            eventContext = new EmoteEventContext()
+            eventContext = new EventContext()
             {
                 EventName = nameof(OnMessageReactionRemoved),
                 User = eventArgs.User,
                 Channel = eventArgs.Channel,
                 Guild = eventArgs.Guild,
-                Source = EmoteSource.Reaction,
             };
 
             DiscordChannel channel = eventArgs.Channel;
@@ -265,8 +260,8 @@ public class EmoteEventHandler : BaseEventHandler
 
     private bool MessageIsCommand(string command)
     {
-        var commandPrefix = _options.CommandPrefix;
-        var altCommandPrefix = _options.AlternateCommandPrefix;
+        string commandPrefix = _options.CommandPrefix;
+        string altCommandPrefix = _options.AlternateCommandPrefix;
 
         return command.StartsWith(commandPrefix, StringComparison.OrdinalIgnoreCase)
             || command.StartsWith(altCommandPrefix, StringComparison.OrdinalIgnoreCase);

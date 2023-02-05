@@ -15,10 +15,3 @@ public class EventContext
 
     public DiscordMessage? Message { get; set; }
 }
-
-#pragma warning disable SA1402 // File may only contain a single type
-public class EmoteEventContext : EventContext
-#pragma warning restore SA1402 // File may only contain a single type
-{
-    public EmoteSource Source { get; set; }
-}
