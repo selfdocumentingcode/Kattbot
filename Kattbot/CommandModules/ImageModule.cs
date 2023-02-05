@@ -5,7 +5,6 @@ using DSharpPlus.Entities;
 using Kattbot.Attributes;
 using Kattbot.CommandHandlers.Images;
 using Kattbot.Workers;
-using static Kattbot.CommandHandlers.Images.GetBigEmote;
 
 namespace Kattbot.CommandModules;
 
@@ -52,7 +51,7 @@ public class ImageModule : BaseCommandModule
         {
             Emoji = emoji,
             ScaleFactor = 2,
-            Effect = EffectDeepFry,
+            Effect = GetBigEmoteRequest.EffectDeepFry,
         };
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
@@ -66,7 +65,31 @@ public class ImageModule : BaseCommandModule
         {
             Emoji = emoji,
             ScaleFactor = 2,
-            Effect = EffectOilPaint,
+            Effect = GetBigEmoteRequest.EffectOilPaint,
+        };
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("pet")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+    public Task PetEmote(CommandContext ctx, DiscordEmoji emoji)
+    {
+        var request = new GetAnimatedEmoji(ctx)
+        {
+            Emoji = emoji,
+        };
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("pet")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+    public Task PetUser(CommandContext ctx, DiscordUser user)
+    {
+        var request = new GetAnimatedUserAvatar(ctx)
+        {
+            User = user,
         };
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();

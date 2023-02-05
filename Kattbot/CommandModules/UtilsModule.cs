@@ -63,7 +63,7 @@ public class UtilsModule : BaseCommandModule
     {
         TryResolveResult result = DiscordRoleResolver.TryResolveByName(ctx.Guild, roleName, out DiscordRole? discordRole);
 
-        return !result.Resolved ? ctx.RespondAsync(result.ErrorMessage) : (Task)ctx.RespondAsync($"Role {roleName} has id {discordRole.Id}");
+        return !result.Resolved ? ctx.RespondAsync(result.ErrorMessage) : ctx.RespondAsync($"Role {roleName} has id {discordRole.Id}");
     }
 
     [Command("test-log-sync")]

@@ -7,6 +7,7 @@ using Kattbot.Data.Repositories;
 using Kattbot.EventHandlers;
 using Kattbot.Helpers;
 using Kattbot.Services;
+using Kattbot.Services.Images;
 using Kattbot.Workers;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,7 @@ public class Program
                 services.AddSingleton<NotificationPublisher>();
 
                 services.AddSingleton<SharedCache>();
+                services.AddSingleton<PuppeteerFactory>();
 
                 AddWorkers(services);
 
@@ -109,6 +111,7 @@ public class Program
         services.AddTransient<GuildSettingsService>();
         services.AddTransient<ImageService>();
         services.AddTransient<DiscordErrorLogger>();
+        services.AddTransient<MakeEmojiClient>();
     }
 
     private static void AddRepositories(IServiceCollection services)

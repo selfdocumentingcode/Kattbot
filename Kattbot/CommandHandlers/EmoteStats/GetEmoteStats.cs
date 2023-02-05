@@ -30,7 +30,7 @@ public class GetEmoteStats
 
     public class GetEmoteStatsHandler : AsyncRequestHandler<GetEmoteStatsRequest>
     {
-        private const int _maxUserCount = 10;
+        private const int MaxUserCount = 10;
 
         private readonly EmoteStatsRepository _emoteStatsRepo;
 
@@ -48,7 +48,7 @@ public class GetEmoteStats
 
             ulong guildId = ctx.Guild.Id;
 
-            EmoteUsageResult emoteUsageResult = await _emoteStatsRepo.GetSingleEmoteStats(guildId, emote, _maxUserCount, fromDate);
+            EmoteUsageResult emoteUsageResult = await _emoteStatsRepo.GetSingleEmoteStats(guildId, emote, MaxUserCount, fromDate);
 
             if (emoteUsageResult == null)
             {
@@ -69,7 +69,7 @@ public class GetEmoteStats
                 title += $" from {fromDate.Value:yyyy-MM-dd}";
             }
 
-            StringBuilder result = new();
+            var result = new StringBuilder();
 
             result.AppendLine(title);
             result.AppendLine($"Total usage: {totalUsage}");
