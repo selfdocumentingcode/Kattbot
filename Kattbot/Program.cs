@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Channels;
 using DSharpPlus;
 using Kattbot.CommandHandlers;
 using Kattbot.Data;
@@ -38,27 +39,13 @@ public class Program
 
                 services.AddSingleton<SharedCache>();
 
-                services.AddHostedService<BotWorker>();
-                services.AddHostedService<CommandQueueWorker>();
-                services.AddHostedService<CommandParallelQueueWorker>();
-                services.AddHostedService<EventQueueWorker>();
+                AddWorkers(services);
 
-                services.AddSingleton<CommandQueue>();
-                services.AddSingleton<CommandParallelQueue>();
-                services.AddSingleton<EventQueue>();
+                AddChannels(services);
 
-                services.AddTransient<EmoteEntityBuilder>();
-                services.AddTransient<DateTimeProvider>();
-                services.AddTransient<EmoteParser>();
-                services.AddTransient<GuildSettingsService>();
-                services.AddTransient<ImageService>();
+                AddInternalServices(services);
 
-                services.AddTransient<DiscordErrorLogger>();
-
-                services.AddTransient<EmotesRepository>();
-                services.AddTransient<EmoteStatsRepository>();
-                services.AddTransient<BotUserRolesRepository>();
-                services.AddTransient<GuildSettingsRepository>();
+                AddRepositories(services);
 
                 services.AddDbContext<KattbotContext>(
                     builder =>
@@ -97,5 +84,40 @@ public class Program
                 services.AddSingleton<EmoteEventHandler>();
             })
         .UseSystemd();
+    }
+
+    private static void AddInternalServices(IServiceCollection services)
+    {
+        services.AddTransient<EmoteEntityBuilder>();
+        services.AddTransient<DateTimeProvider>();
+        services.AddTransient<EmoteParser>();
+        services.AddTransient<GuildSettingsService>();
+        services.AddTransient<ImageService>();
+        services.AddTransient<DiscordErrorLogger>();
+    }
+
+    private static void AddRepositories(IServiceCollection services)
+    {
+        services.AddTransient<EmotesRepository>();
+        services.AddTransient<EmoteStatsRepository>();
+        services.AddTransient<BotUserRolesRepository>();
+        services.AddTransient<GuildSettingsRepository>();
+    }
+
+    private static void AddWorkers(IServiceCollection services)
+    {
+        services.AddHostedService<BotWorker>();
+        services.AddHostedService<CommandQueueWorker>();
+        services.AddHostedService<CommandParallelQueueWorker>();
+        services.AddHostedService<EventQueueWorker>();
+    }
+
+    private static void AddChannels(IServiceCollection services)
+    {
+        const int channelSize = 1024;
+
+        services.AddSingleton((_) => new CommandQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
+        services.AddSingleton((_) => new CommandParallelQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
+        services.AddSingleton((_) => new EventQueueChannel(Channel.CreateBounded<INotification>(channelSize)));
     }
 }

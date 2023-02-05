@@ -17,14 +17,14 @@ public class EmoteEventHandler : BaseEventHandler
 {
     private readonly DiscordClient _client;
     private readonly ILogger<CommandEventHandler> _logger;
-    private readonly EventQueue _eventQueue;
+    private readonly EventQueueChannel _eventQueue;
     private readonly DiscordErrorLogger _discordErrorLogger;
     private readonly BotOptions _options;
 
     public EmoteEventHandler(
         DiscordClient client,
         ILogger<CommandEventHandler> logger,
-        EventQueue eventQueue,
+        EventQueueChannel eventQueue,
         IOptions<BotOptions> options,
         DiscordErrorLogger discordErrorLogger)
     {
@@ -45,7 +45,7 @@ public class EmoteEventHandler : BaseEventHandler
         _client.MessageReactionRemoved += OnMessageReactionRemoved;
     }
 
-    private async Task OnMessageCreated(DiscordClient client, MessageCreateEventArgs eventArgs)
+    private Task OnMessageCreated(DiscordClient client, MessageCreateEventArgs eventArgs)
     {
         EmoteEventContext? eventContext = null;
 
@@ -66,33 +66,32 @@ public class EmoteEventHandler : BaseEventHandler
 
             if (MessageIsCommand(message.Content))
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (!IsReleventMessage(message))
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (IsPrivateMessageChannel(message.Channel))
             {
-                await message.Channel.SendMessageAsync("https://cdn.discordapp.com/emojis/740563346599968900.png?v=1");
-                return;
+                return message.Channel.SendMessageAsync("https://cdn.discordapp.com/emojis/740563346599968900.png?v=1");
             }
 
             var command = new CreateMessageCommand(eventContext, message);
 
-            _eventQueue.Enqueue(command);
+            return _eventQueue.Writer.WriteAsync(command).AsTask();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, nameof(OnMessageCreated));
 
-            await _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
+            return _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
         }
     }
 
-    private async Task OnMessageUpdated(DiscordClient client, MessageUpdateEventArgs eventArgs)
+    private Task OnMessageUpdated(DiscordClient client, MessageUpdateEventArgs eventArgs)
     {
         EmoteEventContext? eventContext = null;
 
@@ -120,32 +119,32 @@ public class EmoteEventHandler : BaseEventHandler
             // issues caused by Threads feature
             if (message.Author == null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (!IsReleventMessage(message))
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (IsPrivateMessageChannel(channel))
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var command = new UpdateMessageCommand(eventContext, message);
 
-            _eventQueue.Enqueue(command);
+            return _eventQueue.Writer.WriteAsync(command).AsTask();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, nameof(OnMessageUpdated));
 
-            await _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
+            return _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
         }
     }
 
-    private async Task OnMessageDeleted(DiscordClient client, MessageDeleteEventArgs eventArgs)
+    private Task OnMessageDeleted(DiscordClient client, MessageDeleteEventArgs eventArgs)
     {
         EmoteEventContext? eventContext = null;
 
@@ -166,24 +165,24 @@ public class EmoteEventHandler : BaseEventHandler
 
             if (IsPrivateMessageChannel(channel))
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var messageId = message.Id;
 
             var command = new DeleteMessageCommand(eventContext, messageId);
 
-            _eventQueue.Enqueue(command);
+            return _eventQueue.Writer.WriteAsync(command).AsTask();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, nameof(OnMessageDeleted));
 
-            await _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
+            return _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
         }
     }
 
-    private async Task OnMessageReactionAdded(DiscordClient client, MessageReactionAddEventArgs eventArgs)
+    private Task OnMessageReactionAdded(DiscordClient client, MessageReactionAddEventArgs eventArgs)
     {
         EmoteEventContext? eventContext = null;
 
@@ -206,27 +205,27 @@ public class EmoteEventHandler : BaseEventHandler
 
             if (IsPrivateMessageChannel(channel))
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (!IsRelevantReaction(user))
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var command = new CreateReactionCommand(eventContext, emoji, message);
 
-            _eventQueue.Enqueue(command);
+            return _eventQueue.Writer.WriteAsync(command).AsTask();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, nameof(OnMessageReactionAdded));
 
-            await _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
+            return _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
         }
     }
 
-    private async Task OnMessageReactionRemoved(DiscordClient client, MessageReactionRemoveEventArgs eventArgs)
+    private Task OnMessageReactionRemoved(DiscordClient client, MessageReactionRemoveEventArgs eventArgs)
     {
         EmoteEventContext? eventContext = null;
 
@@ -249,18 +248,18 @@ public class EmoteEventHandler : BaseEventHandler
 
             if (IsPrivateMessageChannel(channel))
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var command = new DeleteReactionCommand(eventContext, emoji, message);
 
-            _eventQueue.Enqueue(command);
+            return _eventQueue.Writer.WriteAsync(command).AsTask();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, nameof(OnMessageReactionRemoved));
 
-            await _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
+            return _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
         }
     }
 

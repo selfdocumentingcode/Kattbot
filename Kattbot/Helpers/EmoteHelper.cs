@@ -56,18 +56,15 @@ public static class EmoteHelper
     /// <summary>
     /// Not emoji, belongs to guild.
     /// </summary>
-    /// <returns></returns>
-    public static bool IsValidEmote(DiscordEmoji emoji, DiscordGuild guild)
-    {
-        return guild.Emojis.ContainsKey(emoji.Id);
-    }
+    public static bool IsValidEmote(DiscordEmoji emoji, DiscordGuild guild) => guild.Emojis.ContainsKey(emoji.Id);
 
     /// <summary>
     /// Not emoji, belongs to guild.
     /// </summary>
-    /// <returns></returns>
-    public static bool IsValidEmote(EmoteEntity emote, DiscordGuild guild)
-    {
-        return guild.Emojis.ContainsKey(emote.EmoteId);
-    }
+    public static bool IsValidEmote(EmoteEntity emote, DiscordGuild guild) => guild.Emojis.ContainsKey(emote.EmoteId);
+
+    /// <summary>
+    /// Not emoji, belongs to guild.
+    /// </summary>
+    public static bool IsValidEmote(ulong emojiId, DiscordGuild guild) => guild.Emojis.ContainsKey(emojiId);
 }

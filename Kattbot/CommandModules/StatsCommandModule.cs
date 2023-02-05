@@ -27,11 +27,11 @@ namespace Kattbot.CommandModules;
 public class StatsCommandModule : BaseCommandModule
 {
     private readonly BotOptions _options;
-    private readonly CommandQueue _commandQueue;
+    private readonly CommandQueueChannel _commandQueue;
 
     public StatsCommandModule(
         IOptions<BotOptions> options,
-        CommandQueue commandQueue)
+        CommandQueueChannel commandQueue)
     {
         _options = options.Value;
         _commandQueue = commandQueue;
@@ -39,50 +39,29 @@ public class StatsCommandModule : BaseCommandModule
 
     [Command("best")]
     [Description("Return best emotes")]
-    public async Task GetBestEmotes(CommandContext ctx, [RemainingText] StatsCommandArgs? args = null)
+    public Task GetBestEmotes(CommandContext ctx, [RemainingText] StatsCommandArgs? args = null)
     {
         args ??= new StatsCommandArgs();
 
         IReadOnlyDictionary<ulong, DiscordEmoji> guildEmotes = ctx.Guild.Emojis;
 
-        await GetRankedEmotes(ctx, SortDirection.DESC, args.Page, args.Interval, guildEmotes);
+        return GetRankedEmotes(ctx, SortDirection.DESC, args.Page, args.Interval, guildEmotes);
     }
 
     [Command("worst")]
     [Description("Return worst emotes")]
-    public async Task GetWorstEmotes(CommandContext ctx, [RemainingText] StatsCommandArgs? args = null)
+    public Task GetWorstEmotes(CommandContext ctx, [RemainingText] StatsCommandArgs? args = null)
     {
         args ??= new StatsCommandArgs();
 
         IReadOnlyDictionary<ulong, DiscordEmoji> guildEmotes = ctx.Guild.Emojis;
 
-        await GetRankedEmotes(ctx, SortDirection.ASC, args.Page, args.Interval, guildEmotes);
-    }
-
-    private async Task GetRankedEmotes(CommandContext ctx, SortDirection direction, int page, string interval, IReadOnlyDictionary<ulong, DiscordEmoji> guildEmotes)
-    {
-        bool parsed = TryGetDateFromInterval(IntervalValue.Parse(interval), out DateTime? fromDate);
-
-        if (!parsed)
-        {
-            await ctx.RespondAsync("Invalid interval");
-            return;
-        }
-
-        var request = new GetGuildEmoteStatsRequest(ctx)
-        {
-            SortDirection = direction,
-            Page = page,
-            FromDate = fromDate,
-            GuildEmojis = guildEmotes,
-        };
-
-        _commandQueue.Enqueue(request);
+        return GetRankedEmotes(ctx, SortDirection.ASC, args.Page, args.Interval, guildEmotes);
     }
 
     [Command("me")]
     [Description("Return best emotes for self")]
-    public async Task GetBestEmotesSelf(CommandContext ctx, [RemainingText] StatsCommandArgs? args = null)
+    public Task GetBestEmotesSelf(CommandContext ctx, [RemainingText] StatsCommandArgs? args = null)
     {
         args ??= new StatsCommandArgs();
 
@@ -90,7 +69,7 @@ public class StatsCommandModule : BaseCommandModule
 
         string mention = ctx.User.GetNicknameOrUsername();
 
-        await GetBestEmotesUser(ctx, userId, mention, args.Page, args.Interval);
+        return GetBestEmotesUser(ctx, userId, mention, args.Page, args.Interval);
     }
 
     [GroupCommand]
@@ -104,27 +83,6 @@ public class StatsCommandModule : BaseCommandModule
         string mention = user.GetNicknameOrUsername();
 
         await GetBestEmotesUser(ctx, userId, mention, args.Page, args.Interval);
-    }
-
-    private async Task GetBestEmotesUser(CommandContext ctx, ulong userId, string mention, int page, string interval)
-    {
-        bool parsed = TryGetDateFromInterval(IntervalValue.Parse(interval), out DateTime? fromDate);
-
-        if (!parsed)
-        {
-            await ctx.RespondAsync("Invalid interval");
-            return;
-        }
-
-        var request = new GetUserEmoteStatsRequest(ctx)
-        {
-            UserId = userId,
-            Mention = mention,
-            Page = page,
-            FromDate = fromDate,
-        };
-
-        _commandQueue.Enqueue(request);
     }
 
     [GroupCommand]
@@ -143,35 +101,6 @@ public class StatsCommandModule : BaseCommandModule
         {
             await ctx.RespondAsync("I don't know what to do with this");
         }
-    }
-
-    private async Task GetEmoteStats(CommandContext ctx, TempEmote emote, string interval)
-    {
-        DiscordGuild guild = ctx.Guild;
-
-        bool isValidEmote = IsValidMessageEmote(emote.Id, guild);
-
-        if (!isValidEmote)
-        {
-            await ctx.RespondAsync("Invalid emote");
-            return;
-        }
-
-        bool parsed = TryGetDateFromInterval(IntervalValue.Parse(interval), out DateTime? fromDate);
-
-        if (!parsed)
-        {
-            await ctx.RespondAsync("Invalid interval");
-            return;
-        }
-
-        var request = new GetEmoteStatsRequest(ctx)
-        {
-            Emote = emote,
-            FromDate = fromDate,
-        };
-
-        _commandQueue.Enqueue(request);
     }
 
     [Command("help")]
@@ -203,6 +132,73 @@ public class StatsCommandModule : BaseCommandModule
         return ctx.RespondAsync(result);
     }
 
+    private Task GetRankedEmotes(CommandContext ctx, SortDirection direction, int page, string interval, IReadOnlyDictionary<ulong, DiscordEmoji> guildEmotes)
+    {
+        bool parsed = TryGetDateFromInterval(IntervalValue.Parse(interval), out DateTime? fromDate);
+
+        if (!parsed)
+        {
+            return ctx.RespondAsync("Invalid interval");
+        }
+
+        var request = new GetGuildEmoteStatsRequest(ctx)
+        {
+            SortDirection = direction,
+            Page = page,
+            FromDate = fromDate,
+            GuildEmojis = guildEmotes,
+        };
+
+        return _commandQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    private Task GetBestEmotesUser(CommandContext ctx, ulong userId, string mention, int page, string interval)
+    {
+        bool parsed = TryGetDateFromInterval(IntervalValue.Parse(interval), out DateTime? fromDate);
+
+        if (!parsed)
+        {
+            return ctx.RespondAsync("Invalid interval");
+        }
+
+        var request = new GetUserEmoteStatsRequest(ctx)
+        {
+            UserId = userId,
+            Mention = mention,
+            Page = page,
+            FromDate = fromDate,
+        };
+
+        return _commandQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    private Task GetEmoteStats(CommandContext ctx, TempEmote emote, string interval)
+    {
+        DiscordGuild guild = ctx.Guild;
+
+        bool isValidEmote = EmoteHelper.IsValidEmote(emote.Id, guild);
+
+        if (!isValidEmote)
+        {
+            return ctx.RespondAsync("Invalid emote");
+        }
+
+        bool parsed = TryGetDateFromInterval(IntervalValue.Parse(interval), out DateTime? fromDate);
+
+        if (!parsed)
+        {
+            return ctx.RespondAsync("Invalid interval");
+        }
+
+        var request = new GetEmoteStatsRequest(ctx)
+        {
+            Emote = emote,
+            FromDate = fromDate,
+        };
+
+        return _commandQueue.Writer.WriteAsync(request).AsTask();
+    }
+
     private bool TryGetDateFromInterval(IntervalValue interval, out DateTime? dateTime)
     {
         if (interval.IsLifetime)
@@ -232,15 +228,5 @@ public class StatsCommandModule : BaseCommandModule
         dateTime = dateResult;
 
         return true;
-    }
-
-    /// <summary>
-    /// Check if emote belongs to guild
-    /// TODO: Refactor (duplicated in EmoteMessageService).
-    /// </summary>
-    /// <returns></returns>
-    private bool IsValidMessageEmote(ulong emoteId, DiscordGuild guild)
-    {
-        return guild.Emojis.ContainsKey(emoteId);
     }
 }
