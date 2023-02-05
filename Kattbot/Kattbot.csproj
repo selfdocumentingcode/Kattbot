@@ -27,8 +27,4 @@
     <ProjectReference Include="..\Kattbot.Common\Kattbot.Common.csproj" />
     <ProjectReference Include="..\Kattbot.Data\Kattbot.Data.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Workers\Channels\" />
-  </ItemGroup>
 </Project>

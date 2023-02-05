@@ -1,132 +1,131 @@
-﻿using DSharpPlus.CommandsNext;
-using DSharpPlus.Entities;
-using Kattbot.CommandModules;
-using Kattbot.Common.Models.Emotes;
-using Kattbot.Data;
-using Kattbot.Helper;
-using MediatR;
-using Microsoft.Extensions.Options;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using DSharpPlus.CommandsNext;
+using Kattbot.CommandModules.ResultFormatters;
+using Kattbot.Common.Models.Emotes;
+using Kattbot.Data;
+using Kattbot.Helpers;
+using MediatR;
 
-namespace Kattbot.CommandHandlers.EmoteStats
+namespace Kattbot.CommandHandlers.EmoteStats;
+
+public class GetUserEmoteStats
 {
-    public class GetUserEmoteStats
+    public class GetUserEmoteStatsRequest : CommandRequest
     {
-        public class GetUserEmoteStatsRequest : CommandRequest
-        {
-            public ulong UserId { get; set; }
-            public string Mention { get; set; } = null!;
-            public int Page { get; set; }
-            public DateTime? FromDate { get; set; }
+        public ulong UserId { get; set; }
 
-            public GetUserEmoteStatsRequest(CommandContext ctx) : base(ctx)
-            {
-            }
+        public string Mention { get; set; } = null!;
+
+        public int Page { get; set; }
+
+        public DateTime? FromDate { get; set; }
+
+        public GetUserEmoteStatsRequest(CommandContext ctx)
+            : base(ctx)
+        {
+        }
+    }
+
+    public class GetUserEmoteStatsHandler : AsyncRequestHandler<GetUserEmoteStatsRequest>
+    {
+        private const int ResultsPerPage = 10;
+
+        private readonly EmoteStatsRepository _emoteStatsRepo;
+
+        public GetUserEmoteStatsHandler(
+            EmoteStatsRepository emoteStatsRepo)
+        {
+            _emoteStatsRepo = emoteStatsRepo;
         }
 
-        public class GetUserEmoteStatsHandler : AsyncRequestHandler<GetUserEmoteStatsRequest>
+        protected override async Task Handle(GetUserEmoteStatsRequest request, CancellationToken cancellationToken)
         {
-            private const int ResultsPerPage = 10;
+            CommandContext ctx = request.Ctx;
+            int page = request.Page;
+            DateTime? fromDate = request.FromDate;
+            ulong userId = request.UserId;
+            string mention = request.Mention;
 
-            private readonly EmoteStatsRepository _emoteStatsRepo;
+            ulong guildId = ctx.Guild.Id;
 
-            public GetUserEmoteStatsHandler(
-                EmoteStatsRepository emoteStatsRepo
-                )
+            int pageOffset = page - 1;
+
+            Models.PaginatedResult<ExtendedStatsQueryResult> emoteUsageResult = await _emoteStatsRepo.GetBestEmotesForUser(guildId, userId, pageOffset, ResultsPerPage, fromDate);
+
+            List<ExtendedStatsQueryResult> emoteUsageItems = emoteUsageResult.Items;
+            int safePageOffset = emoteUsageResult.PageOffset;
+            int pageCount = emoteUsageResult.PageCount;
+            int totalCount = emoteUsageResult.TotalCount;
+
+            var emoteUsageList = emoteUsageItems
+                .Select(r => new ExtendedEmoteStats()
+                {
+                    EmoteCode = EmoteHelper.BuildEmoteCode(r.EmoteId, r.IsAnimated),
+                    Usage = r.Usage,
+                    PercentageOfTotal = (double)r.Usage / r.TotalUsage,
+                })
+                .ToList();
+
+            if (emoteUsageList.Count == 0)
             {
-                _emoteStatsRepo = emoteStatsRepo;
+                await ctx.RespondAsync("No stats yet");
+                return;
             }
 
-            protected override async Task Handle(GetUserEmoteStatsRequest request, CancellationToken cancellationToken)
+            string rangeText;
+
+            if (safePageOffset == 0)
             {
-                var ctx = request.Ctx;                
-                var page = request.Page;
-                var fromDate = request.FromDate;
-                var userId = request.UserId;
-                var mention = request.Mention;
+                rangeText = ResultsPerPage.ToString();
+            }
+            else
+            {
+                int rangeMin = (ResultsPerPage * safePageOffset) + 1;
+                int rangeMax = Math.Min((ResultsPerPage * safePageOffset) + ResultsPerPage, totalCount);
+                rangeText = $"{rangeMin} - {rangeMax}";
+            }
 
-                var guildId = ctx.Guild.Id;
+            string title = $"Top {rangeText} emotes for {mention}";
 
-                int pageOffset = page - 1;
+            if (fromDate != null)
+            {
+                title += $" from {fromDate.Value:yyyy-MM-dd}";
+            }
 
-                var emoteUsageResult = await _emoteStatsRepo.GetBestEmotesForUser(guildId, userId, pageOffset, ResultsPerPage, fromDate);
+            int rankOffset = safePageOffset * ResultsPerPage;
 
-                var emoteUsageItems = emoteUsageResult.Items;
-                var safePageOffset = emoteUsageResult.PageOffset;
-                var pageCount = emoteUsageResult.PageCount;
-                var totalCount = emoteUsageResult.TotalCount;
+            List<string> lines = FormattedResultHelper.FormatExtendedEmoteStats(emoteUsageList, rankOffset);
 
-                var emoteUsageList = emoteUsageItems
-                    .Select(r => new ExtendedEmoteStats()
-                    {
-                        EmoteCode = EmoteHelper.BuildEmoteCode(r.EmoteId, r.IsAnimated),
-                        Usage = r.Usage,
-                        PercentageOfTotal = (double)r.Usage / r.TotalUsage
+            string body = FormattedResultHelper.BuildBody(lines);
 
-                    })
-                    .ToList();
+            var result = new StringBuilder();
 
-                if (emoteUsageList.Count == 0)
-                {
-                    await ctx.RespondAsync("No stats yet");
-                    return;
-                }
+            result.AppendLine(title);
+            result.AppendLine();
+            result.AppendLine(body);
 
-                string rangeText;
-
-                if (safePageOffset == 0)
-                {
-                    rangeText = ResultsPerPage.ToString();
-                }
-                else
-                {
-                    var rangeMin = ResultsPerPage * safePageOffset + 1;
-                    var rangeMax = Math.Min(ResultsPerPage * safePageOffset + ResultsPerPage, totalCount);
-                    rangeText = $"{rangeMin} - {rangeMax}";
-                }
-
-                var title = $"Top {rangeText} emotes for {mention}";
-
-                if (fromDate != null)
-                {
-                    title += $" from {fromDate.Value:yyyy-MM-dd}";
-                }
-
-                var rankOffset = safePageOffset * ResultsPerPage;
-
-                var lines = FormattedResultHelper.FormatExtendedEmoteStats(emoteUsageList, rankOffset);
-
-                var body = FormattedResultHelper.BuildBody(lines);
-
-                var result = new StringBuilder();
-
-                result.AppendLine(title);
+            if (pageCount > 1)
+            {
                 result.AppendLine();
-                result.AppendLine(body);
 
-                if (pageCount > 1)
+                string pagingText = $"Page {safePageOffset + 1}/{pageCount}";
+
+                if (safePageOffset + 1 < pageCount)
                 {
-                    result.AppendLine();
-
-                    var pagingText = $"Page {safePageOffset + 1}/{pageCount}";
-
-                    if (safePageOffset + 1 < pageCount)
-                    {
-                        pagingText += $" (use -p {safePageOffset + 2} to view next page)";
-                    }
-
-                    result.AppendLine(pagingText);
+                    pagingText += $" (use -p {safePageOffset + 2} to view next page)";
                 }
 
-                var formattedResultMessage = $"`{result}`";
-
-                await ctx.RespondAsync(formattedResultMessage);
+                result.AppendLine(pagingText);
             }
+
+            string formattedResultMessage = $"`{result}`";
+
+            await ctx.RespondAsync(formattedResultMessage);
         }
     }
 }

@@ -1,97 +1,95 @@
-﻿using DSharpPlus;
+﻿using System;
+using System.Threading.Tasks;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
-using Kattbot.Models;
+using Kattbot.NotificationHandlers;
 using Microsoft.Extensions.Options;
-using System;
-using System.Threading.Tasks;
 
-namespace Kattbot.Services
+namespace Kattbot.Services;
+
+public class DiscordErrorLogger
 {
-    public class DiscordErrorLogger
+    private readonly DiscordClient _client;
+    private readonly BotOptions _options;
+
+    public DiscordErrorLogger(DiscordClient client, IOptions<BotOptions> options)
     {
-        private readonly DiscordClient _client;
-        private readonly BotOptions _options;
+        _client = client;
+        _options = options.Value;
+    }
 
-        public DiscordErrorLogger(DiscordClient client, IOptions<BotOptions> options)
+    public async Task LogDiscordError(CommandContext ctx, string errorMessage)
+    {
+        string user = $"{ctx.User.Username}#{ctx.User.Discriminator}";
+        string channelName = ctx.Channel.Name;
+        string guildName = ctx.Guild.Name;
+        string command = EscapeTicks(ctx.Message.Content);
+
+        string contextMessage = $"**Failed command** `{command}` by `{user}` in `{channelName}`(`{guildName}`)";
+        string escapedErrorMesssage = $"`{EscapeTicks(errorMessage)}`";
+
+        string fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMesssage}";
+
+        await LogDiscordError(fullErrorMessage);
+    }
+
+    public async Task LogDiscordError(EventContext? ctx, string errorMessage)
+    {
+        string user = ctx?.User != null ? $"{ctx.User.Username}#{ctx.User.Discriminator}" : "Unknown user";
+        string channelName = ctx?.Channel?.Name ?? "Unknown channel";
+        string guildName = ctx?.Guild?.Name ?? "Unknown guild";
+        string eventName = ctx?.EventName ?? "Unknown event";
+        string message = ctx?.Message != null ? EscapeTicks(ctx.Message.Content) : string.Empty;
+
+        string contextMessage = $"**Failed event** `{eventName}` by `{user}` in `{channelName}`(`{guildName}`)";
+
+        if (!string.IsNullOrWhiteSpace(message))
         {
-            _client = client;
-            _options = options.Value;
+            contextMessage += $"{Environment.NewLine}Message: `{message}`";
         }
 
-        public async Task LogDiscordError(CommandContext ctx, string errorMessage)
+        string escapedErrorMesssage = $"`{EscapeTicks(errorMessage)}`";
+
+        string fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMesssage}";
+
+        await LogDiscordError(fullErrorMessage);
+    }
+
+    public async Task LogDiscordError(string error)
+    {
+        ulong errorLogGuilId = _options.ErrorLogGuildId;
+        ulong errorLogChannelId = _options.ErrorLogChannelId;
+
+        DiscordChannel errorLogChannel = await ResolveErrorLogChannel(errorLogGuilId, errorLogChannelId);
+
+        if (errorLogChannel != null)
         {
-            var user = $"{ctx.User.Username}#{ctx.User.Discriminator}";
-            var channelName = ctx.Channel.Name;
-            var guildName = ctx.Guild.Name;
-            var command = EscapeTicks(ctx.Message.Content);
+            await errorLogChannel.SendMessageAsync(error);
+        }
+    }
 
-            var contextMessage = $"**Failed command** `{command}` by `{user}` in `{channelName}`(`{guildName}`)";
-            var escapedErrorMesssage = $"`{EscapeTicks(errorMessage)}`";
+    private static string EscapeTicks(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? value : value.Replace('`', '\'');
+    }
 
-            var fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMesssage}";
+    private async Task<DiscordChannel> ResolveErrorLogChannel(ulong guildId, ulong channelId)
+    {
+        _client.Guilds.TryGetValue(guildId, out DiscordGuild? discordGuild);
 
-            await LogDiscordError(fullErrorMessage);
+        if (discordGuild == null)
+        {
+            discordGuild = await _client.GetGuildAsync(guildId);
         }
 
-        public async Task LogDiscordError(EventContext ctx, string errorMessage)
+        discordGuild.Channels.TryGetValue(channelId, out DiscordChannel? discordChannel);
+
+        if (discordChannel == null)
         {
-            var user = ctx.User != null ? $"{ctx.User.Username}#{ctx.User.Discriminator}" : "Unknown user";
-            var channelName = ctx.Channel?.Name ?? "Unknown channel";
-            var guildName = ctx.Guild?.Name ?? "Unknown guild";
-            var eventName = ctx.EventName;
-            var message = ctx.Message != null ? EscapeTicks(ctx.Message.Content) : string.Empty;
-
-            var contextMessage = $"**Failed event** `{eventName}` by `{user}` in `{channelName}`(`{guildName}`)";
-
-            if (!string.IsNullOrWhiteSpace(message))
-                contextMessage += $"{Environment.NewLine}Message: `{message}`";
-
-            var escapedErrorMesssage = $"`{EscapeTicks(errorMessage)}`";
-
-            var fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMesssage}";
-
-            await LogDiscordError(fullErrorMessage);
+            discordChannel = discordGuild.GetChannel(channelId);
         }
 
-        public async Task LogDiscordError(string error)
-        {
-            var errorLogGuilId = _options.ErrorLogGuildId;
-            var errorLogChannelId = _options.ErrorLogChannelId;
-
-            var errorLogChannel = await ResolveErrorLogChannel(errorLogGuilId, errorLogChannelId);
-
-            if (errorLogChannel != null)
-            {
-                await errorLogChannel.SendMessageAsync(error);
-            }
-        }
-
-        private static string EscapeTicks(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return value;
-
-            return value.Replace('`', '\'');
-        }
-
-        private async Task<DiscordChannel> ResolveErrorLogChannel(ulong guildId, ulong channelId)
-        {
-            _client.Guilds.TryGetValue(guildId, out var discordGuild);
-
-            if (discordGuild == null)
-            {
-                discordGuild = await _client.GetGuildAsync(guildId);
-            }
-
-            discordGuild.Channels.TryGetValue(channelId, out var discordChannel);
-
-            if (discordChannel == null)
-            {
-                discordChannel = discordGuild.GetChannel(channelId);
-            }
-
-            return discordChannel;
-        }
+        return discordChannel;
     }
 }

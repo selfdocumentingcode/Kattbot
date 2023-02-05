@@ -1,72 +1,70 @@
+using System;
 using DSharpPlus;
+using Kattbot.CommandHandlers;
 using Kattbot.Data;
 using Kattbot.Data.Repositories;
 using Kattbot.EventHandlers;
 using Kattbot.Helpers;
 using Kattbot.Services;
+using Kattbot.Workers;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System;
-using MediatR;
-using Kattbot.CommandHandlers;
-using Kattbot.Workers;
 
-namespace Kattbot
+namespace Kattbot;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
-        {
-            CreateHostBuilder(args).Build().Run();
-        }
+        CreateHostBuilder(args).Build().Run();
+    }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureServices((hostContext, services) =>
-                {
-                    services.Configure<BotOptions>(hostContext.Configuration.GetSection(BotOptions.OptionsKey));
+    public static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        return Host.CreateDefaultBuilder(args)
+            .ConfigureServices((hostContext, services) =>
+            {
+                services.Configure<BotOptions>(hostContext.Configuration.GetSection(BotOptions.OptionsKey));
 
-                    services.AddHttpClient();
+                services.AddHttpClient();
 
-                    services.AddMediatR(typeof(Program));
-                    services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
-                    services.AddSingleton<NotificationPublisher>();
+                services.AddMediatR(typeof(Program));
+                services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
+                services.AddSingleton<NotificationPublisher>();
 
-                    services.AddSingleton<SharedCache>();
+                services.AddSingleton<SharedCache>();
 
-                    services.AddHostedService<BotWorker>();
-                    services.AddHostedService<CommandQueueWorker>();
-                    services.AddHostedService<CommandParallelQueueWorker>();
-                    services.AddHostedService<EventQueueWorker>();
-                    services.AddHostedService<EmoteCommandQueueWorker>();
+                services.AddHostedService<BotWorker>();
+                services.AddHostedService<CommandQueueWorker>();
+                services.AddHostedService<CommandParallelQueueWorker>();
+                services.AddHostedService<EventQueueWorker>();
 
-                    services.AddSingleton<CommandQueue>();
-                    services.AddSingleton<CommandParallelQueue>();
-                    services.AddSingleton<EventQueue>();
-                    services.AddSingleton<EmoteCommandQueue>();
+                services.AddSingleton<CommandQueue>();
+                services.AddSingleton<CommandParallelQueue>();
+                services.AddSingleton<EventQueue>();
 
-                    services.AddTransient<EmoteEntityBuilder>();
-                    services.AddTransient<EmoteMessageService>();
-                    services.AddTransient<EmoteCommandReceiver>();
-                    services.AddTransient<DateTimeProvider>();
-                    services.AddTransient<EmoteParser>();
-                    services.AddTransient<GuildSettingsService>();
-                    services.AddTransient<ImageService>();
+                services.AddTransient<EmoteEntityBuilder>();
+                services.AddTransient<DateTimeProvider>();
+                services.AddTransient<EmoteParser>();
+                services.AddTransient<GuildSettingsService>();
+                services.AddTransient<ImageService>();
 
-                    services.AddTransient<DiscordErrorLogger>();
+                services.AddTransient<DiscordErrorLogger>();
 
-                    services.AddTransient<EmotesRepository>();
-                    services.AddTransient<EmoteStatsRepository>();
-                    services.AddTransient<BotUserRolesRepository>();
-                    services.AddTransient<GuildSettingsRepository>();
+                services.AddTransient<EmotesRepository>();
+                services.AddTransient<EmoteStatsRepository>();
+                services.AddTransient<BotUserRolesRepository>();
+                services.AddTransient<GuildSettingsRepository>();
 
-                    services.AddDbContext<KattbotContext>(builder =>
+                services.AddDbContext<KattbotContext>(
+                    builder =>
                     {
-                        var dbConnString = hostContext.Configuration.GetValue<string>("Kattbot:ConnectionString");
-                        var logLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
+                        string dbConnString = hostContext.Configuration.GetValue<string>("Kattbot:ConnectionString");
+                        string logLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
 
                         builder.EnableSensitiveDataLogging(logLevel == "Debug");
 
@@ -75,28 +73,29 @@ namespace Kattbot
                     ServiceLifetime.Transient,
                     ServiceLifetime.Singleton);
 
-                    services.AddSingleton((_) =>
+                services.AddSingleton((_) =>
+                {
+                    string defaultLogLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
+                    string botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken");
+
+                    LogLevel logLevel = Enum.Parse<LogLevel>(defaultLogLevel);
+
+                    var socketConfig = new DiscordConfiguration
                     {
-                        var defaultLogLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
-                        var botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken");
+                        MinimumLogLevel = logLevel,
+                        TokenType = TokenType.Bot,
+                        Token = botToken,
+                        Intents = DiscordIntents.All,
+                    };
 
-                        var logLevel = Enum.Parse<LogLevel>(defaultLogLevel);
+                    var client = new DiscordClient(socketConfig);
 
-                        var socketConfig = new DiscordConfiguration
-                        {
-                            MinimumLogLevel = logLevel,
-                            TokenType = TokenType.Bot,
-                            Token = botToken
-                        };
+                    return client;
+                });
 
-                        var client = new DiscordClient(socketConfig);
-
-                        return client;
-                    });
-
-                    services.AddSingleton<CommandEventHandler>();
-                    services.AddSingleton<EmoteEventHandler>();
-                })
-            .UseSystemd();
+                services.AddSingleton<CommandEventHandler>();
+                services.AddSingleton<EmoteEventHandler>();
+            })
+        .UseSystemd();
     }
 }
