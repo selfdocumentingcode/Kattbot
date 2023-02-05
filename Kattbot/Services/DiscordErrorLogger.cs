@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using Kattbot.NotificationHandlers;
 using Kattbot.Workers;
@@ -18,7 +17,7 @@ public class DiscordErrorLogger
         _options = options.Value;
     }
 
-    public Task LogDiscordError(CommandContext ctx, string errorMessage)
+    public void LogDiscordError(CommandContext ctx, string errorMessage)
     {
         string user = $"{ctx.User.Username}#{ctx.User.Discriminator}";
         string channelName = ctx.Channel.Name;
@@ -30,10 +29,10 @@ public class DiscordErrorLogger
 
         string fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMesssage}";
 
-        return LogDiscordError(fullErrorMessage);
+        LogDiscordError(fullErrorMessage);
     }
 
-    public Task LogDiscordError(EventContext? ctx, string errorMessage)
+    public void LogDiscordError(EventContext? ctx, string errorMessage)
     {
         string user = ctx?.User != null ? $"{ctx.User.Username}#{ctx.User.Discriminator}" : "Unknown user";
         string channelName = ctx?.Channel?.Name ?? "Unknown channel";
@@ -52,17 +51,17 @@ public class DiscordErrorLogger
 
         string fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMesssage}";
 
-        return LogDiscordError(fullErrorMessage);
+        LogDiscordError(fullErrorMessage);
     }
 
-    public Task LogDiscordError(string error)
+    public void LogDiscordError(string error)
     {
         ulong errorLogGuilId = _options.ErrorLogGuildId;
         ulong errorLogChannelId = _options.ErrorLogChannelId;
 
         var discordLogItem = new DiscordLogItem(error, errorLogGuilId, errorLogChannelId);
 
-        return _channel.Writer.WriteAsync(discordLogItem).AsTask();
+        _ = _channel.Writer.TryWrite(discordLogItem);
     }
 
     private static string EscapeTicks(string value)

@@ -52,7 +52,7 @@ public class EventQueueWorker : BackgroundService
             {
                 if (@event is not null and EventNotification notification)
                 {
-                    await _discordErrorLogger.LogDiscordError(notification.Ctx, innerEx.Message);
+                    _discordErrorLogger.LogDiscordError(notification.Ctx, innerEx.Message);
                 }
 
                 _logger.LogError(innerEx, nameof(EventQueueWorker));

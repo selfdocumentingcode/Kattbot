@@ -127,7 +127,7 @@ namespace Kattbot.EventHandlers
                 {
                     errorMessage = "You do not have permission to do that.";
                 }
-                else if(failedCheck is CooldownAttribute cooldDownAttribute)
+                else if (failedCheck is CooldownAttribute cooldDownAttribute)
                 {
                     errorMessage = $"Please wait {cooldDownAttribute.Reset.TotalSeconds} seconds";
                 }
@@ -179,7 +179,7 @@ namespace Kattbot.EventHandlers
 
             if (shouldLogDiscordError)
             {
-                await _discordErrorLogger.LogDiscordError(ctx, exception.ToString());
+                _discordErrorLogger.LogDiscordError(ctx, exception.ToString());
             }
 
             _logger.LogWarning($"Message: {message.Content}\r\nCommand failed: {exception})");

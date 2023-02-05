@@ -5,6 +5,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Kattbot.Attributes;
 using Kattbot.Helpers;
+using Kattbot.Services;
 
 namespace Kattbot.CommandModules;
 
@@ -12,6 +13,13 @@ namespace Kattbot.CommandModules;
 [Group("utils")]
 public class UtilsModule : BaseCommandModule
 {
+    private readonly DiscordErrorLogger _discordErrorLogger;
+
+    public UtilsModule(DiscordErrorLogger discordErrorLogger)
+    {
+        _discordErrorLogger = discordErrorLogger;
+    }
+
     [Command("emoji-code")]
     public Task GetEmojiCode(CommandContext ctx, DiscordEmoji emoji)
     {
@@ -56,5 +64,13 @@ public class UtilsModule : BaseCommandModule
         TryResolveResult result = DiscordRoleResolver.TryResolveByName(ctx.Guild, roleName, out DiscordRole? discordRole);
 
         return !result.Resolved ? ctx.RespondAsync(result.ErrorMessage) : (Task)ctx.RespondAsync($"Role {roleName} has id {discordRole.Id}");
+    }
+
+    [Command("test-log-sync")]
+    public Task TestLogSync(CommandContext ctx)
+    {
+        _discordErrorLogger.LogDiscordError("Test error sync");
+
+        return Task.CompletedTask;
     }
 }
