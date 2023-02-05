@@ -32,7 +32,7 @@ public class DiscordLoggerWorker : BackgroundService
                     continue;
                 }
 
-                DiscordChannel logChannel = await ResolveErrorLogChannel(logItem.DiscordGuildId, logItem.DiscordChannelId);
+                DiscordChannel logChannel = await ResolveLogChannel(logItem.DiscordGuildId, logItem.DiscordChannelId);
 
                 if (logChannel != null)
                 {
@@ -52,7 +52,7 @@ public class DiscordLoggerWorker : BackgroundService
         }
     }
 
-    private async Task<DiscordChannel> ResolveErrorLogChannel(ulong guildId, ulong channelId)
+    private async Task<DiscordChannel> ResolveLogChannel(ulong guildId, ulong channelId)
     {
         _client.Guilds.TryGetValue(guildId, out DiscordGuild? discordGuild);
 
