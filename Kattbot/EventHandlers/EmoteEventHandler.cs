@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using Kattbot.Common.Models.Emotes;
 using Kattbot.NotificationHandlers;
 using Kattbot.NotificationHandlers.Emotes;
 using Kattbot.Services;
@@ -12,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Kattbot.EventHandlers;
-
 public class EmoteEventHandler : BaseEventHandler
 {
     private readonly DiscordClient _client;
@@ -102,7 +100,7 @@ public class EmoteEventHandler : BaseEventHandler
                 User = eventArgs.Author,
                 Channel = eventArgs.Channel,
                 Guild = eventArgs.Guild,
-                Message = eventArgs.Message
+                Message = eventArgs.Message,
             };
 
             DiscordMessage message = eventArgs.Message;

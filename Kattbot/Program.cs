@@ -124,6 +124,7 @@ public class Program
         services.AddHostedService<CommandQueueWorker>();
         services.AddHostedService<CommandParallelQueueWorker>();
         services.AddHostedService<EventQueueWorker>();
+        services.AddHostedService<DiscordLoggerWorker>();
         services.AddHostedService<BotWorker>();
     }
 
@@ -134,5 +135,6 @@ public class Program
         services.AddSingleton((_) => new CommandQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
         services.AddSingleton((_) => new CommandParallelQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
         services.AddSingleton((_) => new EventQueueChannel(Channel.CreateBounded<INotification>(channelSize)));
+        services.AddSingleton((_) => new DiscordLogChannel(Channel.CreateBounded<DiscordLogItem>(channelSize)));
     }
 }

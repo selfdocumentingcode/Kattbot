@@ -52,3 +52,13 @@ public class EventQueueChannel : AbstractQueueChannel<INotification>
     {
     }
 }
+
+public record DiscordLogItem(string Message, ulong DiscordGuildId, ulong DiscordChannelId);
+
+public class DiscordLogChannel : AbstractQueueChannel<DiscordLogItem>
+{
+    public DiscordLogChannel(Channel<DiscordLogItem> channel)
+        : base(channel)
+    {
+    }
+}
