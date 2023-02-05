@@ -19,7 +19,7 @@ jobs:
       with:
         tokenPrefix: '__'
         tokenSuffix: '__'
-        files: 'Kattbot/appsettings.Production.json'
+        files: 'Kattbot/appsettings.json'
       env:
         CONNECTION_STRING: ${{secrets.DB_CONNECTION_STRING}}
         BOT_TOKEN: ${{secrets.BOT_TOKEN}}
