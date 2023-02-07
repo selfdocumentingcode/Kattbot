@@ -1,11 +1,12 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
 using Kattbot.Services;
 using Kattbot.Services.Images;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using PuppeteerSharp;
+using Moq;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
 
 namespace Kattbot.Tests;
 
@@ -14,38 +15,20 @@ namespace Kattbot.Tests;
 public class PetTests
 {
     [TestMethod]
-    public async Task Pet()
+    public async Task PetPetTest()
     {
         var puppeteerFactory = new PuppeteerFactory();
 
-        const string url = "https://makeemoji.com/";
+        var logger = new Mock<ILogger<PetPetClient>>();
+
+        var makeEmojiClient = new PetPetClient(puppeteerFactory, logger.Object);
 
         string inputFile = Path.Combine(Path.GetTempPath(), "froge.png");
         string ouputFile = Path.Combine(Path.GetTempPath(), "pet_froge.gif");
 
-        using IBrowser browser = await puppeteerFactory.BuildBrowser();
-        using IPage page = await browser.NewPageAsync();
+        byte[] resultBytes = await makeEmojiClient.PetPet(inputFile);
 
-        IResponse response = await page.GoToAsync(url);
-
-        IElementHandle fileInput = await page.QuerySelectorAsync("input[aria-label^='Upload'][type='file']");
-
-        await fileInput.UploadFileAsync(inputFile);
-
-        await page.WaitForNetworkIdleAsync();
-
-        const string imageElementAltValue = "The generated pet animated emoji";
-
-        IElementHandle imageElement = await page.QuerySelectorAsync($"img[alt='{imageElementAltValue}']");
-
-        IJSHandle imageElementSrcHandle = await imageElement.GetPropertyAsync("src");
-        string imageElementSrcValue = await imageElementSrcHandle.JsonValueAsync<string>();
-
-        string cleanBase64 = imageElementSrcValue[(imageElementSrcValue.IndexOf("base64,") + "base64,".Length)..];
-
-        byte[] imageAsBytes = Convert.FromBase64String(cleanBase64);
-
-        using var image = Image.Load(imageAsBytes, out SixLabors.ImageSharp.Formats.IImageFormat? format);
+        using var image = Image.Load(resultBytes);
 
         await image.SaveAsGifAsync(ouputFile);
     }
@@ -58,11 +41,11 @@ public class PetTests
 
         var imageService = new ImageService(null!);
 
-        using var image = Image.Load(inputFile, out SixLabors.ImageSharp.Formats.IImageFormat? format);
+        using var image = Image.Load(inputFile, out IImageFormat? format);
 
         var imageResult = new ImageResult(image, format);
 
-        var croppedImageResult = imageService.CropImageToCircle(imageResult);
+        ImageResult croppedImageResult = imageService.CropImageToCircle(imageResult);
 
         await croppedImageResult.Image.SaveAsPngAsync(ouputFile);
     }

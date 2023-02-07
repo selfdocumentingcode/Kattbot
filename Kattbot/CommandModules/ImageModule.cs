@@ -73,11 +73,12 @@ public class ImageModule : BaseCommandModule
 
     [Command("pet")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task PetEmote(CommandContext ctx, DiscordEmoji emoji)
+    public Task PetEmote(CommandContext ctx, DiscordEmoji emoji, string speed = null)
     {
         var request = new GetAnimatedEmoji(ctx)
         {
             Emoji = emoji,
+            Speed = speed,
         };
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
@@ -85,11 +86,12 @@ public class ImageModule : BaseCommandModule
 
     [Command("pet")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task PetUser(CommandContext ctx, DiscordUser user)
+    public Task PetUser(CommandContext ctx, DiscordUser user, string speed = null)
     {
         var request = new GetAnimatedUserAvatar(ctx)
         {
             User = user,
+            Speed = speed,
         };
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();

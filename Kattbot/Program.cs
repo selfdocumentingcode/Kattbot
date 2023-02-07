@@ -111,7 +111,7 @@ public class Program
         services.AddTransient<GuildSettingsService>();
         services.AddTransient<ImageService>();
         services.AddTransient<DiscordErrorLogger>();
-        services.AddTransient<MakeEmojiClient>();
+        services.AddTransient<PetPetClient>();
     }
 
     private static void AddRepositories(IServiceCollection services)
