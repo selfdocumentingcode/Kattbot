@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using PuppeteerSharp;
@@ -10,7 +11,7 @@ public class PuppeteerFactory
 {
     public async Task<IBrowser> BuildBrowser()
     {
-        string downloadPath = Path.Combine(Path.GetTempPath(), "puppeteer");
+        string downloadPath = Path.Combine(Path.GetTempPath(), $"puppeteer-kattbot");
 
         var browserFetcherOptions = new BrowserFetcherOptions { Path = downloadPath };
         var browserFetcher = new BrowserFetcher(browserFetcherOptions);
