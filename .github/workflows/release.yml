@@ -91,7 +91,7 @@ jobs:
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
-        script: systemctl --user stop --quiet kattbot
+        script: systemctl --user stop --quiet kattbot || true
     
     - name: Deploy - Prepare deploy scripts
       uses: appleboy/ssh-action@master
