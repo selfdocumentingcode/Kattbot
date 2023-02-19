@@ -1,7 +1,7 @@
 #! /bin/bash
 
-# empty directory
-rm -r $HOME/kattbot
+# remove directory
+rm -rf $HOME/kattbot
 
 # recreate it
 mkdir -p $HOME/kattbot
@@ -9,5 +9,5 @@ mkdir -p $HOME/kattbot
 # copy files from staging to app directory
 cp -r $HOME/kattbot-staging/. $HOME/kattbot
 
-# copy service file
-cp $HOME/kattbot-deploy/kattbot.service $HOME/.config/system/user
+# copy service file and create path if it doesn't exist
+cp -p $HOME/kattbot-deploy/kattbot.service $HOME/.config/systemd/user

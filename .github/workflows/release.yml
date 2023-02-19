@@ -53,20 +53,7 @@ jobs:
         key: ${{secrets.KATTBOT_KEY}}
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
         source: "publish-output/"
-        target: "/home/${{secrets.KATTBOT_USER}}/kattbot-staging"
-        strip_components: 1
-        rm: true
-
-    - name: Copy publish output to staging folder 2
-      uses: appleboy/scp-action@master
-      with:  
-        host: ${{secrets.VPS_HOST_NEW}}
-        port: ${{secrets.VPS_PORT}}
-        username: ${{secrets.KATTBOT_USER}}
-        key: ${{secrets.KATTBOT_KEY}}
-        passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
-        source: "publish-output/"
-        target: "$HOME/kattbot-staging2"
+        target: "$HOME/kattbot-staging"
         strip_components: 1
         rm: true
         
