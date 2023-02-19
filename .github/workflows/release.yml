@@ -33,7 +33,7 @@ jobs:
       run: dotnet test
     
     - name: Publish
-      run: dotnet publish -c Release -r linux-x64 -o deploy --no-self-contained
+      run: dotnet publish -c Release -r linux-x64 -o deploy --no-self-contained ./Kattbot/
 
     - name: Generate database migration script
       if: github.event.inputs.updateDatabase == 'auto' || github.event.inputs.updateDatabase == 'manual'
@@ -47,10 +47,10 @@ jobs:
     - name: Copy files to remote dir
       uses: appleboy/scp-action@master
       with:  
-        host: ${{secrets.VPS_HOST}}
+        host: ${{secrets.VPS_HOST_NEW}}
         port: ${{secrets.VPS_PORT}}
-        username: ${{secrets.VPS_USER}}
-        password: ${{secrets.VPS_PASSWORD}}        
+        username: ${{secrets.KATTBOT_USER}}
+        key: ${{secrets.KATTBOT_KEY}}        
         source: "/home/runner/work/Kattbot/Kattbot/deploy/"
         target: "/home/kattbot-user/kattbot-deploy"
         rm: true
@@ -58,56 +58,56 @@ jobs:
     - name: Deploy - Stop service
       uses: appleboy/ssh-action@master
       with:  
-        host: ${{secrets.VPS_HOST}}
+        host: ${{secrets.VPS_HOST_NEW}}
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.KATTBOT_USER}}
-        password: ${{secrets.KATTBOT_PASSWORD}}
+        key: ${{secrets.KATTBOT_KEY}}        
         script: systemctl --user stop kattbot
     
     - name: Deploy - Run deploy script
       uses: appleboy/ssh-action@master
       with:  
-        host: ${{secrets.VPS_HOST}}
+        host: ${{secrets.VPS_HOST_NEW}}
         port: ${{secrets.VPS_PORT}}
-        username: ${{secrets.VPS_USER}}
-        password: ${{secrets.VPS_PASSWORD}}      
-        script: sudo /home/kattbot-user/kattbot-deploy.sh
+        username: ${{secrets.KATTBOT_USER}}
+        key: ${{secrets.KATTBOT_KEY}}        
+        script: /home/kattbot-user/kattbot-deploy.sh
  
-    - name: Deploy - Change Kattbot permission
-      uses: appleboy/ssh-action@master
-      with:  
-        host: ${{secrets.VPS_HOST}}
-        port: ${{secrets.VPS_PORT}}
-        username: ${{secrets.VPS_USER}}
-        password: ${{secrets.VPS_PASSWORD}}      
-        script: sudo chmod 777 /home/kattbot-user/kattbot/Kattbot
+    #- name: Deploy - Change Kattbot permission
+    #  uses: appleboy/ssh-action@master
+    #  with:  
+    #    host: ${{secrets.VPS_HOST_NEW}}
+    #    port: ${{secrets.VPS_PORT}}
+    #    username: ${{secrets.KATTBOT_USER}}
+    #    key: ${{secrets.KATTBOT_KEY}}         
+    #    script: sudo chmod 777 /home/kattbot-user/kattbot/Kattbot
 
     - name: Deploy - Backup database
       if: github.event.inputs.updateDatabase == 'auto' || github.event.inputs.updateDatabase == 'manual'
       uses: appleboy/ssh-action@master
       with:  
-        host: ${{secrets.VPS_HOST}}
+        host: ${{secrets.VPS_HOST_NEW}}
         port: ${{secrets.VPS_PORT}}
-        username: ${{secrets.VPS_USER}}
-        password: ${{secrets.VPS_PASSWORD}}      
-        script: sudo /home/kattbot-user/kattbot-backup-db.sh
+        username: ${{secrets.KATTBOT_USER}}
+        key: ${{secrets.KATTBOT_KEY}}        
+        script: /home/kattbot-user/kattbot-backup-db.sh
  
     - name: Deploy - Run database migration script
       if: github.event.inputs.updateDatabase == 'auto'
       uses: appleboy/ssh-action@master
       with:  
-        host: ${{secrets.VPS_HOST}}
+        host: ${{secrets.VPS_HOST_NEW}}
         port: ${{secrets.VPS_PORT}}
-        username: ${{secrets.VPS_USER}}
-        password: ${{secrets.VPS_PASSWORD}}      
-        script: sudo psql -U postgres -d kattbot -q -f /home/kattbot-user/kattbot/database_migration.sql
+        username: ${{secrets.KATTBOT_USER}}
+        key: ${{secrets.KATTBOT_KEY}}         
+        script: psql -U postgres -d kattbot -q -f /home/kattbot-user/kattbot/database_migration.sql
  
     - name: Deploy - Start service
       if: github.event.inputs.updateDatabase == 'no' || github.event.inputs.updateDatabase == 'auto'
       uses: appleboy/ssh-action@master
       with:  
-        host: ${{secrets.VPS_HOST}}
+        host: ${{secrets.VPS_HOST_NEW}}
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.KATTBOT_USER}}
-        password: ${{secrets.KATTBOT_PASSWORD}}
+        key: ${{secrets.KATTBOT_KEY}}        
         script: systemctl --user start kattbot
