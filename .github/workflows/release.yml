@@ -47,7 +47,7 @@ jobs:
     - name: Copy publish output to staging folder
       uses: appleboy/scp-action@master
       with:  
-        host: ${{secrets.VPS_HOST_NEW}}
+        host: ${{secrets.VPS_HOST}}
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
@@ -60,7 +60,7 @@ jobs:
     - name: Copy deploy scripts to deploy folder
       uses: appleboy/scp-action@master
       with:  
-        host: ${{secrets.VPS_HOST_NEW}}
+        host: ${{secrets.VPS_HOST}}
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
@@ -73,7 +73,7 @@ jobs:
     - name: Deploy - Stop service
       uses: appleboy/ssh-action@master
       with:  
-        host: ${{secrets.VPS_HOST_NEW}}
+        host: ${{secrets.VPS_HOST}}
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
@@ -83,7 +83,7 @@ jobs:
     - name: Deploy - Prepare deploy scripts
       uses: appleboy/ssh-action@master
       with:  
-        host: ${{secrets.VPS_HOST_NEW}}
+        host: ${{secrets.VPS_HOST}}
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
@@ -93,27 +93,18 @@ jobs:
     - name: Deploy - Run deploy script
       uses: appleboy/ssh-action@master
       with:  
-        host: ${{secrets.VPS_HOST_NEW}}
+        host: ${{secrets.VPS_HOST}}
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
         script: $HOME/kattbot-deploy/kattbot-deploy.sh
- 
-    #- name: Deploy - Change Kattbot permission
-    #  uses: appleboy/ssh-action@master
-    #  with:  
-    #    host: ${{secrets.VPS_HOST_NEW}}
-    #    port: ${{secrets.VPS_PORT}}
-    #    username: ${{secrets.KATTBOT_USER}}
-    #    key: ${{secrets.KATTBOT_KEY}} 
-    #    script: sudo chmod 777 /home/${{secrets.KATTBOT_USER}}/kattbot/Kattbot
 
     - name: Deploy - Backup database
       if: github.event.inputs.updateDatabase == 'auto' || github.event.inputs.updateDatabase == 'manual'
       uses: appleboy/ssh-action@master
       with:  
-        host: ${{secrets.VPS_HOST_NEW}}
+        host: ${{secrets.VPS_HOST}}
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
@@ -124,20 +115,20 @@ jobs:
       if: github.event.inputs.updateDatabase == 'auto'
       uses: appleboy/ssh-action@master
       with:  
-        host: ${{secrets.VPS_HOST_NEW}}
+        host: ${{secrets.VPS_HOST}}
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
         script: psql -U postgres -d kattbot -q -f $HOME/kattbot/database_migration.sql
  
-    #- name: Deploy - Start service
-    #  if: github.event.inputs.updateDatabase == 'no' || github.event.inputs.updateDatabase == 'auto'
-    #  uses: appleboy/ssh-action@master
-    #  with:  
-    #    host: ${{secrets.VPS_HOST_NEW}}
-    #    port: ${{secrets.VPS_PORT}}
-    #    username: ${{secrets.KATTBOT_USER}}
-    #    key: ${{secrets.KATTBOT_KEY}}
-    #    passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
-    #    script: systemctl --user start kattbot
+    - name: Deploy - Start service
+      if: github.event.inputs.updateDatabase == 'no' || github.event.inputs.updateDatabase == 'auto'
+      uses: appleboy/ssh-action@master
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.KATTBOT_USER}}
+        key: ${{secrets.KATTBOT_KEY}}
+        passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
+        script: systemctl --user enable kattbot && systemctl --user start kattbot
