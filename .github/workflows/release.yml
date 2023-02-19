@@ -33,18 +33,28 @@ jobs:
       run: dotnet test
     
     - name: Publish
-      run: dotnet publish -c Release -r linux-x64 -o deploy --no-self-contained ./Kattbot/
+      run: dotnet publish -c Release -r linux-x64 -o publish-output --no-self-contained ./Kattbot/
 
     - name: Generate database migration script
       if: github.event.inputs.updateDatabase == 'auto' || github.event.inputs.updateDatabase == 'manual'
       run: |
         dotnet tool install --global dotnet-ef
         dotnet tool restore
-        dotnet ef migrations script --idempotent -p Kattbot.Data.Migrations -o deploy/database_migration.sql
+        dotnet ef migrations script --idempotent -p Kattbot.Data.Migrations -o publish-output/database_migration.sql
       env:
         DOTNET_ENVIRONMENT: Production
     
-    - name: Copy files to remote dir
+    - name: List dir
+      uses: appleboy/ssh-action@master
+      with:  
+        host: ${{secrets.VPS_HOST_NEW}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.KATTBOT_USER}}
+        key: ${{secrets.KATTBOT_KEY}}
+        passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
+        script: 'pwd && ls -lA && echo workspacedir: $GITHUB_WORKSPACE'
+
+    - name: Copy publish output to staging folder
       uses: appleboy/scp-action@master
       with:  
         host: ${{secrets.VPS_HOST_NEW}}
@@ -52,9 +62,31 @@ jobs:
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
-        source: "/home/runner/work/Kattbot/Kattbot/deploy/"
-        target: "/home/kattbot-user/kattbot-deploy"
+        source: "/home/runner/work/Kattbot/Kattbot/publish-output/"
+        target: "/home/${{secrets.KATTBOT_USER}}/kattbot-staging"
         rm: true
+    
+    - name: List dir 2
+      uses: appleboy/ssh-action@master
+      with:  
+        host: ${{secrets.VPS_HOST_NEW}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.KATTBOT_USER}}
+        key: ${{secrets.KATTBOT_KEY}}
+        passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
+        script: 'ls $HOME'
+        
+    #- name: Copy deploy scripts to deploy folder
+    #  uses: appleboy/scp-action@master
+    #  with:  
+    #    host: ${{secrets.VPS_HOST_NEW}}
+    #    port: ${{secrets.VPS_PORT}}
+    #    username: ${{secrets.KATTBOT_USER}}
+    #    key: ${{secrets.KATTBOT_KEY}}
+    #    passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
+    #    source: "/home/runner/work/Kattbot/Kattbot/deploy/"
+    #    target: "/home/${{secrets.KATTBOT_USER}}/kattbot-deploy"
+    #    rm: true
     
     - name: Deploy - Stop service
       uses: appleboy/ssh-action@master
@@ -64,7 +96,7 @@ jobs:
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
-        script: systemctl --user stop kattbot
+        script: systemctl --user stop kattbot &> /dev/null
     
     - name: Deploy - Run deploy script
       uses: appleboy/ssh-action@master
@@ -74,7 +106,7 @@ jobs:
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
-        script: /home/kattbot-user/kattbot-deploy.sh
+        script: /home/${{secrets.KATTBOT_USER}}/kattbot-deploy/kattbot-deploy.sh
  
     #- name: Deploy - Change Kattbot permission
     #  uses: appleboy/ssh-action@master
@@ -83,7 +115,7 @@ jobs:
     #    port: ${{secrets.VPS_PORT}}
     #    username: ${{secrets.KATTBOT_USER}}
     #    key: ${{secrets.KATTBOT_KEY}} 
-    #    script: sudo chmod 777 /home/kattbot-user/kattbot/Kattbot
+    #    script: sudo chmod 777 /home/${{secrets.KATTBOT_USER}}/kattbot/Kattbot
 
     - name: Deploy - Backup database
       if: github.event.inputs.updateDatabase == 'auto' || github.event.inputs.updateDatabase == 'manual'
@@ -94,7 +126,7 @@ jobs:
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
-        script: /home/kattbot-user/kattbot-backup-db.sh
+        script: /home/${{secrets.KATTBOT_USER}}/kattbot-backup-db.sh
  
     - name: Deploy - Run database migration script
       if: github.event.inputs.updateDatabase == 'auto'
@@ -105,7 +137,7 @@ jobs:
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
-        script: psql -U postgres -d kattbot -q -f /home/kattbot-user/kattbot/database_migration.sql
+        script: psql -U postgres -d kattbot -q -f /home/${{secrets.KATTBOT_USER}}/kattbot/database_migration.sql
  
     #- name: Deploy - Start service
     #  if: github.event.inputs.updateDatabase == 'no' || github.event.inputs.updateDatabase == 'auto'

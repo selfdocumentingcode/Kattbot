@@ -15,9 +15,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.github\dependabot.yml = .github\dependabot.yml
 		Directory.Build.props = Directory.Build.props
 		Dotnet_cheatsheet.md = Dotnet_cheatsheet.md
-		kattbot-backup-db.sh = kattbot-backup-db.sh
-		kattbot-deploy.sh = kattbot-deploy.sh
-		kattbot.service = kattbot.service
+		deploy\kattbot-backup-db.sh = deploy\kattbot-backup-db.sh
+		deploy\kattbot-deploy.sh = deploy\kattbot-deploy.sh
+		deploy\kattbot.service = deploy\kattbot.service
 		Readme.md = Readme.md
 		.github\workflows\release.yml = .github\workflows\release.yml
 	EndProjectSection
