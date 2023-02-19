@@ -54,19 +54,7 @@ jobs:
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
         script: 'pwd && ls -lA && echo workspacedir: $GITHUB_WORKSPACE'
 
-    - name: Copy publish output to staging folder
-      uses: appleboy/scp-action@master
-      with:  
-        host: ${{secrets.VPS_HOST_NEW}}
-        port: ${{secrets.VPS_PORT}}
-        username: ${{secrets.KATTBOT_USER}}
-        key: ${{secrets.KATTBOT_KEY}}
-        passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
-        source: "/home/runner/work/Kattbot/Kattbot/publish-output/"
-        target: "/home/${{secrets.KATTBOT_USER}}/kattbot-staging"
-        rm: true
-
-    - name: Copy publish output to staging folder 2
+    - name: Copy publish output to staging folder 1
       uses: appleboy/scp-action@master
       with:  
         host: ${{secrets.VPS_HOST_NEW}}
@@ -75,7 +63,7 @@ jobs:
         key: ${{secrets.KATTBOT_KEY}}
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
         source: "publish-output/"
-        target: "/home/${{secrets.KATTBOT_USER}}/kattbot-staging2"
+        target: "/home/${{secrets.KATTBOT_USER}}/kattbot-staging"
         rm: true
 
     - name: Copy publish output to staging folder 3
@@ -88,7 +76,7 @@ jobs:
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
         source: "publish-output/"
         target: "/home/${{secrets.KATTBOT_USER}}/kattbot-staging3"
-        strip_components: 2
+        strip_components: 1
         rm: true
     
     - name: List dir 2
