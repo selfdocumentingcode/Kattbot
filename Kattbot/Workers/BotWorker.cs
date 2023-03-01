@@ -8,6 +8,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using Kattbot.CommandModules.TypeReaders;
 using Kattbot.EventHandlers;
+using Kattbot.NotificationHandlers;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -22,6 +23,7 @@ public class BotWorker : IHostedService
     private readonly IServiceProvider _serviceProvider;
     private readonly CommandEventHandler _commandEventHandler;
     private readonly EmoteEventHandler _emoteEventHandler;
+    private readonly EventQueueChannel _eventQueue;
 
     public BotWorker(
         IOptions<BotOptions> options,
@@ -29,7 +31,8 @@ public class BotWorker : IHostedService
         DiscordClient client,
         IServiceProvider serviceProvider,
         CommandEventHandler commandEventHandler,
-        EmoteEventHandler emoteEventHandler)
+        EmoteEventHandler emoteEventHandler,
+        EventQueueChannel eventQueue)
     {
         _options = options.Value;
         _logger = logger;
@@ -37,6 +40,7 @@ public class BotWorker : IHostedService
         _serviceProvider = serviceProvider;
         _commandEventHandler = commandEventHandler;
         _emoteEventHandler = emoteEventHandler;
+        _eventQueue = eventQueue;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -53,8 +57,6 @@ public class BotWorker : IHostedService
             EnableDefaultHelp = false,
         });
 
-        await _client.ConnectAsync();
-
         commands.RegisterConverter(new GenericArgumentConverter<StatsCommandArgs, StatsCommandArgsParser>());
         commands.RegisterCommands(Assembly.GetExecutingAssembly());
 
@@ -64,6 +66,10 @@ public class BotWorker : IHostedService
 
         _commandEventHandler.RegisterHandlers(commands);
         _emoteEventHandler.RegisterHandlers();
+
+        _client.MessageCreated += (sender, args) => _eventQueue.Writer.WriteAsync(new MessageCreatedNotification(args)).AsTask();
+
+        await _client.ConnectAsync();
     }
 
     private Task OnClientDisconnected(DiscordClient sender, SocketCloseEventArgs e)

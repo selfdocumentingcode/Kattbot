@@ -1,48 +1,68 @@
-﻿using Kattbot.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System;
 using System.Threading.Tasks;
+using Kattbot.Data;
 
-namespace Kattbot.Services
+namespace Kattbot.Services;
+
+public class GuildSettingsService
 {
-    public class GuildSettingsService
+    private static readonly string BotChannel = "BotChannel";
+    private static readonly string KattGptChannel = "KattGptChannel";
+
+    private readonly GuildSettingsRepository _guildSettingsRepo;
+    private readonly SharedCache _cache;
+
+    public GuildSettingsService(
+        GuildSettingsRepository guildSettingsRepo,
+        SharedCache cache)
     {
-        private readonly GuildSettingsRepository _guildSettingsRepo;
-        private readonly SharedCache _cache;
+        _guildSettingsRepo = guildSettingsRepo;
+        _cache = cache;
+    }
 
-        private static readonly string BotChannel = "BotChannel";
+    public async Task SetBotChannel(ulong guildId, ulong channelId)
+    {
+        await _guildSettingsRepo.SaveGuildSetting(guildId, BotChannel, channelId.ToString());
 
-        public GuildSettingsService(
-            GuildSettingsRepository guildSettingsRepo,
-            SharedCache cache
-            )
-        {
-            _guildSettingsRepo = guildSettingsRepo;
-            _cache = cache;
-        }
+        var cacheKey = string.Format(SharedCache.BotChannel, guildId);
 
-        public async Task SetBotChannel(ulong guildId, ulong channelId)
-        {
-            await _guildSettingsRepo.SaveGuildSetting(guildId, BotChannel, channelId.ToString());
+        _cache.FlushCache(cacheKey);
+    }
 
-            var cacheKey = string.Format(SharedCacheKeys.BotChannel, guildId);
+    public async Task<ulong?> GetBotChannelId(ulong guildId)
+    {
+        var cacheKey = string.Format(SharedCache.BotChannel, guildId);
 
-            _cache.FlushCache(cacheKey);
-        }
+        var channelId = await _cache.LoadFromCacheAsync(
+            cacheKey,
+            async () => await _guildSettingsRepo.GetGuildSetting(guildId, BotChannel),
+            TimeSpan.FromMinutes(10));
 
-        public async Task<ulong?> GetBotChannelId(ulong guildId)
-        {
-            var cacheKey = string.Format(SharedCacheKeys.BotChannel, guildId);
+        var parsed = ulong.TryParse(channelId, out var result);
 
-            var channelId = await _cache.LoadFromCacheAsync(cacheKey, async () =>
-                await _guildSettingsRepo.GetGuildSetting(guildId, BotChannel),
-                TimeSpan.FromMinutes(10));
+        return parsed ? result : null;
+    }
 
-            var parsed = ulong.TryParse(channelId, out var result);
+    public async Task SetKattGptChannel(ulong guildId, ulong channelId)
+    {
+        await _guildSettingsRepo.SaveGuildSetting(guildId, KattGptChannel, channelId.ToString());
 
-            return parsed ? (ulong?)result : null;
-        }
+        var cacheKey = string.Format(SharedCache.KattGptChannel, guildId);
+
+        _cache.FlushCache(cacheKey);
+    }
+
+    public async Task<ulong?> GetKattGptChannelId(ulong guildId)
+    {
+        var cacheKey = string.Format(SharedCache.KattGptChannel, guildId);
+
+        var channelId = await _cache.LoadFromCacheAsync(
+            cacheKey,
+            async () => await _guildSettingsRepo.GetGuildSetting(guildId, KattGptChannel),
+            TimeSpan.FromMinutes(10));
+
+        var parsed = ulong.TryParse(channelId, out var result);
+
+        return parsed ? result : null;
     }
 }

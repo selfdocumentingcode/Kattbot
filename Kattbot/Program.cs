@@ -8,6 +8,7 @@ using Kattbot.EventHandlers;
 using Kattbot.Helpers;
 using Kattbot.Services;
 using Kattbot.Services.Images;
+using Kattbot.Services.KattGpt;
 using Kattbot.Workers;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -31,14 +32,17 @@ public class Program
             .ConfigureServices((hostContext, services) =>
             {
                 services.Configure<BotOptions>(hostContext.Configuration.GetSection(BotOptions.OptionsKey));
+                services.Configure<KattGptOptions>(hostContext.Configuration.GetSection(KattGptOptions.OptionsKey));
 
                 services.AddHttpClient();
+                services.AddHttpClient<ChatGptHttpClient>();
 
                 services.AddMediatR(typeof(Program));
                 services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
                 services.AddSingleton<NotificationPublisher>();
 
                 services.AddSingleton<SharedCache>();
+                services.AddSingleton<KattGptCache>();
                 services.AddSingleton<PuppeteerFactory>();
 
                 AddWorkers(services);

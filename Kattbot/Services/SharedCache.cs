@@ -1,56 +1,95 @@
-﻿using Microsoft.Extensions.Caching.Memory;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
 
-namespace Kattbot.Services
+namespace Kattbot.Services;
+
+#pragma warning disable SA1402 // File may only contain a single type
+
+public abstract class SimpleMemoryCache
 {
-    public class SharedCache
+    private static readonly object Lock = new object();
+
+    private readonly MemoryCache _cache;
+
+    public SimpleMemoryCache(int cacheSize)
     {
-        private readonly MemoryCache _cache;
-
-        private static readonly object _lock = new object();
-
-        public SharedCache()
+        _cache = new MemoryCache(new MemoryCacheOptions()
         {
-            _cache = new MemoryCache(new MemoryCacheOptions()
+            SizeLimit = cacheSize,
+        });
+    }
+
+    public async Task<T> LoadFromCacheAsync<T>(string key, Func<Task<T>> delegateFunction, TimeSpan duration)
+    {
+        if (_cache.TryGetValue(key, out T value))
+            return value;
+
+        var loadedData = await delegateFunction();
+
+        lock (Lock)
+        {
+            _cache.Set(key, loadedData, new MemoryCacheEntryOptions()
             {
-                SizeLimit = 1024
+                AbsoluteExpirationRelativeToNow = duration,
+                Size = 1,
             });
-        }
 
-        public async Task<T> LoadFromCacheAsync<T>(string key, Func<Task<T>> delegateFunction, TimeSpan duration)
-        {
-            if (_cache.TryGetValue(key, out T value))
-                return value;
-
-            var loadedData = await delegateFunction();
-
-            lock (_lock)
-            {
-                _cache.Set(key, loadedData, new MemoryCacheEntryOptions()
-                {
-                    AbsoluteExpirationRelativeToNow = duration,
-                    Size = 1
-                });
-
-                return loadedData;
-            }
-        }
-
-        public void FlushCache(string key)
-        {
-            lock(_lock)
-            {
-                _cache.Remove(key);
-            }            
+            return loadedData;
         }
     }
 
-    public static class SharedCacheKeys
+    public void SetCache<T>(string key, T value, TimeSpan duration)
     {
-        public static string BotChannel => "BotChannel_%d";
+        lock (Lock)
+        {
+            _cache.Set(key, value, new MemoryCacheEntryOptions()
+            {
+                AbsoluteExpirationRelativeToNow = duration,
+                Size = 1,
+            });
+        }
+    }
+
+    public T? GetCache<T>(string key)
+    {
+        if (_cache.TryGetValue(key, out T value))
+            return value;
+
+        return default;
+    }
+
+    public void FlushCache(string key)
+    {
+        lock (Lock)
+        {
+            _cache.Remove(key);
+        }
+    }
+}
+
+public class SharedCache : SimpleMemoryCache
+{
+    public static string BotChannel => "BotChannel_%d";
+
+    public static string KattGptChannel => "KattGptChannel_%d";
+
+    private const int CacheSize = 1024;
+
+    public SharedCache()
+        : base(CacheSize)
+    {
+    }
+}
+
+public class KattGptCache : SimpleMemoryCache
+{
+    public static string CacheKey => "Messages";
+
+    private const int CacheSize = 20;
+
+    public KattGptCache()
+        : base(CacheSize)
+    {
     }
 }
