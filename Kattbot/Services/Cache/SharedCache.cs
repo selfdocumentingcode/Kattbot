@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace Kattbot.Services;
+namespace Kattbot.Services.Cache;
 
 #pragma warning disable SA1402 // File may only contain a single type
 
@@ -70,25 +70,13 @@ public abstract class SimpleMemoryCache
 
 public class SharedCache : SimpleMemoryCache
 {
+    private const int CacheSize = 1024;
+
     public static string BotChannel => "BotChannel_%d";
 
     public static string KattGptChannel => "KattGptChannel_%d";
 
-    private const int CacheSize = 1024;
-
     public SharedCache()
-        : base(CacheSize)
-    {
-    }
-}
-
-public class KattGptCache : SimpleMemoryCache
-{
-    public static string CacheKey => "Messages";
-
-    private const int CacheSize = 20;
-
-    public KattGptCache()
         : base(CacheSize)
     {
     }

@@ -13,6 +13,9 @@ namespace Kattbot.NotificationHandlers;
 
 public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotification>
 {
+    private const int CacheDurationMinutes = 60;
+    private const string ChatGptModel = "gpt-3.5-turbo";
+
     private readonly GuildSettingsService _guildSettingsService;
     private readonly ChatGptHttpClient _chatGpt;
     private readonly KattGptOptions _kattGptOptions;
@@ -61,23 +64,25 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
         messages.AddRange(systemPropmts.Select(promptMessage => new ChatCompletionMessage { Role = "system", Content = promptMessage }));
 
-        // Add previous messages from cache
-        var prevMessages = (_cache.GetCache<ChatCompletionMessage[]>(KattGptCache.CacheKey) ?? Array.Empty<ChatCompletionMessage>())
-                            .ToList();
+        var cacheKey = KattGptCache.MessageCacheKey(channel.Id);
 
-        messages.AddRange(prevMessages);
+        var messageCache = _cache.GetCache<KattGptMessageCacheQueue>(cacheKey) ?? new KattGptMessageCacheQueue();
+
+        // Add previous messages from cache
+        messages.AddRange(messageCache.GetAll());
 
         // Add new message from notification
         var newMessageContent = message.Content;
         var newMessageUser = author.GetNicknameOrUsername();
 
-        var newUserMessage = new ChatCompletionMessage { Role = "user", Content = $"[{newMessageUser}]: {newMessageContent}" };
+        var newUserMessage = new ChatCompletionMessage { Role = "user", Content = $"{newMessageUser}: {newMessageContent}" };
 
         messages.Add(newUserMessage);
 
+        // Make request
         var request = new ChatCompletionCreateRequest()
         {
-            Model = "gpt-3.5-turbo",
+            Model = ChatGptModel,
             Messages = messages.ToArray(),
         };
 
@@ -85,12 +90,14 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
         var responseMessage = response.Choices[0].Message;
 
+        // Send message to Discord channel
         await channel.SendMessageAsync(responseMessage.Content);
 
         // Cache user message and chat gpt response message
-        prevMessages.Add(newUserMessage);
-        prevMessages.Add(responseMessage);
+        messageCache.Enqueue(newUserMessage);
+        messageCache.Enqueue(responseMessage);
 
-        _cache.SetCache(KattGptCache.CacheKey, prevMessages.ToArray(), TimeSpan.FromMinutes(10));
+        // Cache message cache
+        _cache.SetCache(cacheKey, messageCache, TimeSpan.FromMinutes(CacheDurationMinutes));
     }
 }

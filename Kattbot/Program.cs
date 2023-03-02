@@ -7,6 +7,7 @@ using Kattbot.Data.Repositories;
 using Kattbot.EventHandlers;
 using Kattbot.Helpers;
 using Kattbot.Services;
+using Kattbot.Services.Cache;
 using Kattbot.Services.Images;
 using Kattbot.Services.KattGpt;
 using Kattbot.Workers;

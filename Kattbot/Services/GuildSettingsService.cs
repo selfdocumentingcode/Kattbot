@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Kattbot.Data;
+using Kattbot.Services.Cache;
 
 namespace Kattbot.Services;
 
