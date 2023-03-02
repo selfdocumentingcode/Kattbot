@@ -15,6 +15,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 {
     private const int CacheDurationMinutes = 60;
     private const string ChatGptModel = "gpt-3.5-turbo";
+    private const string MetaMessagePrefix = "msg";
 
     private readonly GuildSettingsService _guildSettingsService;
     private readonly ChatGptHttpClient _chatGpt;
@@ -52,7 +53,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
             return;
         }
 
-        if (message.Content.Contains("[meta]", StringComparison.OrdinalIgnoreCase))
+        if (message.Content.StartsWith(MetaMessagePrefix, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
