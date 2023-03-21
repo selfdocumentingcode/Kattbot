@@ -37,6 +37,7 @@ public class Program
 
                 services.AddHttpClient();
                 services.AddHttpClient<ChatGptHttpClient>();
+                services.AddHttpClient<DalleHttpClient>();
 
                 services.AddMediatR(typeof(Program));
                 services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
