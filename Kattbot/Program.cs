@@ -9,6 +9,7 @@ using Kattbot.Helpers;
 using Kattbot.Infrastructure;
 using Kattbot.Services;
 using Kattbot.Services.Cache;
+using Kattbot.Services.Dalle;
 using Kattbot.Services.Images;
 using Kattbot.Services.KattGpt;
 using Kattbot.Workers;
@@ -40,8 +41,11 @@ public class Program
                 services.AddHttpClient<ChatGptHttpClient>();
                 services.AddHttpClient<DalleHttpClient>();
 
-                services.AddMediatR(cfg => { cfg.RegisterServicesFromAssemblyContaining<Program>(); });
-                services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
+                services.AddMediatR(cfg =>
+                {
+                    cfg.RegisterServicesFromAssemblyContaining<Program>();
+                    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
+                });
                 services.AddSingleton<NotificationPublisher>();
 
                 services.AddSingleton<SharedCache>();

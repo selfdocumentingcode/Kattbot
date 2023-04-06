@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Kattbot.Services.KattGpt;
+namespace Kattbot.Services.Dalle;
 
 public record CreateImageRequest
 {
@@ -26,7 +26,7 @@ public record CreateImageRequest
     /// https://platform.openai.com/docs/api-reference/images/create#images/create-size.
     /// </summary>
     [JsonPropertyName("size")]
-    public string? Size { get; set; } = null!;
+    public string? Size { get; set; }
 
     /// <summary>
     /// Gets or sets the format in which the generated images are returned. Must be one of url or b64_json.
@@ -34,7 +34,7 @@ public record CreateImageRequest
     /// https://platform.openai.com/docs/api-reference/images/create#images/create-response_format.
     /// </summary>
     [JsonPropertyName("response_format")]
-    public string? ResponseFormat { get; set; } = null!;
+    public string? ResponseFormat { get; set; }
 
     /// <summary>
     /// Gets or sets a unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
@@ -56,4 +56,25 @@ public record ImageResponseUrlData
 {
     [JsonPropertyName("url")]
     public string Url { get; set; } = null!;
+}
+
+public record ImageResponseErrorWrapper
+{
+    [JsonPropertyName("error")]
+    public ImageResponseError Error { get; set; } = null!;
+}
+
+public record ImageResponseError
+{
+    [JsonPropertyName("code")]
+    public string Code { get; set; } = null!;
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; } = null!;
+
+    [JsonPropertyName("param")]
+    public string Param { get; set; } = null!;
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = null!;
 }

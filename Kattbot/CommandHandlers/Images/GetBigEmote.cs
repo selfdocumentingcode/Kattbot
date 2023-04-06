@@ -47,25 +47,25 @@ public class GetBigEmoteHandler : IRequestHandler<GetBigEmoteRequest>
 
         string url = emoji.GetEmojiImageUrl();
 
-        using ImageResult imageResult = await _imageService.LoadImage(url);
+        using var image = await _imageService.DownloadImage(url);
 
         ImageStreamResult imageStreamResult;
 
         if (effect == GetBigEmoteRequest.EffectDeepFry)
         {
             uint scaleFactor = request.ScaleFactor.HasValue ? request.ScaleFactor.Value : 2;
-            imageStreamResult = await _imageService.DeepFryImage(imageResult, scaleFactor);
+            imageStreamResult = await _imageService.DeepFryImage(image, scaleFactor);
         }
         else if (effect == GetBigEmoteRequest.EffectOilPaint)
         {
             uint scaleFactor = request.ScaleFactor.HasValue ? request.ScaleFactor.Value : 2;
-            imageStreamResult = await _imageService.OilPaintImage(imageResult, scaleFactor);
+            imageStreamResult = await _imageService.OilPaintImage(image, scaleFactor);
         }
         else
         {
             imageStreamResult = hasScaleFactor
-                ? await _imageService.ScaleImage(imageResult, request.ScaleFactor!.Value)
-                : await _imageService.GetImageStream(imageResult);
+                ? await _imageService.ScaleImage(image, request.ScaleFactor!.Value)
+                : await _imageService.GetImageStream(image);
         }
 
         MemoryStream imageStream = imageStreamResult.MemoryStream;

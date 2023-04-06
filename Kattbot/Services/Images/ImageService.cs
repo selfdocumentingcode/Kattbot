@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -29,14 +28,12 @@ public class ImageService
         _httpClientFactory = httpClientFactory;
     }
 
-    public static ImageResult LoadImage(byte[] sourceImageBytes)
+    public static Image LoadImage(byte[] imageBytes)
     {
-        var image = Image.Load(sourceImageBytes, out IImageFormat? format);
-
-        return format == null ? throw new Exception("Invalid image format") : new ImageResult(image, format);
+        return Image.Load(imageBytes);
     }
 
-    public async Task<ImageResult> LoadImage(string url)
+    public async Task<Image> DownloadImage(string url)
     {
         byte[] imageBytes;
 
@@ -46,9 +43,9 @@ public class ImageService
 
             imageBytes = await client.GetByteArrayAsync(url);
 
-            ImageResult imageResult = LoadImage(imageBytes);
+            var image = Image.Load(imageBytes);
 
-            return imageResult;
+            return image;
         }
         catch (HttpRequestException)
         {
@@ -60,22 +57,18 @@ public class ImageService
         }
     }
 
-    public Task<ImageStreamResult> ScaleImage(ImageResult imageResult, uint scaleFactor)
+    public Task<ImageStreamResult> ScaleImage(Image image, uint scaleFactor)
     {
-        Image image = imageResult.Image;
-
         int newWidth = image.Width * (int)scaleFactor;
         int newHeight = image.Height * (int)scaleFactor;
 
         image.Mutate(i => i.Resize(newWidth, newHeight, KnownResamplers.Hermite));
 
-        return GetImageStream(imageResult);
+        return GetImageStream(image);
     }
 
-    public Task<ImageStreamResult> DeepFryImage(ImageResult imageResult, uint scaleFactor)
+    public Task<ImageStreamResult> DeepFryImage(Image image, uint scaleFactor)
     {
-        Image image = imageResult.Image;
-
         int newWidth = image.Width * (int)scaleFactor;
         int newHeight = image.Height * (int)scaleFactor;
 
@@ -88,13 +81,11 @@ public class ImageService
             i.Saturate(5f);
         });
 
-        return GetImageStream(imageResult);
+        return GetImageStream(image);
     }
 
-    public Task<ImageStreamResult> OilPaintImage(ImageResult imageResult, uint scaleFactor)
+    public Task<ImageStreamResult> OilPaintImage(Image image, uint scaleFactor)
     {
-        Image image = imageResult.Image;
-
         int newWidth = image.Width * (int)scaleFactor;
         int newHeight = image.Height * (int)scaleFactor;
 
@@ -106,13 +97,11 @@ public class ImageService
             i.OilPaint(paintLevel, paintLevel);
         });
 
-        return GetImageStream(imageResult);
+        return GetImageStream(image);
     }
 
-    public ImageResult CropImageToCircle(ImageResult imageResult)
+    public Image CropImageToCircle(Image image)
     {
-        Image image = imageResult.Image;
-
         var ellipsePath = new EllipsePolygon(image.Width / 2, image.Height / 2, image.Width, image.Height);
 
         var cloned = image.Clone(i =>
@@ -126,21 +115,14 @@ public class ImageService
             i.Fill(Color.Red, ellipsePath);
         });
 
-        return new ImageResult(cloned, imageResult.Format);
+        return cloned;
     }
 
     public async Task<ImageStreamResult> CombineImages(string[] base64Images)
     {
         IEnumerable<byte[]> bytesImages = base64Images.Select(Convert.FromBase64String);
 
-        IImageFormat? format = null;
-
-        var images = bytesImages.Select(x => Image.Load(x, out format)).ToList();
-
-        if (format == null)
-        {
-            throw new InvalidOperationException("Something went wrong");
-        }
+        var images = bytesImages.Select(x => Image.Load(x)).ToList();
 
         // Assume all images have the same size. If this turns out to not be true,
         // might have to upscale/downscale them to get them to be the same size.
@@ -167,20 +149,14 @@ public class ImageService
             outputImage.Mutate(x => x.DrawImage(image, new Point(positionX, positionY), 1f));
         }
 
-        ImageStreamResult outputImageStream = await GetImageStream(outputImage, format);
+        ImageStreamResult outputImageStream = await GetImageStream(outputImage);
 
         return outputImageStream;
     }
 
-    public Task<ImageStreamResult> GetImageStream(ImageResult imageResult)
+    public async Task<string> SaveImageToTempPath(Image image, string filename)
     {
-        return GetImageStream(imageResult.Image, imageResult.Format);
-    }
-
-    public async Task<string> SaveImageToTempPath(ImageResult imageResult, string filename)
-    {
-        var image = imageResult.Image;
-        var format = imageResult.Format;
+        var format = image.Metadata.GetFormatOrDefault();
 
         string extensionName = format.FileExtensions.First();
 
@@ -193,9 +169,11 @@ public class ImageService
         return tempFilePath;
     }
 
-    private async Task<ImageStreamResult> GetImageStream(Image image, IImageFormat format)
+    public async Task<ImageStreamResult> GetImageStream(Image image)
     {
         var outputStream = new MemoryStream();
+
+        var format = image.Metadata.GetFormatOrDefault();
 
         string extensionName = format.FileExtensions.First();
 
@@ -221,14 +199,6 @@ public class ImageService
             "webp" => new WebpEncoder(),
             _ => throw new ArgumentException($"Unknown filetype: {fileType}"),
         };
-    }
-}
-
-public record ImageResult(Image Image, IImageFormat Format) : IDisposable
-{
-    public void Dispose()
-    {
-        Image.Dispose();
     }
 }
 

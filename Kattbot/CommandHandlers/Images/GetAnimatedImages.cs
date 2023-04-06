@@ -56,15 +56,15 @@ public class GetAnimatedImagesHandlers : IRequestHandler<GetAnimatedEmoji>,
         string url = emoji.GetEmojiImageUrl();
         string imageName = emoji.Id != 0 ? emoji.Id.ToString() : emoji.Name;
 
-        using ImageResult inputImageResult = await _imageService.LoadImage(url);
+        using var image = await _imageService.DownloadImage(url);
 
-        string imagePath = await _imageService.SaveImageToTempPath(inputImageResult, imageName);
+        string imagePath = await _imageService.SaveImageToTempPath(image, imageName);
 
         byte[] animatedEmojiBytes = await _petPetClient.PetPet(imagePath, request.Speed);
 
-        using ImageResult outputImageResult = ImageService.LoadImage(animatedEmojiBytes);
+        using var outputImage = ImageService.LoadImage(animatedEmojiBytes);
 
-        ImageStreamResult imageStreamResult = await _imageService.GetImageStream(outputImageResult);
+        ImageStreamResult imageStreamResult = await _imageService.GetImageStream(outputImage);
 
         var responseBuilder = new DiscordMessageBuilder();
 
@@ -96,17 +96,17 @@ public class GetAnimatedImagesHandlers : IRequestHandler<GetAnimatedEmoji>,
         // TODO find a nicer filename
         string imageName = user.Id.ToString();
 
-        using ImageResult inputImageResult = await _imageService.LoadImage(avatarUrl);
+        using var inputImage = await _imageService.DownloadImage(avatarUrl);
 
-        ImageResult croppedImageResult = _imageService.CropImageToCircle(inputImageResult);
+        var croppedImage = _imageService.CropImageToCircle(inputImage);
 
-        string imagePath = await _imageService.SaveImageToTempPath(croppedImageResult, imageName);
+        string imagePath = await _imageService.SaveImageToTempPath(croppedImage, imageName);
 
         byte[] animatedEmojiBytes = await _petPetClient.PetPet(imagePath, request.Speed);
 
-        using ImageResult outputImageResult = ImageService.LoadImage(animatedEmojiBytes);
+        using var outputImage = ImageService.LoadImage(animatedEmojiBytes);
 
-        ImageStreamResult imageStreamResult = await _imageService.GetImageStream(outputImageResult);
+        ImageStreamResult imageStreamResult = await _imageService.GetImageStream(outputImage);
 
         var responseBuilder = new DiscordMessageBuilder();
 

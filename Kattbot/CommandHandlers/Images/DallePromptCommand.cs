@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using Kattbot.Services.Dalle;
 using Kattbot.Services.Images;
-using Kattbot.Services.KattGpt;
 using MediatR;
 
 namespace Kattbot.CommandHandlers.Images;
@@ -45,11 +46,14 @@ public class DallePromptCommandHandler : IRequestHandler<DallePromptCommand>
 
             var imageUrl = response.Data.First();
 
-            var image = await _imageService.LoadImage(imageUrl.Url);
+            var image = await _imageService.DownloadImage(imageUrl.Url);
 
             var imageStream = await _imageService.GetImageStream(image);
 
-            string safeFileName = new(request.Prompt.Select(c => char.IsLetterOrDigit(c) ? c : '_').ToArray());
+            string safeFileName = new(Encoding.ASCII.GetString(Encoding.ASCII.GetBytes(request.Prompt))
+                                    .Select(c => char.IsLetterOrDigit(c) ? c : '_')
+                                    .ToArray());
+
             string fileName = $"{safeFileName}.{imageStream.FileExtension}";
 
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder()

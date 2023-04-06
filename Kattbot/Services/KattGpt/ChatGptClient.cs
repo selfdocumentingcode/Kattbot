@@ -1,9 +1,11 @@
 ﻿using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Kattbot.Services.Dalle;
 using Microsoft.Extensions.Options;
 
 namespace Kattbot.Services.KattGpt;
@@ -23,26 +25,34 @@ public class ChatGptHttpClient
 
     public async Task<ChatCompletionCreateResponse> ChatCompletionCreate(ChatCompletionCreateRequest request)
     {
-        JsonSerializerOptions opts = new JsonSerializerOptions() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
+        var opts = new JsonSerializerOptions() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
 
-        var response = await _client.PostAsJsonAsync("completions", request, opts);
+        HttpResponseMessage? response;
+        Stream? responseContentStream = null;
 
         try
         {
+            response = await _client.PostAsJsonAsync("completions", request, opts);
+
+            responseContentStream = await response.Content.ReadAsStreamAsync();
+
             response.EnsureSuccessStatusCode();
 
-            var jsonStream = await response.Content.ReadAsStreamAsync();
-
-            var parsedResponse = (await JsonSerializer.DeserializeAsync<ChatCompletionCreateResponse>(jsonStream))
+            var parsedResponse = await JsonSerializer.DeserializeAsync<ChatCompletionCreateResponse>(responseContentStream)
                                 ?? throw new Exception("Failed to parse response");
 
             return parsedResponse;
         }
-        catch (Exception)
+        catch (HttpRequestException) when (responseContentStream != null)
         {
-            var errorMessage = await response.Content.ReadAsStringAsync();
+            var parsedResponse = await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(responseContentStream)
+                                ?? throw new Exception("Failed to parse error response");
 
-            throw new Exception($"HTTP {response.StatusCode}: {errorMessage}");
+            throw new Exception(parsedResponse.Error.Message);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new Exception($"HTTP {ex.StatusCode}: {ex.Message}");
         }
     }
 }

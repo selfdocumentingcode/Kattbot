@@ -41,12 +41,10 @@ public class PetTests
 
         var imageService = new ImageService(null!);
 
-        using var image = Image.Load(inputFile, out IImageFormat? format);
+        using var image = Image.Load(inputFile);
 
-        var imageResult = new ImageResult(image, format);
+        var croppedImage = imageService.CropImageToCircle(image);
 
-        ImageResult croppedImageResult = imageService.CropImageToCircle(imageResult);
-
-        await croppedImageResult.Image.SaveAsPngAsync(ouputFile);
+        await croppedImage.SaveAsPngAsync(ouputFile);
     }
 }

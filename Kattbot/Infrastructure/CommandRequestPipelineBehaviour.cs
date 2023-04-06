@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 namespace Kattbot.Infrastructure;
 
 public class CommandRequestPipelineBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+    where TRequest : notnull
 {
     private readonly ILogger<CommandRequestPipelineBehaviour<TRequest, TResponse>> _logger;
     private readonly DiscordErrorLogger _discordErrorLogger;
