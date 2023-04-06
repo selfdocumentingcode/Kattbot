@@ -29,8 +29,7 @@ public class GetBigEmoteRequest : CommandRequest
 }
 
 #pragma warning disable SA1402 // File may only contain a single type
-public class GetBigEmoteHandler : AsyncRequestHandler<GetBigEmoteRequest>
-#pragma warning restore SA1402 // File may only contain a single type
+public class GetBigEmoteHandler : IRequestHandler<GetBigEmoteRequest>
 {
     private readonly ImageService _imageService;
 
@@ -39,7 +38,7 @@ public class GetBigEmoteHandler : AsyncRequestHandler<GetBigEmoteRequest>
         _imageService = imageService;
     }
 
-    protected override async Task Handle(GetBigEmoteRequest request, CancellationToken cancellationToken)
+    public async Task Handle(GetBigEmoteRequest request, CancellationToken cancellationToken)
     {
         CommandContext ctx = request.Ctx;
         DiscordEmoji emoji = request.Emoji;

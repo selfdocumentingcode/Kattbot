@@ -28,7 +28,7 @@ public class GetEmoteStats
         }
     }
 
-    public class GetEmoteStatsHandler : AsyncRequestHandler<GetEmoteStatsRequest>
+    public class GetEmoteStatsHandler : IRequestHandler<GetEmoteStatsRequest>
     {
         private const int MaxUserCount = 10;
 
@@ -40,7 +40,7 @@ public class GetEmoteStats
             _emoteStatsRepo = emoteStatsRepo;
         }
 
-        protected override async Task Handle(GetEmoteStatsRequest request, CancellationToken cancellationToken)
+        public async Task Handle(GetEmoteStatsRequest request, CancellationToken cancellationToken)
         {
             CommandContext ctx = request.Ctx;
             TempEmote emote = request.Emote;

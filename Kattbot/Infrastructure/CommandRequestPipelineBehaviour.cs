@@ -3,12 +3,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using Kattbot.CommandHandlers;
 using Kattbot.Helpers;
 using Kattbot.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace Kattbot.CommandHandlers;
+namespace Kattbot.Infrastructure;
 
 public class CommandRequestPipelineBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
@@ -27,7 +28,7 @@ public class CommandRequestPipelineBehaviour<TRequest, TResponse> : IPipelineBeh
         _guildSettingsService = guildSettingsService;
     }
 
-    public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
         try
         {

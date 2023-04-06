@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Kattbot.Infrastructure;
 using Kattbot.NotificationHandlers;
 using Kattbot.Services;
 using MediatR;

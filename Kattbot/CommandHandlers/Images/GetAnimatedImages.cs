@@ -48,7 +48,7 @@ public class GetAnimatedImagesHandlers : IRequestHandler<GetAnimatedEmoji>,
         _logger = logger;
     }
 
-    public async Task<Unit> Handle(GetAnimatedEmoji request, CancellationToken cancellationToken)
+    public async Task Handle(GetAnimatedEmoji request, CancellationToken cancellationToken)
     {
         CommandContext ctx = request.Ctx;
         DiscordEmoji emoji = request.Emoji;
@@ -71,11 +71,9 @@ public class GetAnimatedImagesHandlers : IRequestHandler<GetAnimatedEmoji>,
         responseBuilder.AddFile($"{imageName}.{imageStreamResult.FileExtension}", imageStreamResult.MemoryStream);
 
         await ctx.RespondAsync(responseBuilder);
-
-        return Unit.Value;
     }
 
-    public async Task<Unit> Handle(GetAnimatedUserAvatar request, CancellationToken cancellationToken)
+    public async Task Handle(GetAnimatedUserAvatar request, CancellationToken cancellationToken)
     {
         CommandContext ctx = request.Ctx;
         DiscordUser user = request.User;
@@ -115,8 +113,6 @@ public class GetAnimatedImagesHandlers : IRequestHandler<GetAnimatedEmoji>,
         responseBuilder.AddFile($"{imageName}.{imageStreamResult.FileExtension}", imageStreamResult.MemoryStream);
 
         await ctx.RespondAsync(responseBuilder);
-
-        return Unit.Value;
     }
 
     private Task<DiscordMember?> ResolveGuildMember(DiscordGuild guild, ulong userId)

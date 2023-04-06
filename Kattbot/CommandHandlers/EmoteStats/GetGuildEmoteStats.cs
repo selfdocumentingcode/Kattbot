@@ -31,7 +31,7 @@ public class GetGuildEmoteStats
         }
     }
 
-    public class GetGuildEmoteStatsHandler : AsyncRequestHandler<GetGuildEmoteStatsRequest>
+    public class GetGuildEmoteStatsHandler : IRequestHandler<GetGuildEmoteStatsRequest>
     {
         private const int _resultsPerPage = 10;
 
@@ -43,7 +43,7 @@ public class GetGuildEmoteStats
             _emoteStatsRepo = emoteStatsRepo;
         }
 
-        protected override async Task Handle(GetGuildEmoteStatsRequest request, CancellationToken cancellationToken)
+        public async Task Handle(GetGuildEmoteStatsRequest request, CancellationToken cancellationToken)
         {
             CommandContext ctx = request.Ctx;
             int page = request.Page;

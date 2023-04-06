@@ -8,6 +8,7 @@ Type=notify
 ExecStart=/home/kattbot-user/kattbot/Kattbot
 WorkingDirectory=/home/kattbot-user/kattbot
 Environment=DOTNET_ENVIRONMENT=Production
+Environment=DOTNET_ROOT=/usr/share/dotnet
 Restart=on-failure
 RestartSec=1s
 

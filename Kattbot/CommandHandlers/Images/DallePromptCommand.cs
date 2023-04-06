@@ -22,7 +22,7 @@ public class DallePromptCommand : CommandRequest
     }
 }
 
-public class DallePromptCommandHandler : AsyncRequestHandler<DallePromptCommand>
+public class DallePromptCommandHandler : IRequestHandler<DallePromptCommand>
 {
     private readonly DalleHttpClient _dalleHttpClient;
     private readonly ImageService _imageService;
@@ -33,7 +33,7 @@ public class DallePromptCommandHandler : AsyncRequestHandler<DallePromptCommand>
         _imageService = imageService;
     }
 
-    protected override async Task Handle(DallePromptCommand request, CancellationToken cancellationToken)
+    public async Task Handle(DallePromptCommand request, CancellationToken cancellationToken)
     {
         DiscordMessage message = await request.Ctx.RespondAsync("Working on it");
 

@@ -6,6 +6,7 @@ using Kattbot.Data;
 using Kattbot.Data.Repositories;
 using Kattbot.EventHandlers;
 using Kattbot.Helpers;
+using Kattbot.Infrastructure;
 using Kattbot.Services;
 using Kattbot.Services.Cache;
 using Kattbot.Services.Images;
@@ -39,7 +40,7 @@ public class Program
                 services.AddHttpClient<ChatGptHttpClient>();
                 services.AddHttpClient<DalleHttpClient>();
 
-                services.AddMediatR(typeof(Program));
+                services.AddMediatR(cfg => { cfg.RegisterServicesFromAssemblyContaining<Program>(); });
                 services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
                 services.AddSingleton<NotificationPublisher>();
 
