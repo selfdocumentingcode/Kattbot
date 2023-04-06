@@ -52,7 +52,7 @@ namespace Kattbot.CommandModules
 
             var hasRole = await _botUserRolesRepo.UserHasRole(userId, friendRole);
 
-            if(hasRole)
+            if (hasRole)
             {
                 await ctx.RespondAsync("User already has role");
                 return;
@@ -92,6 +92,17 @@ namespace Kattbot.CommandModules
             await _guildSettingsService.SetBotChannel(guildId, channelId);
 
             await ctx.RespondAsync($"Set bot channel to #{channel.Name}");
+        }
+
+        [Command("set-kattgpt-channel")]
+        public async Task SetKattGptChannel(CommandContext ctx, DiscordChannel channel)
+        {
+            var channelId = channel.Id;
+            var guildId = channel.GuildId!.Value;
+
+            await _guildSettingsService.SetKattGptChannel(guildId, channelId);
+
+            await ctx.RespondAsync($"Set KattGpt channel to #{channel.Name}");
         }
     }
 }

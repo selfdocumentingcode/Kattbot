@@ -15,20 +15,16 @@ tab_width = 4
 end_of_line = crlf
 insert_final_newline = true
 
-#### .NET Coding Conventions ####
-
-# Organize usings
-dotnet_separate_import_directive_groups                         = false
-dotnet_sort_system_directives_first                             = true
-
-#### C# Coding Conventions ####
-
-# Code-block preferences
-csharp_style_namespace_declarations                             = file_scoped
+# Visual Studio
+csharp_style_namespace_declarations=file_scoped   # Use file scoped namespace by default for new class files
 
 ### Naming styles ###
 
 # Naming rules
+
+dotnet_naming_rule.private_or_internal_static_field_should_be_pascal_case.severity = warning
+dotnet_naming_rule.private_or_internal_static_field_should_be_pascal_case.symbols = private_or_internal_static_field
+dotnet_naming_rule.private_or_internal_static_field_should_be_pascal_case.style = pascal_case
 
 dotnet_naming_rule.private_or_internal_field_should_be__fieldname.severity = suggestion
 dotnet_naming_rule.private_or_internal_field_should_be__fieldname.symbols = private_or_internal_field
@@ -38,7 +34,15 @@ dotnet_naming_rule.local_should_be_camelcase.severity = warning
 dotnet_naming_rule.local_should_be_camelcase.symbols = local
 dotnet_naming_rule.local_should_be_camelcase.style = camelcase
 
+dotnet_naming_rule.constant_field_should_be_pascal_case.severity = warning
+dotnet_naming_rule.constant_field_should_be_pascal_case.symbols = constant_field
+dotnet_naming_rule.constant_field_should_be_pascal_case.style = pascal_case
+
 # Symbol specifications
+
+dotnet_naming_symbols.private_or_internal_static_field.applicable_kinds = field
+dotnet_naming_symbols.private_or_internal_static_field.applicable_accessibilities = internal, private, private_protected
+dotnet_naming_symbols.private_or_internal_static_field.required_modifiers = static
 
 dotnet_naming_symbols.private_or_internal_field.applicable_kinds = field
 dotnet_naming_symbols.private_or_internal_field.applicable_accessibilities = internal, private, private_protected
@@ -47,6 +51,10 @@ dotnet_naming_symbols.private_or_internal_field.required_modifiers =
 dotnet_naming_symbols.local.applicable_kinds = local
 dotnet_naming_symbols.local.applicable_accessibilities = local
 dotnet_naming_symbols.local.required_modifiers = 
+
+dotnet_naming_symbols.constant_field.applicable_kinds = field
+dotnet_naming_symbols.constant_field.applicable_accessibilities = *
+dotnet_naming_symbols.constant_field.required_modifiers = const
 
 # Naming styles
 
@@ -59,6 +67,11 @@ dotnet_naming_style.camelcase.required_prefix =
 dotnet_naming_style.camelcase.required_suffix = 
 dotnet_naming_style.camelcase.word_separator = 
 dotnet_naming_style.camelcase.capitalization = camel_case
+
+dotnet_naming_style.pascal_case.required_prefix = 
+dotnet_naming_style.pascal_case.required_suffix = 
+dotnet_naming_style.pascal_case.word_separator = 
+dotnet_naming_style.pascal_case.capitalization = pascal_case
 
 ### Stylecop rules ###
 

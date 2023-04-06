@@ -115,10 +115,6 @@ public class ImageService
 
         var ellipsePath = new EllipsePolygon(image.Width / 2, image.Height / 2, image.Width, image.Height);
 
-        //var squarePath = new RectangularPolygon(0, 0, image.Width, image.Height);
-
-        //var clippedSquare = squarePath.Clip(ellipsePath);
-
         var cloned = image.Clone(i =>
         {
             i.SetGraphicsOptions(new GraphicsOptions()
@@ -127,7 +123,6 @@ public class ImageService
                 AlphaCompositionMode = PixelAlphaCompositionMode.DestIn,
             });
 
-            //i.Fill(Color.Red, clippedSquare);
             i.Fill(Color.Red, ellipsePath);
         });
 

@@ -36,7 +36,14 @@ public class DiscordLoggerWorker : BackgroundService
 
                 if (logChannel != null)
                 {
-                    await logChannel.SendMessageAsync(logItem.Message);
+                    try
+                    {
+                        await logChannel.SendMessageAsync(logItem.Message);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "{Error}", ex.Message);
+                    }
                 }
 
                 _logger.LogDebug("Dequeued (parallel) command. {RemainingMessageCount} left in queue", _channel.Reader.Count);

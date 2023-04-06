@@ -23,6 +23,7 @@ jobs:
       env:
         CONNECTION_STRING: ${{secrets.DB_CONNECTION_STRING}}
         BOT_TOKEN: ${{secrets.BOT_TOKEN}}
+        OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
     
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v3
