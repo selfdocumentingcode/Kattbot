@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AI.Dev.OpenAI.GPT;
 using DSharpPlus.Entities;
 using Kattbot.Helpers;
 using Kattbot.Services;
@@ -14,20 +15,20 @@ namespace Kattbot.NotificationHandlers;
 
 public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotification>
 {
-    private const int CacheDurationMinutes = 60;
     private const string ChatGptModel = "gpt-3.5-turbo";
     private const string MetaMessagePrefix = "msg";
+    private const int MaxTokensPerRequest = 2048;
 
     private readonly GuildSettingsService _guildSettingsService;
     private readonly ChatGptHttpClient _chatGpt;
     private readonly KattGptOptions _kattGptOptions;
-    private readonly KattGptCache _cache;
+    private readonly KattGptChannelCache _cache;
 
     public KattGptMessageHandler(
         GuildSettingsService guildSettingsService,
         ChatGptHttpClient chatGpt,
         IOptions<KattGptOptions> kattGptOptions,
-        KattGptCache cache)
+        KattGptChannelCache cache)
     {
         _guildSettingsService = guildSettingsService;
         _chatGpt = chatGpt;
@@ -47,19 +48,22 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
             return;
         }
 
-        var messages = new List<ChatCompletionMessage>();
-
-        // Add system prompt messages
+        // Get system prompt messages
         var systemPropmts = _kattGptOptions.SystemPrompts;
+        var systemPromptsMessages = systemPropmts.Select(promptMessage => new ChatCompletionMessage { Role = "system", Content = promptMessage });
 
-        messages.AddRange(systemPropmts.Select(promptMessage => new ChatCompletionMessage { Role = "system", Content = promptMessage }));
+        // Get or create bounded queue
+        var cacheKey = KattGptChannelCache.KattGptChannelCacheKey(channel.Id);
+        var boundedMessageQueue = _cache.GetCache(cacheKey);
 
-        var cacheKey = KattGptCache.MessageCacheKey(channel.Id);
+        if (boundedMessageQueue == null)
+        {
+            var totalTokenCountForSystemMessages = systemPropmts.Sum(m => GPT3Tokenizer.Encode(m).Count);
 
-        var messageCache = _cache.GetCache<KattGptMessageCacheQueue>(cacheKey) ?? new KattGptMessageCacheQueue();
+            var remainingTokensForContextMessages = MaxTokensPerRequest - totalTokenCountForSystemMessages;
 
-        // Add previous messages from cache
-        messages.AddRange(messageCache.GetAll());
+            boundedMessageQueue = new BoundedQueue<ChatCompletionMessage>(remainingTokensForContextMessages);
+        }
 
         // Add new message from notification
         var newMessageContent = message.Content;
@@ -67,28 +71,32 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
         var newUserMessage = new ChatCompletionMessage { Role = "user", Content = $"{newMessageUser}: {newMessageContent}" };
 
-        messages.Add(newUserMessage);
+        boundedMessageQueue.Enqueue(newUserMessage, GPT3Tokenizer.Encode(newUserMessage.Content).Count);
+
+        // Collect request messages
+        var requestMessages = new List<ChatCompletionMessage>();
+        requestMessages.AddRange(systemPromptsMessages);
+        requestMessages.AddRange(boundedMessageQueue.GetAll());
 
         // Make request
         var request = new ChatCompletionCreateRequest()
         {
             Model = ChatGptModel,
-            Messages = messages.ToArray(),
+            Messages = requestMessages.ToArray(),
         };
 
         var response = await _chatGpt.ChatCompletionCreate(request);
 
         var responseMessage = response.Choices[0].Message;
 
-        // Send message to Discord channel
-        await channel.SendMessageAsync(responseMessage.Content);
+        // Reply to user
+        await message.RespondAsync(responseMessage.Content);
 
-        // Cache user message and chat gpt response message
-        messageCache.Enqueue(newUserMessage);
-        messageCache.Enqueue(responseMessage);
+        // Add the chat gpt response message to the bounded queue
+        boundedMessageQueue.Enqueue(responseMessage, GPT3Tokenizer.Encode(responseMessage.Content).Count);
 
-        // Cache message cache
-        _cache.SetCache(cacheKey, messageCache, TimeSpan.FromMinutes(CacheDurationMinutes));
+        // Cache the message queue
+        _cache.SetCache(cacheKey, boundedMessageQueue);
     }
 
     private async Task<bool> ShouldHandleMessage(DiscordMessage message, DiscordUser author, DiscordChannel channel)
@@ -99,7 +107,6 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         }
 
         var kattGptChannelId = await _guildSettingsService.GetKattGptChannelId(channel.Guild.Id);
-
         var channelIsKattGptChannel = !(kattGptChannelId == null || kattGptChannelId != channel.Id);
 
         if (channelIsKattGptChannel)
@@ -108,7 +115,11 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
             return !isMetaMessage;
         }
-        else
+
+        var kattGptishChannelId = await _guildSettingsService.GetKattGptishChannelId(channel.Guild.Id);
+        var channelIsKattGptishChannel = !(kattGptishChannelId == null || kattGptishChannelId != channel.Id);
+
+        if (channelIsKattGptishChannel)
         {
             var messageIsReplyToKattbot = message.ReferencedMessage?.Author?.IsCurrent ?? false;
 

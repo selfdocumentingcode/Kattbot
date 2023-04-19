@@ -49,7 +49,7 @@ public class Program
                 services.AddSingleton<NotificationPublisher>();
 
                 services.AddSingleton<SharedCache>();
-                services.AddSingleton<KattGptCache>();
+                services.AddSingleton<KattGptChannelCache>();
                 services.AddSingleton<PuppeteerFactory>();
 
                 AddWorkers(services);
@@ -73,8 +73,8 @@ public class Program
     {
         services.AddSingleton((_) =>
         {
-            string defaultLogLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
-            string botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken");
+            var defaultLogLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default") ?? "Warning";
+            var botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken");
 
             LogLevel logLevel = Enum.Parse<LogLevel>(defaultLogLevel);
 
@@ -97,8 +97,8 @@ public class Program
         services.AddDbContext<KattbotContext>(
                             builder =>
                             {
-                                string dbConnString = hostContext.Configuration.GetValue<string>("Kattbot:ConnectionString");
-                                string logLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
+                                var dbConnString = hostContext.Configuration.GetValue<string>("Kattbot:ConnectionString");
+                                var logLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
 
                                 builder.EnableSensitiveDataLogging(logLevel == "Debug");
 

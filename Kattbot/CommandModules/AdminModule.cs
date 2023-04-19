@@ -104,5 +104,16 @@ namespace Kattbot.CommandModules
 
             await ctx.RespondAsync($"Set KattGpt channel to #{channel.Name}");
         }
+
+        [Command("set-kattgptish-channel")]
+        public async Task SetKattGptishChannel(CommandContext ctx, DiscordChannel channel)
+        {
+            var channelId = channel.Id;
+            var guildId = channel.GuildId!.Value;
+
+            await _guildSettingsService.SetKattGptishChannel(guildId, channelId);
+
+            await ctx.RespondAsync($"Set KattGptish channel to #{channel.Name}");
+        }
     }
 }
