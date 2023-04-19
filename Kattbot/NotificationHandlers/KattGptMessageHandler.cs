@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DSharpPlus.Entities;
 using Kattbot.Helpers;
 using Kattbot.Services;
 using Kattbot.Services.KattGpt;
@@ -41,19 +42,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         var author = args.Author;
         var channel = args.Message.Channel;
 
-        if (author.IsBot || author.IsSystem.GetValueOrDefault())
-        {
-            return;
-        }
-
-        var kattGptChannelId = await _guildSettingsService.GetKattGptChannelId(args.Message.Channel.Guild.Id);
-
-        if (kattGptChannelId == null || kattGptChannelId != args.Message.Channel.Id)
-        {
-            return;
-        }
-
-        if (message.Content.StartsWith(MetaMessagePrefix, StringComparison.OrdinalIgnoreCase))
+        if (!await ShouldHandleMessage(message, author, channel))
         {
             return;
         }
@@ -100,5 +89,42 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
         // Cache message cache
         _cache.SetCache(cacheKey, messageCache, TimeSpan.FromMinutes(CacheDurationMinutes));
+    }
+
+    private async Task<bool> ShouldHandleMessage(DiscordMessage message, DiscordUser author, DiscordChannel channel)
+    {
+        if (author.IsBot || author.IsSystem.GetValueOrDefault())
+        {
+            return false;
+        }
+
+        var kattGptChannelId = await _guildSettingsService.GetKattGptChannelId(channel.Guild.Id);
+
+        var channelIsKattGptChannel = !(kattGptChannelId == null || kattGptChannelId != channel.Id);
+
+        if (channelIsKattGptChannel)
+        {
+            var isMetaMessage = message.Content.StartsWith(MetaMessagePrefix, StringComparison.OrdinalIgnoreCase);
+
+            return !isMetaMessage;
+        }
+        else
+        {
+            var messageIsReplyToKattbot = message.ReferencedMessage?.Author?.IsCurrent ?? false;
+
+            if (messageIsReplyToKattbot)
+            {
+                return true;
+            }
+
+            var kattbotIsMentioned = message.MentionedUsers.Any(u => u.IsCurrent);
+
+            if (kattbotIsMentioned)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -55,6 +55,7 @@ public class BotWorker : IHostedService
             StringPrefixes = new[] { commandPrefix, altCommandPrefix },
             Services = _serviceProvider,
             EnableDefaultHelp = false,
+            EnableMentionPrefix = false,
         });
 
         commands.RegisterConverter(new GenericArgumentConverter<StatsCommandArgs, StatsCommandArgsParser>());
