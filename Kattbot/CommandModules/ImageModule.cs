@@ -11,9 +11,9 @@ namespace Kattbot.CommandModules;
 [BaseCommandCheck]
 public class ImageModule : BaseCommandModule
 {
-    private readonly CommandParallelQueueChannel _commandParallelQueue;
+    private readonly CommandQueueChannel _commandParallelQueue;
 
-    public ImageModule(CommandParallelQueueChannel commandParallelQueue)
+    public ImageModule(CommandQueueChannel commandParallelQueue)
     {
         _commandParallelQueue = commandParallelQueue;
     }

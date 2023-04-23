@@ -136,7 +136,6 @@ public class Program
     private static void AddWorkers(IServiceCollection services)
     {
         services.AddHostedService<CommandQueueWorker>();
-        services.AddHostedService<CommandParallelQueueWorker>();
         services.AddHostedService<EventQueueWorker>();
         services.AddHostedService<DiscordLoggerWorker>();
         services.AddHostedService<BotWorker>();
@@ -147,7 +146,6 @@ public class Program
         const int channelSize = 1024;
 
         services.AddSingleton((_) => new CommandQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
-        services.AddSingleton((_) => new CommandParallelQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
         services.AddSingleton((_) => new EventQueueChannel(Channel.CreateBounded<INotification>(channelSize)));
         services.AddSingleton((_) => new DiscordLogChannel(Channel.CreateBounded<DiscordLogItem>(channelSize)));
     }

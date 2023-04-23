@@ -37,14 +37,6 @@ public class CommandQueueChannel : AbstractQueueChannel<CommandRequest>
     }
 }
 
-public class CommandParallelQueueChannel : AbstractQueueChannel<CommandRequest>
-{
-    public CommandParallelQueueChannel(Channel<CommandRequest> channel)
-        : base(channel)
-    {
-    }
-}
-
 public class EventQueueChannel : AbstractQueueChannel<INotification>
 {
     public EventQueueChannel(Channel<INotification> channel)

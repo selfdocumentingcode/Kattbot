@@ -31,7 +31,7 @@ public class CommandQueueWorker : BackgroundService
                 {
                     _logger.LogDebug("Dequeued command. {RemainingMessageCount} left in queue", _channel.Reader.Count);
 
-                    await _mediator.Send(command, stoppingToken);
+                    _ = Task.Run(() => _mediator.Send(command, stoppingToken), stoppingToken);
                 }
             }
         }
