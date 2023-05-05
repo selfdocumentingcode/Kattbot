@@ -25,6 +25,8 @@ public class DallePromptCommand : CommandRequest
 
 public class DallePromptCommandHandler : IRequestHandler<DallePromptCommand>
 {
+    private const int MaxEmbedTitleLength = 256;
+
     private readonly DalleHttpClient _dalleHttpClient;
     private readonly ImageService _imageService;
 
@@ -56,14 +58,18 @@ public class DallePromptCommandHandler : IRequestHandler<DallePromptCommand>
 
             string fileName = $"{safeFileName}.{imageStream.FileExtension}";
 
+            var truncatedPrompt = request.Prompt.Length > MaxEmbedTitleLength
+                ? $"{request.Prompt[..(MaxEmbedTitleLength - 3)]}..."
+                : request.Prompt;
+
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
-                .WithTitle(request.Prompt)
+                .WithTitle(truncatedPrompt)
                 .WithImageUrl($"attachment://{fileName}");
 
             DiscordMessageBuilder mb = new DiscordMessageBuilder()
-            .AddFile(fileName, imageStream.MemoryStream)
-            .WithEmbed(eb)
-            .WithContent($"There you go {request.Ctx.Member?.Mention ?? "Unknown user"}");
+                .AddFile(fileName, imageStream.MemoryStream)
+                .WithEmbed(eb)
+                .WithContent($"There you go {request.Ctx.Member?.Mention ?? "Unknown user"}");
 
             await message.DeleteAsync();
 
