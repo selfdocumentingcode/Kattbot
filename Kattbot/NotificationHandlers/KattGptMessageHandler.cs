@@ -48,6 +48,8 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
             return;
         }
 
+        await channel.TriggerTypingAsync();
+
         // Get system prompt messages
         var systemPropmts = _kattGptOptions.SystemPrompts;
         var systemPromptsMessages = systemPropmts.Select(promptMessage => new ChatCompletionMessage { Role = "system", Content = promptMessage });
