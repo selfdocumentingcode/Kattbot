@@ -13,5 +13,6 @@ jobs:
         host: ${{secrets.VPS_HOST}}
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.KATTBOT_USER}}
-        password: ${{secrets.KATTBOT_PASSWORD}}      
+        key: ${{secrets.KATTBOT_KEY}}
+        passphrase: ${{secrets.KATTBOT_PASSPHRASE}}   
         script: systemctl --user restart kattbot

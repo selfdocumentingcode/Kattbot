@@ -121,7 +121,7 @@ jobs:
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
-        script: psql -U postgres -d kattbot -q -f $HOME/kattbot/database_migration.sql
+        script: psql -U "kattbot-user" -d kattbot -q -f $HOME/kattbot/database_migration.sql
  
     - name: Deploy - Start service
       if: github.event.inputs.updateDatabase == 'no' || github.event.inputs.updateDatabase == 'auto'
