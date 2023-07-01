@@ -109,32 +109,38 @@ dotnet_diagnostic.SA1649.severity   = none        # File name should match first
 
 # Expression-level preferences
 
-dotnet_diagnostic.IDE0032.severity  = suggestion  # Use auto-implemented property
+dotnet_diagnostic.IDE0032.severity      = suggestion  # Use auto-implemented property
 
 # Modifier preferences
 
-dotnet_diagnostic.IDE0044.severity  = warning     # Add readonly modifier
+dotnet_diagnostic.IDE0044.severity      = warning     # Add readonly modifier
 
 # Naming
 
-dotnet_diagnostic.IDE1006.severity  = warning     # Naming rule violation
+dotnet_diagnostic.IDE1006.severity      = warning     # Naming rule violation
 
 # Unnecessary code rules
 
-dotnet_diagnostic.IDE0058.severity  = none        # Remove unnecessary expression value
+dotnet_diagnostic.IDE0058.severity      = none        # Remove unnecessary expression value
 
 ### .NET Code-quality rules ###
 
 # Reliability
 
-dotnet_diagnostic.CA2016.severity   = warning     # Forward the CancellationToken parameter to methods that take one
+dotnet_diagnostic.CA2016.severity       = warning     # Forward the CancellationToken parameter to methods that take one
 
 # Usage
 
-dotnet_diagnostic.CA2208.severity   = warning     # Instantiate argument exceptions correctly
+dotnet_diagnostic.CA2208.severity       = warning     # Instantiate argument exceptions correctly
 
 ### C# compiler messages ###
 
 # Level 4 warning messages
 
-dotnet_diagnostic.CS1591.severity   = none        # Missing XML comment for publicly visible type or member
+dotnet_diagnostic.CS1591.severity       = none        # Missing XML comment for publicly visible type or member
+
+### SYSLIB diagnostics ###
+
+# Source-generated code
+
+dotnet_diagnostic.SYSLIB1045.severity   = none        # Convert to 'GeneratedRegexAttribute'
