@@ -68,7 +68,7 @@ public class CommandRequestPipelineBehaviour<TRequest, TResponse> : IPipelineBeh
             await ctx.Message.CreateReactionAsync(DiscordEmoji.FromUnicode(EmojiMap.RedX));
         }
 
-        _discordErrorLogger.LogDiscordError(ctx, ex.ToString());
+        _discordErrorLogger.LogError(ctx, ex.ToString());
 
         _logger.LogError(ex, nameof(HandeCommandRequestException));
     }

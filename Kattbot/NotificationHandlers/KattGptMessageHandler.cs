@@ -8,6 +8,7 @@ using DSharpPlus.Entities;
 using Kattbot.Helpers;
 using Kattbot.Services.KattGpt;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using TiktokenSharp;
 
@@ -16,6 +17,7 @@ namespace Kattbot.NotificationHandlers;
 public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotification>
 {
     private const string ChatGptModel = "gpt-3.5-turbo-16k";
+    private const string TokenizerModel = "gpt-3.5";
     private const string MetaMessagePrefix = "msg";
     private const float Temperature = 1.2f;
     private const int MaxTokens = 8192;
@@ -30,13 +32,14 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     public KattGptMessageHandler(
         ChatGptHttpClient chatGpt,
         IOptions<KattGptOptions> kattGptOptions,
+        IConfiguration config,
         KattGptChannelCache cache)
     {
         _chatGpt = chatGpt;
         _kattGptOptions = kattGptOptions.Value;
         _cache = cache;
 
-        _tokenizer = TikToken.EncodingForModel(ChatGptModel);
+        _tokenizer = TikToken.EncodingForModel(TokenizerModel);
     }
 
     public async Task Handle(MessageCreatedNotification notification, CancellationToken cancellationToken)
@@ -220,11 +223,6 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     /// <returns>True if the message should be handled by kattgpt.</returns>
     private bool ShouldHandleMessage(DiscordMessage message, DiscordUser author)
     {
-        if (author.IsBot || author.IsSystem.GetValueOrDefault())
-        {
-            return false;
-        }
-
         var channel = message.Channel;
         var guild = channel.Guild;
         var guildId = guild.Id;

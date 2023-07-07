@@ -179,7 +179,7 @@ namespace Kattbot.EventHandlers
 
             if (shouldLogDiscordError)
             {
-                _discordErrorLogger.LogDiscordError(ctx, exception.ToString());
+                _discordErrorLogger.LogError(ctx, exception.ToString());
             }
 
             _logger.LogWarning($"Message: {message.Content}\r\nCommand failed: {exception})");

@@ -35,18 +35,18 @@ public record KattGptOptions
 
 public record GuildOptions
 {
-    public uint Id { get; set; }
+    public ulong Id { get; set; }
 
     public string[] SystemPrompts { get; set; } = Array.Empty<string>();
 
-    public ChannelOptions[] ChannelOptions { get; set; } = Array.Empty<ChannelOptions>();
-
     public ChannelOptions[] CategoryOptions { get; set; } = Array.Empty<ChannelOptions>();
+
+    public ChannelOptions[] ChannelOptions { get; set; } = Array.Empty<ChannelOptions>();
 }
 
 public record ChannelOptions
 {
-    public uint Id { get; set; }
+    public ulong Id { get; set; }
 
     public bool UseChannelTopic { get; set; }
 
