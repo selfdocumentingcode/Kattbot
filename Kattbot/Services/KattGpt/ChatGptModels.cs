@@ -3,10 +3,11 @@ using System.Text.Json.Serialization;
 
 namespace Kattbot.Services.KattGpt;
 
+#pragma warning disable SA1402 // File may only contain a single type
 public record ChatCompletionCreateRequest
 {
     /// <summary>
-    /// Gets or sets iD of the model to use. Currently, only gpt-3.5-turbo and gpt-3.5-turbo-0301 are supported.
+    /// Gets or sets iD of the model to use.
     /// https://platform.openai.com/docs/api-reference/chat/create#chat/create-model.
     /// </summary>
     [JsonPropertyName("model")]
@@ -65,12 +66,13 @@ public record ChatCompletionCreateRequest
     public bool? Stream { get; set; }
 
     /// <summary>
-    ///    Gets or sets number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far,
-    ///    decreasing the model's likelihood to repeat the same line verbatim. Defaults to 0
-    ///    https://platform.openai.com/docs/api-reference/chat/create#chat/create-frequency_penalty.
+    /// Gets or sets the maximum number of tokens to generate in the chat completion.
+    /// The total length of input tokens and generated tokens is limited by the model's context length.
+    /// Defaults to inf.
+    /// https://platform.openai.com/docs/api-reference/chat/create#chat/create-max_tokens.
     /// </summary>
-    [JsonPropertyName("frequency_penalty")]
-    public float? FrequencyPenalty { get; set; }
+    [JsonPropertyName("max_tokens")]
+    public int? MaxTokens { get; set; }
 
     /// <summary>
     ///     Gets or sets number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far,
@@ -81,9 +83,18 @@ public record ChatCompletionCreateRequest
     public float? PresencePenalty { get; set; }
 
     /// <summary>
+    ///    Gets or sets number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far,
+    ///    decreasing the model's likelihood to repeat the same line verbatim. Defaults to 0
+    ///    https://platform.openai.com/docs/api-reference/chat/create#chat/create-frequency_penalty.
+    /// </summary>
+    [JsonPropertyName("frequency_penalty")]
+    public float? FrequencyPenalty { get; set; }
+
+    /// <summary>
     /// Gets or sets a unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
     /// https://platform.openai.com/docs/api-reference/chat/create#chat/create-user.
     /// </summary>
+    [JsonPropertyName("user")]
     public string? User { get; set; }
 }
 
@@ -100,6 +111,12 @@ public record ChatCompletionMessage
     /// </summary>
     [JsonPropertyName("content")]
     public string Content { get; set; } = null!;
+
+    public static ChatCompletionMessage AsSystem(string content) => new() { Role = "system", Content = content };
+
+    public static ChatCompletionMessage AsUser(string content) => new() { Role = "user", Content = content };
+
+    public static ChatCompletionMessage AsAssistant(string content) => new() { Role = "assistant", Content = content };
 }
 
 public record ChatCompletionCreateResponse

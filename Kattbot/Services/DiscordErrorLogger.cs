@@ -17,7 +17,7 @@ public class DiscordErrorLogger
         _options = options.Value;
     }
 
-    public void LogDiscordError(CommandContext ctx, string errorMessage)
+    public void LogError(CommandContext ctx, string errorMessage)
     {
         string user = $"{ctx.User.Username}#{ctx.User.Discriminator}";
         string channelName = ctx.Channel.Name;
@@ -29,10 +29,10 @@ public class DiscordErrorLogger
 
         string fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMesssage}";
 
-        LogDiscordError(fullErrorMessage);
+        LogError(fullErrorMessage);
     }
 
-    public void LogDiscordError(EventContext? ctx, string errorMessage)
+    public void LogError(EventContext? ctx, string errorMessage)
     {
         string user = ctx?.User != null ? $"{ctx.User.Username}#{ctx.User.Discriminator}" : "Unknown user";
         string channelName = ctx?.Channel?.Name ?? "Unknown channel";
@@ -51,10 +51,10 @@ public class DiscordErrorLogger
 
         string fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMesssage}";
 
-        LogDiscordError(fullErrorMessage);
+        LogError(fullErrorMessage);
     }
 
-    public void LogDiscordError(string error)
+    public void LogError(string error)
     {
         ulong errorLogGuilId = _options.ErrorLogGuildId;
         ulong errorLogChannelId = _options.ErrorLogChannelId;

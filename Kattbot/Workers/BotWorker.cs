@@ -68,9 +68,28 @@ public class BotWorker : IHostedService
         _commandEventHandler.RegisterHandlers(commands);
         _emoteEventHandler.RegisterHandlers();
 
-        _client.MessageCreated += (sender, args) => _eventQueue.Writer.WriteAsync(new MessageCreatedNotification(args)).AsTask();
+        _client.MessageCreated += (sender, args) => OnMessageCreated(args, cancellationToken);
 
         await _client.ConnectAsync();
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Stopping bot");
+
+        await _client.DisconnectAsync();
+    }
+
+    private async Task OnMessageCreated(MessageCreateEventArgs args, CancellationToken cancellationToken)
+    {
+        var author = args.Author;
+
+        if (author.IsBot || author.IsSystem.GetValueOrDefault())
+        {
+            return;
+        }
+
+        await _eventQueue.Writer.WriteAsync(new MessageCreatedNotification(args), cancellationToken);
     }
 
     private Task OnClientDisconnected(DiscordClient sender, SocketCloseEventArgs e)
@@ -103,12 +122,5 @@ public class BotWorker : IHostedService
         {
             _logger.LogError(ex, "OnClientReady");
         }
-    }
-
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("Stopping bot");
-
-        await _client.DisconnectAsync();
     }
 }

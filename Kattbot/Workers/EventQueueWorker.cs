@@ -50,11 +50,16 @@ public class EventQueueWorker : BackgroundService
                     {
                         if (@event is not null and EventNotification eventNotification)
                         {
-                            _discordErrorLogger.LogDiscordError(eventNotification.Ctx, innerEx.Message);
+                            _discordErrorLogger.LogError(eventNotification.Ctx, innerEx.Message);
                         }
 
                         _logger.LogError(innerEx, nameof(EventQueueWorker));
                     }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, nameof(EventQueueWorker));
+                    _discordErrorLogger.LogError(ex.Message);
                 }
             }
         }
@@ -65,7 +70,7 @@ public class EventQueueWorker : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, nameof(EventQueueWorker));
-            _discordErrorLogger.LogDiscordError(ex.Message);
+            _discordErrorLogger.LogError(ex.Message);
         }
     }
 }

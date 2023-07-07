@@ -69,7 +69,7 @@ public class UtilsModule : BaseCommandModule
     [Command("test-log-sync")]
     public Task TestLogSync(CommandContext ctx)
     {
-        _discordErrorLogger.LogDiscordError("Test error sync");
+        _discordErrorLogger.LogError("Test error sync");
 
         return Task.CompletedTask;
     }

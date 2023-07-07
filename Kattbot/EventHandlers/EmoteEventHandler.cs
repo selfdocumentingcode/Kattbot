@@ -84,7 +84,7 @@ public class EmoteEventHandler : BaseEventHandler
         {
             _logger.LogError(ex, nameof(OnMessageCreated));
 
-            _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
+            _discordErrorLogger.LogError(eventContext, ex.ToString());
 
             return Task.CompletedTask;
         }
@@ -138,7 +138,7 @@ public class EmoteEventHandler : BaseEventHandler
         {
             _logger.LogError(ex, nameof(OnMessageUpdated));
 
-            _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
+            _discordErrorLogger.LogError(eventContext, ex.ToString());
 
             return Task.CompletedTask;
         }
@@ -177,7 +177,7 @@ public class EmoteEventHandler : BaseEventHandler
         {
             _logger.LogError(ex, nameof(OnMessageDeleted));
 
-            _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
+            _discordErrorLogger.LogError(eventContext, ex.ToString());
 
             return Task.CompletedTask;
         }
@@ -221,7 +221,7 @@ public class EmoteEventHandler : BaseEventHandler
         {
             _logger.LogError(ex, nameof(OnMessageReactionAdded));
 
-            _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
+            _discordErrorLogger.LogError(eventContext, ex.ToString());
 
             return Task.CompletedTask;
         }
@@ -260,7 +260,7 @@ public class EmoteEventHandler : BaseEventHandler
         {
             _logger.LogError(ex, nameof(OnMessageReactionRemoved));
 
-            _discordErrorLogger.LogDiscordError(eventContext, ex.ToString());
+            _discordErrorLogger.LogError(eventContext, ex.ToString());
 
             return Task.CompletedTask;
         }
