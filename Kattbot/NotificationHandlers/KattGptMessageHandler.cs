@@ -21,8 +21,9 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     private const string MetaMessagePrefix = "msg";
     private const float Temperature = 1.2f;
     private const int MaxTokens = 8192;
-    private const int MaxTokensToGenerate = 512; // Roughly the limit of a Discord message
+    private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
     private const string ChannelWithTopicTemplateName = "ChannelWithTopic";
+    private const string MessageSplitToken = "[cont.]";
 
     private readonly ChatGptHttpClient _chatGpt;
     private readonly KattGptOptions _kattGptOptions;
@@ -87,12 +88,24 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         var responseMessage = response.Choices[0].Message;
 
         // Reply to user
-        await message.RespondAsync(responseMessage.Content);
+        await ReplyToUser(responseMessage.Content, message);
 
         // Add the chat gpt response message to the bounded queue
         boundedMessageQueue.Enqueue(responseMessage, _tokenizer.Encode(responseMessage.Content).Count);
 
         SaveBoundedMessageQueue(channel, boundedMessageQueue);
+    }
+
+    private static async Task ReplyToUser(string responseMessage, DiscordMessage messageToReplyTo)
+    {
+        var messageChunks = responseMessage.SplitString(DiscordConstants.MaxMessageLength, MessageSplitToken);
+
+        var nextMessageToReplyTo = messageToReplyTo;
+
+        foreach (var messageChunk in messageChunks)
+        {
+            nextMessageToReplyTo = await nextMessageToReplyTo.RespondAsync(messageChunk);
+        }
     }
 
     /// <summary>
