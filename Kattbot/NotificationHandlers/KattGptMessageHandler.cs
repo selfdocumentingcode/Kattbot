@@ -33,7 +33,6 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     public KattGptMessageHandler(
         ChatGptHttpClient chatGpt,
         IOptions<KattGptOptions> kattGptOptions,
-        IConfiguration config,
         KattGptChannelCache cache)
     {
         _chatGpt = chatGpt;
@@ -50,12 +49,10 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         var author = args.Author;
         var channel = args.Message.Channel;
 
-        if (!ShouldHandleMessage(message, author))
+        if (!ShouldHandleMessage(message))
         {
             return;
         }
-
-        await channel.TriggerTypingAsync();
 
         var systemPromptsMessages = BuildSystemPromptsMessages(channel);
 
@@ -69,34 +66,38 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
         boundedMessageQueue.Enqueue(newUserMessage, _tokenizer.Encode(newUserMessage.Content).Count);
 
-        // Collect request messages
-        var requestMessages = new List<ChatCompletionMessage>();
-        requestMessages.AddRange(systemPromptsMessages);
-        requestMessages.AddRange(boundedMessageQueue.GetAll());
-
-        // Make request
-        var request = new ChatCompletionCreateRequest()
+        if (ShouldReplyToMessage(message))
         {
-            Model = ChatGptModel,
-            Messages = requestMessages.ToArray(),
-            Temperature = Temperature,
-            MaxTokens = MaxTokensToGenerate,
-        };
+            await channel.TriggerTypingAsync();
 
-        var response = await _chatGpt.ChatCompletionCreate(request);
+            // Collect request messages
+            var requestMessages = new List<ChatCompletionMessage>();
+            requestMessages.AddRange(systemPromptsMessages);
+            requestMessages.AddRange(boundedMessageQueue.GetAll());
 
-        var responseMessage = response.Choices[0].Message;
+            // Make request
+            var request = new ChatCompletionCreateRequest()
+            {
+                Model = ChatGptModel,
+                Messages = requestMessages.ToArray(),
+                Temperature = Temperature,
+                MaxTokens = MaxTokensToGenerate,
+            };
 
-        // Reply to user
-        await ReplyToUser(responseMessage.Content, message);
+            var response = await _chatGpt.ChatCompletionCreate(request);
 
-        // Add the chat gpt response message to the bounded queue
-        boundedMessageQueue.Enqueue(responseMessage, _tokenizer.Encode(responseMessage.Content).Count);
+            var chatGptResponse = response.Choices[0].Message;
+
+            await SendReply(chatGptResponse.Content, message);
+
+            // Add the chat gpt response message to the bounded queue
+            boundedMessageQueue.Enqueue(chatGptResponse, _tokenizer.Encode(chatGptResponse.Content).Count);
+        }
 
         SaveBoundedMessageQueue(channel, boundedMessageQueue);
     }
 
-    private static async Task ReplyToUser(string responseMessage, DiscordMessage messageToReplyTo)
+    private static async Task SendReply(string responseMessage, DiscordMessage messageToReplyTo)
     {
         var messageChunks = responseMessage.SplitString(DiscordConstants.MaxMessageLength, MessageSplitToken);
 
@@ -136,19 +137,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
             systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(guildSystemPrompts));
         }
 
-        var guildChannelOptions = guildOptions.ChannelOptions;
-        var guildCategoryOptions = guildOptions.CategoryOptions;
-
-        // Get the channel options for this channel or for the category this channel is in
-        var channelOptions = guildChannelOptions.Where(x => x.Id == channel.Id).SingleOrDefault();
-        if (channelOptions == null)
-        {
-            var category = channel.Parent;
-            if (category != null)
-            {
-                channelOptions = guildCategoryOptions.Where(x => x.Id == category.Id).SingleOrDefault();
-            }
-        }
+        var channelOptions = GetChannelOptions(channel);
 
         // if there are no channel options, return the system prompts messages
         if (channelOptions == null)
@@ -229,39 +218,45 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     }
 
     /// <summary>
-    /// Checks if the message should be handled by kattgpt.
+    /// Checks if the message should be handled by Kattgpt.
     /// </summary>
     /// <param name="message">The message.</param>
-    /// <param name="author">The author.</param>
-    /// <returns>True if the message should be handled by kattgpt.</returns>
-    private bool ShouldHandleMessage(DiscordMessage message, DiscordUser author)
+    /// <returns>True if the message should be handled by Kattgpt.</returns>
+    private bool ShouldHandleMessage(DiscordMessage message)
     {
         var channel = message.Channel;
-        var guild = channel.Guild;
-        var guildId = guild.Id;
 
-        // First check if kattgpt is enabled for this guild
-        var guildOptions = _kattGptOptions.GuildOptions.Where(x => x.Id == guildId).SingleOrDefault();
-        if (guildOptions == null)
+        var channelOptions = GetChannelOptions(channel);
+
+        if (channelOptions == null)
         {
             return false;
         }
 
-        var guildChannelOptions = guildOptions.ChannelOptions;
-        var guildCategoryOptions = guildOptions.CategoryOptions;
-
-        // Get the channel options for this channel or for the category this channel is in
-        var channelOptions = guildChannelOptions.Where(x => x.Id == channel.Id).SingleOrDefault();
-        if (channelOptions == null)
+        // if the channel is not always on, handle the message
+        if (!channelOptions.AlwaysOn)
         {
-            var category = channel.Parent;
-            if (category != null)
-            {
-                channelOptions = guildCategoryOptions.Where(x => x.Id == category.Id).SingleOrDefault();
-            }
+            return true;
         }
 
-        // Check if kattgpt is enabled for this channel
+        // otherwise check if the message does not start with the MetaMessagePrefix
+        var messageStartsWithMetaMessagePrefix = message.Content.StartsWith(MetaMessagePrefix);
+
+        // if it does, return false
+        return !messageStartsWithMetaMessagePrefix;
+    }
+
+    /// <summary>
+    /// Checks if Kattgpt should reply to the message.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <returns>True if Kattgpt should reply.</returns>
+    private bool ShouldReplyToMessage(DiscordMessage message)
+    {
+        var channel = message.Channel;
+
+        var channelOptions = GetChannelOptions(channel);
+
         if (channelOptions == null)
         {
             return false;
@@ -289,5 +284,34 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
         // if it does, return false
         return !messageStartsWithMetaMessagePrefix;
+    }
+
+    private ChannelOptions? GetChannelOptions(DiscordChannel channel)
+    {
+        var guild = channel.Guild;
+        var guildId = guild.Id;
+
+        // First check if kattgpt is enabled for this guild
+        var guildOptions = _kattGptOptions.GuildOptions.Where(x => x.Id == guildId).SingleOrDefault();
+        if (guildOptions == null)
+        {
+            return null;
+        }
+
+        var guildChannelOptions = guildOptions.ChannelOptions;
+        var guildCategoryOptions = guildOptions.CategoryOptions;
+
+        // Get the channel options for this channel or for the category this channel is in
+        var channelOptions = guildChannelOptions.Where(x => x.Id == channel.Id).SingleOrDefault();
+        if (channelOptions == null)
+        {
+            var category = channel.Parent;
+            if (category != null)
+            {
+                channelOptions = guildCategoryOptions.Where(x => x.Id == category.Id).SingleOrDefault();
+            }
+        }
+
+        return channelOptions;
     }
 }
