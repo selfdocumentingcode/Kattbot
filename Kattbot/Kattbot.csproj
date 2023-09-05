@@ -17,7 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.4" />
     <PackageReference Include="PuppeteerSharp" Version="9.1.0" />
-	<PackageReference Include="SixLabors.ImageSharp" Version="3.0.1" />
+	<PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.507">
       <PrivateAssets>all</PrivateAssets>
