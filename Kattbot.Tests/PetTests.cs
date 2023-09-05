@@ -4,9 +4,8 @@ using Kattbot.Services;
 using Kattbot.Services.Images;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+using NSubstitute;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
 
 namespace Kattbot.Tests;
 
@@ -19,9 +18,9 @@ public class PetTests
     {
         var puppeteerFactory = new PuppeteerFactory();
 
-        var logger = new Mock<ILogger<PetPetClient>>();
+        var logger = Substitute.For<ILogger<PetPetClient>>();
 
-        var makeEmojiClient = new PetPetClient(puppeteerFactory, logger.Object);
+        var makeEmojiClient = new PetPetClient(puppeteerFactory, logger);
 
         string inputFile = Path.Combine(Path.GetTempPath(), "froge.png");
         string ouputFile = Path.Combine(Path.GetTempPath(), "pet_froge.gif");
