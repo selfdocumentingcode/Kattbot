@@ -18,42 +18,11 @@ public class ImageModule : BaseCommandModule
         _commandParallelQueue = commandParallelQueue;
     }
 
-    [Command("big")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task BigEmote(CommandContext ctx, DiscordEmoji emoji)
-    {
-        var request = new GetBigEmoteRequest(ctx)
-        {
-            Emoji = emoji,
-        };
-
-        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
-    }
-
-    [Command("bigger")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task BiggerEmote(CommandContext ctx, DiscordEmoji emoji)
-    {
-        var request = new GetBigEmoteRequest(ctx)
-        {
-            Emoji = emoji,
-            ScaleFactor = 2,
-        };
-
-        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
-    }
-
     [Command("deepfry")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
     public Task DeepFryEmote(CommandContext ctx, DiscordEmoji emoji)
     {
-        var request = new GetBigEmoteRequest(ctx)
-        {
-            Emoji = emoji,
-            ScaleFactor = 2,
-            Effect = GetBigEmoteRequest.EffectDeepFry,
-        };
-
+        var request = new TransformImageRequest(ctx, emoji, TransformImageRequest.EffectDeepFry);
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
@@ -61,19 +30,14 @@ public class ImageModule : BaseCommandModule
     [Cooldown(5, 10, CooldownBucketType.Global)]
     public Task OilPaintEmote(CommandContext ctx, DiscordEmoji emoji)
     {
-        var request = new GetBigEmoteRequest(ctx)
-        {
-            Emoji = emoji,
-            ScaleFactor = 2,
-            Effect = GetBigEmoteRequest.EffectOilPaint,
-        };
+        var request = new TransformImageRequest(ctx, emoji, TransformImageRequest.EffectOilPaint);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
     [Command("pet")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task PetEmote(CommandContext ctx, DiscordEmoji emoji, string speed = null)
+    public Task PetEmote(CommandContext ctx, DiscordEmoji emoji, string? speed = null)
     {
         var request = new GetAnimatedEmoji(ctx)
         {
@@ -86,7 +50,7 @@ public class ImageModule : BaseCommandModule
 
     [Command("pet")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task PetUser(CommandContext ctx, DiscordUser user, string speed = null)
+    public Task PetUser(CommandContext ctx, DiscordUser user, string? speed = null)
     {
         var request = new GetAnimatedUserAvatar(ctx)
         {

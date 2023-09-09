@@ -67,14 +67,10 @@ public class ImageService
         return GetImageStream(image);
     }
 
-    public Task<ImageStreamResult> DeepFryImage(Image image, uint scaleFactor)
+    public Task<ImageStreamResult> DeepFryImage(Image image)
     {
-        int newWidth = image.Width * (int)scaleFactor;
-        int newHeight = image.Height * (int)scaleFactor;
-
         image.Mutate(i =>
         {
-            i.Resize(newWidth, newHeight, KnownResamplers.Welch);
             i.Contrast(5f);
             i.Brightness(1.5f);
             i.GaussianSharpen(5f);
@@ -84,16 +80,12 @@ public class ImageService
         return GetImageStream(image);
     }
 
-    public Task<ImageStreamResult> OilPaintImage(Image image, uint scaleFactor)
+    public Task<ImageStreamResult> OilPaintImage(Image image)
     {
-        int newWidth = image.Width * (int)scaleFactor;
-        int newHeight = image.Height * (int)scaleFactor;
-
         int paintLevel = 25;
 
         image.Mutate(i =>
         {
-            i.Resize(newWidth, newHeight, KnownResamplers.Welch);
             i.OilPaint(paintLevel, paintLevel);
         });
 

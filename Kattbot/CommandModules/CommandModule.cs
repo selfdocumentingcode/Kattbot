@@ -33,14 +33,23 @@ public class CommandModule : BaseCommandModule
         sb.AppendLine($"`{commandPrefix}stats help`");
 
         sb.AppendLine();
-        sb.AppendLine("Other commands");
-        sb.AppendLine($"`{commandPrefix}prep me`");
-        sb.AppendLine($"`{commandPrefix}prep [username]`");
-        sb.AppendLine($"`{commandPrefix}meow`");
+        sb.AppendLine("Emote commands");
         sb.AppendLine($"`{commandPrefix}big [emote]`");
         sb.AppendLine($"`{commandPrefix}bigger [emote]`");
-        sb.AppendLine($"`{commandPrefix}deepfry [emote]`");
-        sb.AppendLine($"`{commandPrefix}oilpaint [emote]`");
+        sb.AppendLine($"`{commandPrefix}gigantic [emote]`");
+        sb.AppendLine($"`{commandPrefix}humongous [emote]`");
+
+        sb.AppendLine();
+        sb.AppendLine("Image commands");
+        sb.AppendLine($"`{commandPrefix}deepfry [emote|user|image]`");
+        sb.AppendLine($"`{commandPrefix}oilpaint [emote|user|image]`");
+        sb.AppendLine($"`{commandPrefix}pet [emote|user|image]`");
+        sb.AppendLine($"`{commandPrefix}dallify [emote|user|image]`");
+        sb.AppendLine($"`{commandPrefix}dalle [text]`");
+
+        sb.AppendLine();
+        sb.AppendLine("Other commands");
+        sb.AppendLine($"`{commandPrefix}meow`");
 
         sb.AppendLine($"*(\"?\" denotes an optional parameter)*");
 
