@@ -33,6 +33,20 @@ public class ImageService
         return Image.Load(imageBytes);
     }
 
+    public static async Task<Image> ConvertImageToPng(Image image)
+    {
+        if (image.Metadata.DecodedImageFormat is PngFormat)
+            return image;
+
+        using var pngMemoryStream = new MemoryStream();
+
+        await image.SaveAsPngAsync(pngMemoryStream);
+
+        var convertedImage = await Image.LoadAsync(pngMemoryStream);
+
+        return convertedImage;
+    }
+
     public async Task<Image> DownloadImage(string url)
     {
         byte[] imageBytes;
@@ -108,6 +122,18 @@ public class ImageService
         });
 
         return cloned;
+    }
+
+    public Task<ImageStreamResult> SquareImage(Image image)
+    {
+        int newSize = Math.Min(image.Width, image.Height);
+
+        image.Mutate(i =>
+        {
+            i.Resize(newSize, newSize);
+        });
+
+        return GetImageStream(image);
     }
 
     public async Task<ImageStreamResult> CombineImages(string[] base64Images)

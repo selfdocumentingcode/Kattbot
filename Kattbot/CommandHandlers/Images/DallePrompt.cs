@@ -14,23 +14,23 @@ namespace Kattbot.CommandHandlers.Images;
 #pragma warning disable SA1402 // File may only contain a single type
 public class DallePromptCommand : CommandRequest
 {
-    public string Prompt { get; set; }
-
     public DallePromptCommand(CommandContext ctx, string prompt)
         : base(ctx)
     {
         Prompt = prompt;
     }
+
+    public string Prompt { get; set; }
 }
 
-public class DallePromptCommandHandler : IRequestHandler<DallePromptCommand>
+public class DallePromptHandler : IRequestHandler<DallePromptCommand>
 {
     private const int MaxEmbedTitleLength = 256;
 
     private readonly DalleHttpClient _dalleHttpClient;
     private readonly ImageService _imageService;
 
-    public DallePromptCommandHandler(DalleHttpClient dalleHttpClient, ImageService imageService)
+    public DallePromptHandler(DalleHttpClient dalleHttpClient, ImageService imageService)
     {
         _dalleHttpClient = dalleHttpClient;
         _imageService = imageService;
@@ -42,7 +42,7 @@ public class DallePromptCommandHandler : IRequestHandler<DallePromptCommand>
 
         try
         {
-            var response = await _dalleHttpClient.CreateImage(new CreateImageRequest { Prompt = request.Prompt });
+            var response = await _dalleHttpClient.CreateImage(new CreateImageRequest { Prompt = request.Prompt, User = request.Ctx.User.Id.ToString() });
 
             if (response.Data == null || !response.Data.Any()) throw new Exception("Empty result");
 

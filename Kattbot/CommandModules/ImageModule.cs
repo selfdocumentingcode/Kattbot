@@ -69,4 +69,13 @@ public class ImageModule : BaseCommandModule
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
+
+    [Command("dallify")]
+    [Cooldown(5, 60, CooldownBucketType.Global)]
+    public Task Dallify(CommandContext ctx, DiscordEmoji emoji)
+    {
+        var request = new DallifyImageCommand(ctx, emoji);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
 }
