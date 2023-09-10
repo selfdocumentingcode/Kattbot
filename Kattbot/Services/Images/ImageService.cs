@@ -206,7 +206,16 @@ public class ImageService
         return new ImageStreamResult(outputStream, extensionName);
     }
 
-    private IImageEncoder GetImageEncoderByFileType(string fileType)
+    public string GetImageFileExtension(Image image)
+    {
+        var format = image.Metadata.GetFormatOrDefault();
+
+        string extensionName = format.FileExtensions.First();
+
+        return extensionName;
+    }
+
+    private static IImageEncoder GetImageEncoderByFileType(string fileType)
     {
         return fileType switch
         {

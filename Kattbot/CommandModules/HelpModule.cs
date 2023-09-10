@@ -32,7 +32,6 @@ public class HelpModule : BaseCommandModule
         sb.AppendLine($"`{commandPrefix}stats me [?interval] [?page]`");
         sb.AppendLine($"`{commandPrefix}stats best [?interval] [?page]`");
         sb.AppendLine($"`{commandPrefix}stats [emote] [?interval]`");
-        sb.AppendLine($"`\"?\" denotes an optional parameter`");
         sb.AppendLine($"`{commandPrefix}help stats .. More information about stats command`");
 
         sb.AppendLine();
@@ -46,13 +45,16 @@ public class HelpModule : BaseCommandModule
         sb.AppendLine("Image commands");
         sb.AppendLine($"`{commandPrefix}deepfry [emote|user|image]`");
         sb.AppendLine($"`{commandPrefix}oilpaint [emote|user|image]`");
-        sb.AppendLine($"`{commandPrefix}pet [emote|user|image]`");
+        sb.AppendLine($"`{commandPrefix}pet [emote|user|image] [?speed]`");
         sb.AppendLine($"`{commandPrefix}dallify [emote|user|image]`");
         sb.AppendLine($"`{commandPrefix}dalle [text]`");
 
         sb.AppendLine();
         sb.AppendLine("Other commands");
         sb.AppendLine($"`{commandPrefix}meow`");
+
+        sb.AppendLine();
+        sb.AppendLine($"`\"?\" denotes an optional parameter`");
 
         sb.AppendLine();
         sb.AppendLine("Kattbot source code: [github.com/selfdocumentingcode/Kattbot](https://github.com/selfdocumentingcode/Kattbot)");

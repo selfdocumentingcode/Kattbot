@@ -9,10 +9,11 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace Kattbot.CommandHandlers.Images;
+
 #pragma warning disable SA1402 // File may only contain a single type
-public class GetAnimatedEmoji : CommandRequest
+public class PetEmoteRequest : CommandRequest
 {
-    public GetAnimatedEmoji(CommandContext ctx)
+    public PetEmoteRequest(CommandContext ctx)
     : base(ctx)
     {
     }
@@ -22,9 +23,9 @@ public class GetAnimatedEmoji : CommandRequest
     public string? Speed { get; internal set; }
 }
 
-public class GetAnimatedUserAvatar : CommandRequest
+public class PetUserRequest : CommandRequest
 {
-    public GetAnimatedUserAvatar(CommandContext ctx)
+    public PetUserRequest(CommandContext ctx)
     : base(ctx)
     {
     }
@@ -34,21 +35,21 @@ public class GetAnimatedUserAvatar : CommandRequest
     public string? Speed { get; internal set; }
 }
 
-public class GetAnimatedImagesHandlers : IRequestHandler<GetAnimatedEmoji>,
-                                            IRequestHandler<GetAnimatedUserAvatar>
+public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
+                                IRequestHandler<PetUserRequest>
 {
     private readonly ImageService _imageService;
     private readonly PetPetClient _petPetClient;
-    private readonly ILogger<GetAnimatedImagesHandlers> _logger;
+    private readonly ILogger<PetImageHandlers> _logger;
 
-    public GetAnimatedImagesHandlers(ImageService imageService, PetPetClient petPetClient, ILogger<GetAnimatedImagesHandlers> logger)
+    public PetImageHandlers(ImageService imageService, PetPetClient petPetClient, ILogger<PetImageHandlers> logger)
     {
         _imageService = imageService;
         _petPetClient = petPetClient;
         _logger = logger;
     }
 
-    public async Task Handle(GetAnimatedEmoji request, CancellationToken cancellationToken)
+    public async Task Handle(PetEmoteRequest request, CancellationToken cancellationToken)
     {
         CommandContext ctx = request.Ctx;
         DiscordEmoji emoji = request.Emoji;
@@ -73,18 +74,13 @@ public class GetAnimatedImagesHandlers : IRequestHandler<GetAnimatedEmoji>,
         await ctx.RespondAsync(responseBuilder);
     }
 
-    public async Task Handle(GetAnimatedUserAvatar request, CancellationToken cancellationToken)
+    public async Task Handle(PetUserRequest request, CancellationToken cancellationToken)
     {
         CommandContext ctx = request.Ctx;
         DiscordUser user = request.User;
         DiscordGuild guild = ctx.Guild;
 
-        DiscordMember? userAsMember = await ResolveGuildMember(guild, user.Id);
-
-        if (userAsMember == null)
-        {
-            throw new Exception("Invalid user");
-        }
+        DiscordMember? userAsMember = await ResolveGuildMember(guild, user.Id) ?? throw new Exception("Invalid user");
 
         string avatarUrl = userAsMember.GuildAvatarUrl ?? userAsMember.AvatarUrl;
 
@@ -93,24 +89,25 @@ public class GetAnimatedImagesHandlers : IRequestHandler<GetAnimatedEmoji>,
             throw new Exception("Couldn't load user avatar");
         }
 
-        // TODO find a nicer filename
-        string imageName = user.Id.ToString();
-
         using var inputImage = await _imageService.DownloadImage(avatarUrl);
+
+        string extension = _imageService.GetImageFileExtension(inputImage);
+
+        string imageFilename = user.GetNicknameOrUsername().ToSafeFilename(extension);
 
         var croppedImage = _imageService.CropImageToCircle(inputImage);
 
-        string imagePath = await _imageService.SaveImageToTempPath(croppedImage, imageName);
+        string imagePath = await _imageService.SaveImageToTempPath(croppedImage, imageFilename);
 
         byte[] animatedEmojiBytes = await _petPetClient.PetPet(imagePath, request.Speed);
 
         using var outputImage = ImageService.LoadImage(animatedEmojiBytes);
 
-        ImageStreamResult imageStreamResult = await _imageService.GetImageStream(outputImage);
+        var imageStreamResult = await _imageService.GetImageStream(outputImage);
 
         var responseBuilder = new DiscordMessageBuilder();
 
-        responseBuilder.AddFile($"{imageName}.{imageStreamResult.FileExtension}", imageStreamResult.MemoryStream);
+        responseBuilder.AddFile($"{imageFilename}.{imageStreamResult.FileExtension}", imageStreamResult.MemoryStream);
 
         await ctx.RespondAsync(responseBuilder);
     }

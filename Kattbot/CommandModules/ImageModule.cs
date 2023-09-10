@@ -39,7 +39,7 @@ public class ImageModule : BaseCommandModule
     [Cooldown(5, 10, CooldownBucketType.Global)]
     public Task PetEmote(CommandContext ctx, DiscordEmoji emoji, string? speed = null)
     {
-        var request = new GetAnimatedEmoji(ctx)
+        var request = new PetEmoteRequest(ctx)
         {
             Emoji = emoji,
             Speed = speed,
@@ -52,7 +52,7 @@ public class ImageModule : BaseCommandModule
     [Cooldown(5, 10, CooldownBucketType.Global)]
     public Task PetUser(CommandContext ctx, DiscordUser user, string? speed = null)
     {
-        var request = new GetAnimatedUserAvatar(ctx)
+        var request = new PetUserRequest(ctx)
         {
             User = user,
             Speed = speed,
@@ -74,7 +74,16 @@ public class ImageModule : BaseCommandModule
     [Cooldown(5, 60, CooldownBucketType.Global)]
     public Task Dallify(CommandContext ctx, DiscordEmoji emoji)
     {
-        var request = new DallifyImageCommand(ctx, emoji);
+        var request = new DallifyEmoteRequest(ctx, emoji);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("dallify")]
+    [Cooldown(5, 60, CooldownBucketType.Global)]
+    public Task Dallify(CommandContext ctx, DiscordUser user)
+    {
+        var request = new DallifyUserRequest(ctx, user);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }

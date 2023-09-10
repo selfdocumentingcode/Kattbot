@@ -12,9 +12,9 @@ using MediatR;
 namespace Kattbot.CommandHandlers.Images;
 
 #pragma warning disable SA1402 // File may only contain a single type
-public class DallifyImageCommand : CommandRequest
+public class DallifyEmoteRequest : CommandRequest
 {
-    public DallifyImageCommand(CommandContext ctx, DiscordEmoji emoji)
+    public DallifyEmoteRequest(CommandContext ctx, DiscordEmoji emoji)
         : base(ctx)
     {
         Emoji = emoji;
@@ -23,7 +23,19 @@ public class DallifyImageCommand : CommandRequest
     public DiscordEmoji Emoji { get; set; }
 }
 
-public class DallifyImageHandler : IRequestHandler<DallifyImageCommand>
+public class DallifyUserRequest : CommandRequest
+{
+    public DallifyUserRequest(CommandContext ctx, DiscordUser user)
+        : base(ctx)
+    {
+        User = user;
+    }
+
+    public DiscordUser User { get; set; }
+}
+
+public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
+                                    IRequestHandler<DallifyUserRequest>
 {
     private readonly DalleHttpClient _dalleHttpClient;
     private readonly ImageService _imageService;
@@ -34,7 +46,7 @@ public class DallifyImageHandler : IRequestHandler<DallifyImageCommand>
         _imageService = imageService;
     }
 
-    public async Task Handle(DallifyImageCommand request, CancellationToken cancellationToken)
+    public async Task Handle(DallifyEmoteRequest request, CancellationToken cancellationToken)
     {
         DiscordEmoji emoji = request.Emoji;
 
@@ -84,5 +96,73 @@ public class DallifyImageHandler : IRequestHandler<DallifyImageCommand>
             await message.DeleteAsync();
             throw;
         }
+    }
+
+    public async Task Handle(DallifyUserRequest request, CancellationToken cancellationToken)
+    {
+        CommandContext ctx = request.Ctx;
+        DiscordUser user = request.User;
+        DiscordGuild guild = ctx.Guild;
+
+        DiscordMessage message = await request.Ctx.RespondAsync("Working on it");
+
+        DiscordMember? userAsMember = await ResolveGuildMember(guild, user.Id) ?? throw new Exception("Invalid user");
+
+        string avatarUrl = userAsMember.GuildAvatarUrl ?? userAsMember.AvatarUrl;
+
+        if (string.IsNullOrEmpty(avatarUrl))
+        {
+            throw new Exception("Couldn't load user avatar");
+        }
+
+        try
+        {
+            using var inputImage = await _imageService.DownloadImage(avatarUrl);
+
+            var avatarAsPng = await ImageService.ConvertImageToPng(inputImage);
+
+            var avatarImageStream = await _imageService.GetImageStream(avatarAsPng);
+
+            string imageFilename = user.GetNicknameOrUsername().ToSafeFilename(avatarImageStream.FileExtension);
+
+            const string size = "256x256";
+
+            var imageVariationRequest = new CreateImageVariationRequest
+            {
+                Image = avatarImageStream.MemoryStream.ToArray(),
+                Size = size,
+                User = request.Ctx.User.Id.ToString(),
+            };
+
+            var response = await _dalleHttpClient.CreateImageVariation(imageVariationRequest, imageFilename);
+
+            if (response.Data == null || !response.Data.Any()) throw new Exception("Empty result");
+
+            var imageUrl = response.Data.First();
+
+            var image = await _imageService.DownloadImage(imageUrl.Url);
+
+            var imageStream = await _imageService.GetImageStream(image);
+
+            DiscordMessageBuilder mb = new DiscordMessageBuilder()
+                .AddFile(imageFilename, imageStream.MemoryStream)
+                .WithContent($"There you go {request.Ctx.Member?.Mention ?? "Unknown user"}");
+
+            await message.DeleteAsync();
+
+            await request.Ctx.RespondAsync(mb);
+        }
+        catch (Exception)
+        {
+            await message.DeleteAsync();
+            throw;
+        }
+    }
+
+    private Task<DiscordMember?> ResolveGuildMember(DiscordGuild guild, ulong userId)
+    {
+        bool memberExists = guild.Members.TryGetValue(userId, out DiscordMember? member);
+
+        return memberExists ? Task.FromResult(member) : guild.GetMemberAsync(userId);
     }
 }

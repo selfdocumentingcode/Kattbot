@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Kattbot.Helpers;
@@ -60,5 +61,16 @@ public static class StringExtensions
         }
 
         return result;
+    }
+
+    public static string ToSafeFilename(this string input, string extension)
+    {
+        string safeFilename = new(Encoding.ASCII.GetString(Encoding.ASCII.GetBytes(input))
+                                    .Select(c => char.IsLetterOrDigit(c) ? c : '_')
+                                    .ToArray());
+
+        string filename = $"{safeFilename}.{extension}";
+
+        return filename;
     }
 }

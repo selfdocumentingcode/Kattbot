@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using Kattbot.Helpers;
 using Kattbot.Services.Dalle;
 using Kattbot.Services.Images;
 using MediatR;
@@ -52,11 +52,7 @@ public class DallePromptHandler : IRequestHandler<DallePromptCommand>
 
             var imageStream = await _imageService.GetImageStream(image);
 
-            string safeFileName = new(Encoding.ASCII.GetString(Encoding.ASCII.GetBytes(request.Prompt))
-                                    .Select(c => char.IsLetterOrDigit(c) ? c : '_')
-                                    .ToArray());
-
-            string fileName = $"{safeFileName}.{imageStream.FileExtension}";
+            var fileName = request.Prompt.ToSafeFilename(imageStream.FileExtension);
 
             var truncatedPrompt = request.Prompt.Length > MaxEmbedTitleLength
                 ? $"{request.Prompt[..(MaxEmbedTitleLength - 3)]}..."
