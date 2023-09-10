@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
@@ -11,12 +10,16 @@ using MediatR;
 
 namespace Kattbot.CommandHandlers.Images;
 
-public class TransformImageRequest : CommandRequest
+#pragma warning disable SA1402 // File may only contain a single type
+public enum TransformImageEffect
 {
-    public static readonly string EffectDeepFry = "deepfry";
-    public static readonly string EffectOilPaint = "oilpaint";
+    DeepFry,
+    OilPaint,
+}
 
-    public TransformImageRequest(CommandContext ctx, DiscordEmoji emoji, string effect)
+public class TransformImageEmoteRequest : CommandRequest
+{
+    public TransformImageEmoteRequest(CommandContext ctx, DiscordEmoji emoji, TransformImageEffect effect)
     : base(ctx)
     {
         Emoji = emoji;
@@ -25,24 +28,40 @@ public class TransformImageRequest : CommandRequest
 
     public DiscordEmoji Emoji { get; set; }
 
-    public string Effect { get; set; }
+    public TransformImageEffect Effect { get; set; }
 }
 
-#pragma warning disable SA1402 // File may only contain a single type
-public class TransformImageHandler : IRequestHandler<TransformImageRequest>
+public class TransformImageUserRequest : CommandRequest
 {
-    private readonly ImageService _imageService;
-
-    public TransformImageHandler(ImageService imageService)
+    public TransformImageUserRequest(CommandContext ctx, DiscordUser user, TransformImageEffect effect)
+    : base(ctx)
     {
-        _imageService = imageService;
+        User = user;
+        Effect = effect;
     }
 
-    public async Task Handle(TransformImageRequest request, CancellationToken cancellationToken)
+    public DiscordUser User { get; set; }
+
+    public TransformImageEffect Effect { get; set; }
+}
+
+public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>,
+                                    IRequestHandler<TransformImageUserRequest>
+{
+    private readonly ImageService _imageService;
+    private readonly DiscordResolver _discordResolver;
+
+    public TransformImageHandler(ImageService imageService, DiscordResolver discordResolver)
+    {
+        _imageService = imageService;
+        _discordResolver = discordResolver;
+    }
+
+    public async Task Handle(TransformImageEmoteRequest request, CancellationToken cancellationToken)
     {
         CommandContext ctx = request.Ctx;
         DiscordEmoji emoji = request.Emoji;
-        string effect = request.Effect;
+        var effect = request.Effect;
 
         string url = emoji.GetEmojiImageUrl();
 
@@ -50,11 +69,11 @@ public class TransformImageHandler : IRequestHandler<TransformImageRequest>
 
         ImageStreamResult imageStreamResult;
 
-        if (effect == TransformImageRequest.EffectDeepFry)
+        if (effect == TransformImageEffect.DeepFry)
         {
             imageStreamResult = await _imageService.DeepFryImage(image);
         }
-        else if (effect == TransformImageRequest.EffectOilPaint)
+        else if (effect == TransformImageEffect.OilPaint)
         {
             imageStreamResult = await _imageService.OilPaintImage(image);
         }
@@ -68,9 +87,53 @@ public class TransformImageHandler : IRequestHandler<TransformImageRequest>
 
         var responseBuilder = new DiscordMessageBuilder();
 
-        string fileName = effect;
+        string fileName = $"{Guid.NewGuid()}.png";
 
         responseBuilder.AddFile($"{fileName}.{fileExtension}", imageStream);
+
+        await ctx.RespondAsync(responseBuilder);
+    }
+
+    public async Task Handle(TransformImageUserRequest request, CancellationToken cancellationToken)
+    {
+        CommandContext ctx = request.Ctx;
+        DiscordUser user = request.User;
+        DiscordGuild guild = ctx.Guild;
+        var effect = request.Effect;
+
+        DiscordMember? userAsMember = await _discordResolver.ResolveGuildMember(guild, user.Id) ?? throw new Exception("Invalid user");
+
+        string avatarUrl = userAsMember.GuildAvatarUrl
+                            ?? userAsMember.AvatarUrl
+                            ?? throw new Exception("Couldn't load user avatar");
+
+        using var inputImage = await _imageService.DownloadImage(avatarUrl);
+
+        var croppedImage = _imageService.CropImageToCircle(inputImage);
+
+        ImageStreamResult imageStreamResult;
+
+        if (effect == TransformImageEffect.DeepFry)
+        {
+            imageStreamResult = await _imageService.DeepFryImage(croppedImage);
+        }
+        else if (effect == TransformImageEffect.OilPaint)
+        {
+            imageStreamResult = await _imageService.OilPaintImage(croppedImage);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Unknown effect: {effect}");
+        }
+
+        MemoryStream imageStream = imageStreamResult.MemoryStream;
+        string fileExtension = imageStreamResult.FileExtension;
+
+        var responseBuilder = new DiscordMessageBuilder();
+
+        string imageFilename = user.GetNicknameOrUsername().ToSafeFilename(fileExtension);
+
+        responseBuilder.AddFile(imageFilename, imageStream);
 
         await ctx.RespondAsync(responseBuilder);
     }

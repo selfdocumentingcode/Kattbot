@@ -123,6 +123,7 @@ public class Program
         services.AddTransient<ImageService>();
         services.AddTransient<DiscordErrorLogger>();
         services.AddTransient<PetPetClient>();
+        services.AddTransient<DiscordResolver>();
     }
 
     private static void AddRepositories(IServiceCollection services)

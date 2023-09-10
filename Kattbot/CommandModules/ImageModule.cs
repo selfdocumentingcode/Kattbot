@@ -22,7 +22,15 @@ public class ImageModule : BaseCommandModule
     [Cooldown(5, 10, CooldownBucketType.Global)]
     public Task DeepFryEmote(CommandContext ctx, DiscordEmoji emoji)
     {
-        var request = new TransformImageRequest(ctx, emoji, TransformImageRequest.EffectDeepFry);
+        var request = new TransformImageEmoteRequest(ctx, emoji, TransformImageEffect.DeepFry);
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("deepfry")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+    public Task DeepFryEmote(CommandContext ctx, DiscordUser user)
+    {
+        var request = new TransformImageUserRequest(ctx, user, TransformImageEffect.DeepFry);
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
@@ -30,8 +38,16 @@ public class ImageModule : BaseCommandModule
     [Cooldown(5, 10, CooldownBucketType.Global)]
     public Task OilPaintEmote(CommandContext ctx, DiscordEmoji emoji)
     {
-        var request = new TransformImageRequest(ctx, emoji, TransformImageRequest.EffectOilPaint);
+        var request = new TransformImageEmoteRequest(ctx, emoji, TransformImageEffect.OilPaint);
 
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("oilpaint")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+    public Task OilPaintEmote(CommandContext ctx, DiscordUser user)
+    {
+        var request = new TransformImageUserRequest(ctx, user, TransformImageEffect.OilPaint);
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 

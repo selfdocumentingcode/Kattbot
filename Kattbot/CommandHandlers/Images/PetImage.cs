@@ -6,7 +6,6 @@ using DSharpPlus.Entities;
 using Kattbot.Helpers;
 using Kattbot.Services.Images;
 using MediatR;
-using Microsoft.Extensions.Logging;
 
 namespace Kattbot.CommandHandlers.Images;
 
@@ -40,13 +39,13 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
 {
     private readonly ImageService _imageService;
     private readonly PetPetClient _petPetClient;
-    private readonly ILogger<PetImageHandlers> _logger;
+    private readonly DiscordResolver _discordResolver;
 
-    public PetImageHandlers(ImageService imageService, PetPetClient petPetClient, ILogger<PetImageHandlers> logger)
+    public PetImageHandlers(ImageService imageService, PetPetClient petPetClient, DiscordResolver discordResolver)
     {
         _imageService = imageService;
         _petPetClient = petPetClient;
-        _logger = logger;
+        _discordResolver = discordResolver;
     }
 
     public async Task Handle(PetEmoteRequest request, CancellationToken cancellationToken)
@@ -80,14 +79,11 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
         DiscordUser user = request.User;
         DiscordGuild guild = ctx.Guild;
 
-        DiscordMember? userAsMember = await ResolveGuildMember(guild, user.Id) ?? throw new Exception("Invalid user");
+        DiscordMember? userAsMember = await _discordResolver.ResolveGuildMember(guild, user.Id) ?? throw new Exception("Invalid user");
 
-        string avatarUrl = userAsMember.GuildAvatarUrl ?? userAsMember.AvatarUrl;
-
-        if (string.IsNullOrEmpty(avatarUrl))
-        {
-            throw new Exception("Couldn't load user avatar");
-        }
+        string avatarUrl = userAsMember.GuildAvatarUrl
+                            ?? userAsMember.AvatarUrl
+                            ?? throw new Exception("Couldn't load user avatar");
 
         using var inputImage = await _imageService.DownloadImage(avatarUrl);
 
@@ -110,12 +106,5 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
         responseBuilder.AddFile($"{imageFilename}.{imageStreamResult.FileExtension}", imageStreamResult.MemoryStream);
 
         await ctx.RespondAsync(responseBuilder);
-    }
-
-    private Task<DiscordMember?> ResolveGuildMember(DiscordGuild guild, ulong userId)
-    {
-        bool memberExists = guild.Members.TryGetValue(userId, out DiscordMember? member);
-
-        return memberExists ? Task.FromResult(member) : guild.GetMemberAsync(userId);
     }
 }

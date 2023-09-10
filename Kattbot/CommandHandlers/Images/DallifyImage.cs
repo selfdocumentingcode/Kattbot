@@ -37,13 +37,17 @@ public class DallifyUserRequest : CommandRequest
 public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
                                     IRequestHandler<DallifyUserRequest>
 {
+    private const string Size = "256x256";
+
     private readonly DalleHttpClient _dalleHttpClient;
     private readonly ImageService _imageService;
+    private readonly DiscordResolver _discordResolver;
 
-    public DallifyImageHandler(DalleHttpClient dalleHttpClient, ImageService imageService)
+    public DallifyImageHandler(DalleHttpClient dalleHttpClient, ImageService imageService, DiscordResolver discordResolver)
     {
         _dalleHttpClient = dalleHttpClient;
         _imageService = imageService;
+        _discordResolver = discordResolver;
     }
 
     public async Task Handle(DallifyEmoteRequest request, CancellationToken cancellationToken)
@@ -64,12 +68,10 @@ public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
 
             string fileName = $"{Guid.NewGuid()}.png";
 
-            const string size = "256x256";
-
             var imageVariationRequest = new CreateImageVariationRequest
             {
                 Image = squaredEmojiImage.MemoryStream.ToArray(),
-                Size = size,
+                Size = Size,
                 User = request.Ctx.User.Id.ToString(),
             };
 
@@ -106,17 +108,14 @@ public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
 
         DiscordMessage message = await request.Ctx.RespondAsync("Working on it");
 
-        DiscordMember? userAsMember = await ResolveGuildMember(guild, user.Id) ?? throw new Exception("Invalid user");
-
-        string avatarUrl = userAsMember.GuildAvatarUrl ?? userAsMember.AvatarUrl;
-
-        if (string.IsNullOrEmpty(avatarUrl))
-        {
-            throw new Exception("Couldn't load user avatar");
-        }
-
         try
         {
+            DiscordMember? userAsMember = await _discordResolver.ResolveGuildMember(guild, user.Id) ?? throw new Exception("Invalid user");
+
+            string avatarUrl = userAsMember.GuildAvatarUrl
+                                ?? userAsMember.AvatarUrl
+                                ?? throw new Exception("Couldn't load user avatar");
+
             using var inputImage = await _imageService.DownloadImage(avatarUrl);
 
             var avatarAsPng = await ImageService.ConvertImageToPng(inputImage);
@@ -125,12 +124,10 @@ public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
 
             string imageFilename = user.GetNicknameOrUsername().ToSafeFilename(avatarImageStream.FileExtension);
 
-            const string size = "256x256";
-
             var imageVariationRequest = new CreateImageVariationRequest
             {
                 Image = avatarImageStream.MemoryStream.ToArray(),
-                Size = size,
+                Size = Size,
                 User = request.Ctx.User.Id.ToString(),
             };
 
@@ -157,12 +154,5 @@ public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
             await message.DeleteAsync();
             throw;
         }
-    }
-
-    private Task<DiscordMember?> ResolveGuildMember(DiscordGuild guild, ulong userId)
-    {
-        bool memberExists = guild.Members.TryGetValue(userId, out DiscordMember? member);
-
-        return memberExists ? Task.FromResult(member) : guild.GetMemberAsync(userId);
     }
 }
