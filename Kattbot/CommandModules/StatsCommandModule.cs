@@ -163,35 +163,6 @@ public class StatsCommandModule : BaseCommandModule
         return _commandQueue.Writer.WriteAsync(request).AsTask();
     }
 
-    [Command("help")]
-    [Description("Help about stats")]
-    public Task GetHelpStats(CommandContext ctx)
-    {
-        var sb = new StringBuilder();
-
-        string commandPrefix = _options.CommandPrefix;
-
-        sb.AppendLine();
-        sb.AppendLine($"Command arguments:");
-        sb.AppendLine($"`username       .. Discord username with # identifier or @mention`");
-        sb.AppendLine($"`emote          .. Discord emote (server emotes only)`");
-        sb.AppendLine($"`-p, --page     .. Displays a different page of the result set (default 1st page)`");
-        sb.AppendLine($"`-i, --interval .. Limits result set to given interval (default 2 months)`");
-        sb.AppendLine($"`                    Valid interval units: \"m\", \"w\", \"d\"`");
-        sb.AppendLine($"`                    Optionally use interval value \"lifetime\"`");
-        sb.AppendLine();
-        sb.AppendLine($"Usage examples:");
-        sb.AppendLine($"`{commandPrefix}stats best`");
-        sb.AppendLine($"`{commandPrefix}stats worst --page 2`");
-        sb.AppendLine($"`{commandPrefix}stats User#1234 --interval 3m`");
-        sb.AppendLine($"`{commandPrefix}stats me -p 2 -i 2w`");
-        sb.AppendLine($"`{commandPrefix}stats :a_server_emote:`");
-
-        string result = FormattedResultHelper.BuildMessage($"Shows server-wide emote stats-or for a specific user", sb.ToString());
-
-        return ctx.RespondAsync(result);
-    }
-
     private bool TryGetDateFromInterval(IntervalValue interval, out DateTime? dateTime)
     {
         if (interval.IsLifetime)
