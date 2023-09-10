@@ -110,15 +110,36 @@ public class ImageService
     {
         var ellipsePath = new EllipsePolygon(image.Width / 2, image.Height / 2, image.Width, image.Height);
 
-        var cloned = image.Clone(i =>
-        {
-            i.SetGraphicsOptions(new GraphicsOptions()
-            {
-                Antialias = true,
-                AlphaCompositionMode = PixelAlphaCompositionMode.DestIn,
-            });
+        Image imageAsPngWithTransparency;
 
-            i.Fill(Color.Red, ellipsePath);
+        if (image.Metadata.DecodedImageFormat is not PngFormat ||
+            image.Metadata.GetPngMetadata().ColorType is not PngColorType.RgbWithAlpha)
+        {
+            using var stream = new MemoryStream();
+
+            image.SaveAsPngAsync(stream, new PngEncoder() { ColorType = PngColorType.RgbWithAlpha });
+
+            stream.Position = 0;
+
+            imageAsPngWithTransparency = Image.Load(stream);
+        }
+        else
+        {
+            imageAsPngWithTransparency = image;
+        }
+
+        var cloned = imageAsPngWithTransparency.Clone(i =>
+        {
+            var opts = new DrawingOptions()
+            {
+                GraphicsOptions = new GraphicsOptions()
+                {
+                    Antialias = true,
+                    AlphaCompositionMode = PixelAlphaCompositionMode.DestIn,
+                },
+            };
+
+            i.Fill(opts, Color.Black, ellipsePath);
         });
 
         return cloned;

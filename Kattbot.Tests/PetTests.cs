@@ -32,11 +32,14 @@ public class PetTests
         await image.SaveAsGifAsync(ouputFile);
     }
 
-    [TestMethod]
-    public async Task CropToCircle()
+    [DataTestMethod]
+    [DataRow("froge.png")]
+    [DataRow("test_working.png")]
+    [DataRow("test_not_working.png")]
+    public async Task CropToCircle(string inputFilename)
     {
-        string inputFile = Path.Combine(Path.GetTempPath(), "froge.png");
-        string ouputFile = Path.Combine(Path.GetTempPath(), "froge_circle.png");
+        string inputFile = Path.Combine(Path.GetTempPath(), inputFilename);
+        string ouputFile = Path.Combine(Path.GetTempPath(), $"cropped_{inputFilename}");
 
         var imageService = new ImageService(null!);
 
