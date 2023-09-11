@@ -7,3 +7,21 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+    groups:
+        core-packages:
+            patterns: 
+                - "Microsoft*"
+                - "Npgsql.EntityFramework.PostgreSQL"
+            exclude-patterns:
+                - "Microsoft.NET.Test.Sdk"
+        test-packages:
+            patterns:
+            - "MSTest*"
+            - "Microsoft.NET.Test.Sdk"
+            - "NSubstitute*"
+        dsharp-packages:
+            patterns:
+            - "DSharpPlus*"
+        image-sharp-packages:
+            patterns:
+            - "SixLabors.ImageSharp*"
