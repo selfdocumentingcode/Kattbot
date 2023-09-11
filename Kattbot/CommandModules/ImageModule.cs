@@ -34,6 +34,16 @@ public class ImageModule : BaseCommandModule
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
+    [Command("deepfry")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    public Task DeepFryEmote(CommandContext ctx, string _ = "")
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
+    {
+        var request = new TransformImageMessageRequest(ctx, TransformImageEffect.DeepFry);
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
     [Command("oilpaint")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
     public Task OilPaintEmote(CommandContext ctx, DiscordEmoji emoji)
@@ -48,6 +58,16 @@ public class ImageModule : BaseCommandModule
     public Task OilPaintEmote(CommandContext ctx, DiscordUser user)
     {
         var request = new TransformImageUserRequest(ctx, user, TransformImageEffect.OilPaint);
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("oilpaint")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    public Task OilPaintEmote(CommandContext ctx, string _ = "")
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
+    {
+        var request = new TransformImageMessageRequest(ctx, TransformImageEffect.OilPaint);
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 

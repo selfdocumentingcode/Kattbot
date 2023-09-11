@@ -48,6 +48,7 @@ public class HelpModule : BaseCommandModule
         sb.AppendLine($"`{commandPrefix}pet [emote|user|image] [?speed]`");
         sb.AppendLine($"`{commandPrefix}dallify [emote|user|image]`");
         sb.AppendLine($"`{commandPrefix}dalle [text]`");
+        sb.AppendLine($"`{commandPrefix}help images .. More information about image commands`");
 
         sb.AppendLine();
         sb.AppendLine("Other commands");
@@ -66,7 +67,7 @@ public class HelpModule : BaseCommandModule
 
     [Command("stats")]
     [Description("Help about stats")]
-    public Task GetHelpStats(CommandContext ctx)
+    public Task GetStatsHelp(CommandContext ctx)
     {
         var sb = new StringBuilder();
 
@@ -74,19 +75,51 @@ public class HelpModule : BaseCommandModule
 
         sb.AppendLine();
         sb.AppendLine($"Command arguments:");
-        sb.AppendLine($"`username       .. Discord username with # identifier or @mention`");
+        sb.AppendLine($"`user           .. Discord username with # identifier or @mention`");
         sb.AppendLine($"`emote          .. Discord emote (server emotes only)`");
-        sb.AppendLine($"`-p, --page     .. Displays a different page of the result set (default 1st page)`");
-        sb.AppendLine($"`-i, --interval .. Limits result set to given interval (default 2 months)`");
-        sb.AppendLine($"`                    Valid interval units: \"m\", \"w\", \"d\"`");
-        sb.AppendLine($"`                    Optionally use interval value \"lifetime\"`");
+        sb.AppendLine($"`-p, --page     .. Displays a different page of the result set`");
+        sb.AppendLine($"`                  (default 1st page)`");
+        sb.AppendLine($"`-i, --interval .. Limits result set to given interval`");
+        sb.AppendLine($"`                  (default 2 months)`");
+        sb.AppendLine($"`                  Valid interval units: \"m\", \"w\", \"d\"`");
+        sb.AppendLine($"`                  Optionally use interval value \"lifetime\"`");
         sb.AppendLine();
         sb.AppendLine($"Usage examples:");
         sb.AppendLine($"`{commandPrefix}stats best`");
         sb.AppendLine($"`{commandPrefix}stats worst --page 2`");
-        sb.AppendLine($"`{commandPrefix}stats User#1234 --interval 3m`");
+        sb.AppendLine($"`{commandPrefix}stats @someUser --interval 3m`");
         sb.AppendLine($"`{commandPrefix}stats me -p 2 -i 2w`");
         sb.AppendLine($"`{commandPrefix}stats :a_server_emote:`");
+
+        var eb = EmbedBuilderHelper.BuildSimpleEmbed("Shows server-wide emote stats-or for a specific user", sb.ToString());
+
+        return ctx.RespondAsync(eb);
+    }
+
+    [Command("images")]
+    [Description("Help about images")]
+    public Task GetImagesHelp(CommandContext ctx)
+    {
+        var sb = new StringBuilder();
+
+        string commandPrefix = _options.CommandPrefix;
+
+        sb.AppendLine();
+        sb.AppendLine($"Command arguments:");
+        sb.AppendLine($"`user           .. Discord username with # identifier or @mention`");
+        sb.AppendLine($"`emote          .. Discord emote (server emotes only)`");
+        sb.AppendLine($"`image          .. Attached or linked image in current message.`");
+        sb.AppendLine($"`                  If message contains no images,`");
+        sb.AppendLine($"`                  reply-to message is checked.`");
+        sb.AppendLine($"`speed          .. Petting speed`");
+        sb.AppendLine($"`                  Valid speeds: \"slow\", \"normal\",`");
+        sb.AppendLine($"`                                \"fast\", \"lightspeed\"`");
+
+        sb.AppendLine();
+        sb.AppendLine($"Usage examples:");
+        sb.AppendLine($"`{commandPrefix}deepfry :a_server_emote:`");
+        sb.AppendLine($"`{commandPrefix}pet @someUser fast`");
+        sb.AppendLine($"`{commandPrefix}dallify <message_with_image>`");
 
         var eb = EmbedBuilderHelper.BuildSimpleEmbed("Shows server-wide emote stats-or for a specific user", sb.ToString());
 

@@ -77,7 +77,6 @@ public class PetPetClient
         const int speedSlow = 8;
         const int speedNormal = 16;
         const int speedFast = 32;
-        const int speedFaster = 48;
         const int speedLightspeed = 60;
 
         return ((speed ?? string.Empty).ToLower() switch
@@ -85,7 +84,6 @@ public class PetPetClient
             "slow" => speedSlow,
             "normal" => speedNormal,
             "fast" => speedFast,
-            "faster" => speedFaster,
             "lightspeed" => speedLightspeed,
             _ => speedNormal,
         }).ToString();
