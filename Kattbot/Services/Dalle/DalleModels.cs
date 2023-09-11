@@ -41,6 +41,7 @@ public record CreateImageRequest
     /// Gets or sets a unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
     /// https://platform.openai.com/docs/api-reference/chat/create#chat/create-user.
     /// </summary>
+    [JsonPropertyName("user")]
     public string? User { get; set; }
 }
 
@@ -81,6 +82,7 @@ public record CreateImageVariationRequest
     /// Gets or sets a unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
     /// https://platform.openai.com/docs/api-reference/images/createVariation#user.
     /// </summary>
+    [JsonPropertyName("user")]
     public string? User { get; set; }
 }
 
