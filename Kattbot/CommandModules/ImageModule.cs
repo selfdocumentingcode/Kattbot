@@ -99,7 +99,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("dalle")]
-    [Cooldown(5, 60, CooldownBucketType.Global)]
+    [Cooldown(5, 30, CooldownBucketType.Global)]
     public Task Dalle(CommandContext ctx, [RemainingText] string prompt)
     {
         var request = new DallePromptCommand(ctx, prompt);
@@ -108,7 +108,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("dallify")]
-    [Cooldown(5, 60, CooldownBucketType.Global)]
+    [Cooldown(5, 30, CooldownBucketType.Global)]
     public Task Dallify(CommandContext ctx, DiscordEmoji emoji)
     {
         var request = new DallifyEmoteRequest(ctx, emoji);
@@ -117,10 +117,21 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("dallify")]
-    [Cooldown(5, 60, CooldownBucketType.Global)]
+    [Cooldown(5, 30, CooldownBucketType.Global)]
     public Task Dallify(CommandContext ctx, DiscordUser user)
     {
         var request = new DallifyUserRequest(ctx, user);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("dallify")]
+    [Cooldown(5, 30, CooldownBucketType.Global)]
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    public Task Dallify(CommandContext ctx, string _ = "")
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
+    {
+        var request = new DallifyImageRequest(ctx);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }

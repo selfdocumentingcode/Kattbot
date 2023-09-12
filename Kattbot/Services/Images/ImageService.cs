@@ -33,7 +33,7 @@ public class ImageService
         return Image.Load(imageBytes);
     }
 
-    public static async Task<Image> ConvertImageToPng(Image image)
+    public async Task<Image> ConvertImageToPng(Image image, int? maxSizeInMb = null)
     {
         if (image.Metadata.DecodedImageFormat is PngFormat)
             return image;
@@ -42,12 +42,27 @@ public class ImageService
 
         await image.SaveAsPngAsync(pngMemoryStream);
 
+        pngMemoryStream.Position = 0;
+
+        var sizeInMb = (double)pngMemoryStream.Length / (1024 * 1024);
+
         var convertedImage = await Image.LoadAsync(pngMemoryStream);
+
+        if (maxSizeInMb.HasValue && sizeInMb > maxSizeInMb)
+        {
+            double differenceRatio = sizeInMb / (int)maxSizeInMb;
+            convertedImage = ScaleImageSync(convertedImage, 1 / differenceRatio);
+        }
 
         return convertedImage;
     }
 
     public async Task<Image> DownloadImage(string url)
+    {
+        return (await DownloadImageWithSize(url)).Image;
+    }
+
+    public async Task<(Image Image, int Size)> DownloadImageWithSize(string url)
     {
         byte[] imageBytes;
 
@@ -59,7 +74,7 @@ public class ImageService
 
             var image = Image.Load(imageBytes);
 
-            return image;
+            return (image, imageBytes.Length);
         }
         catch (HttpRequestException)
         {
@@ -71,10 +86,20 @@ public class ImageService
         }
     }
 
-    public Task<ImageStreamResult> ScaleImage(Image image, uint scaleFactor)
+    public Image ScaleImageSync(Image image, double scaleFactor)
     {
-        int newWidth = image.Width * (int)scaleFactor;
-        int newHeight = image.Height * (int)scaleFactor;
+        int newWidth = (int)(image.Width * scaleFactor);
+        int newHeight = (int)(image.Height * scaleFactor);
+
+        image.Mutate(i => i.Resize(newWidth, newHeight, KnownResamplers.Hermite));
+
+        return image;
+    }
+
+    public Task<ImageStreamResult> ScaleImage(Image image, double scaleFactor)
+    {
+        int newWidth = (int)(image.Width * scaleFactor);
+        int newHeight = (int)(image.Height * scaleFactor);
 
         image.Mutate(i => i.Resize(newWidth, newHeight, KnownResamplers.Hermite));
 
@@ -151,7 +176,7 @@ public class ImageService
 
         image.Mutate(i =>
         {
-            i.Resize(newSize, newSize);
+            i.Crop(newSize, newSize);
         });
 
         return GetImageStream(image);

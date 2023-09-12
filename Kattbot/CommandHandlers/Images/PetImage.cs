@@ -79,9 +79,11 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
 
         var imageName = emoji.Id != 0 ? emoji.Id.ToString() : emoji.Name;
 
+        string fileName = $"{imageName}.{imageStreamResult.FileExtension}";
+
         var responseBuilder = new DiscordMessageBuilder();
 
-        responseBuilder.AddFile($"{imageName}.{imageStreamResult.FileExtension}", imageStreamResult.MemoryStream);
+        responseBuilder.AddFile(fileName, imageStreamResult.MemoryStream);
 
         await ctx.RespondAsync(responseBuilder);
     }
@@ -130,7 +132,7 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
         using var imageStream = imageStreamResult.MemoryStream;
         var fileExtension = imageStreamResult.FileExtension;
 
-        string imageFilename = $"{Guid.NewGuid()}.{fileExtension}";
+        var imageFilename = $"{Guid.NewGuid()}.{fileExtension}";
 
         var responseBuilder = new DiscordMessageBuilder();
 
