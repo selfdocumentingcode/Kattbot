@@ -35,34 +35,33 @@ public class ImageService
 
     public async Task<Image> ConvertImageToPng(Image image, int? maxSizeInMb = null)
     {
-        if (image.Metadata.DecodedImageFormat is PngFormat)
-            return image;
-
         using var pngMemoryStream = new MemoryStream();
 
         await image.SaveAsPngAsync(pngMemoryStream);
 
-        pngMemoryStream.Position = 0;
-
         var sizeInMb = (double)pngMemoryStream.Length / (1024 * 1024);
 
-        var convertedImage = await Image.LoadAsync(pngMemoryStream);
+        var imageLargerThanMaxSize = maxSizeInMb.HasValue && sizeInMb > maxSizeInMb;
+        var imageNotPng = !(image.Metadata.DecodedImageFormat is PngFormat);
 
-        if (maxSizeInMb.HasValue && sizeInMb > maxSizeInMb)
+        if (!imageLargerThanMaxSize && !imageNotPng)
         {
-            double differenceRatio = sizeInMb / (int)maxSizeInMb;
-            convertedImage = ScaleImageSync(convertedImage, 1 / differenceRatio);
+            return image;
         }
 
-        return convertedImage;
+        pngMemoryStream.Position = 0;
+        var imageAsPng = await Image.LoadAsync(pngMemoryStream);
+
+        if (imageLargerThanMaxSize)
+        {
+            double differenceRatio = sizeInMb / (int)maxSizeInMb!;
+            imageAsPng = ScaleImageSync(imageAsPng, 1 / differenceRatio);
+        }
+
+        return imageAsPng;
     }
 
     public async Task<Image> DownloadImage(string url)
-    {
-        return (await DownloadImageWithSize(url)).Image;
-    }
-
-    public async Task<(Image Image, int Size)> DownloadImageWithSize(string url)
     {
         byte[] imageBytes;
 
@@ -74,7 +73,7 @@ public class ImageService
 
             var image = Image.Load(imageBytes);
 
-            return (image, imageBytes.Length);
+            return image;
         }
         catch (HttpRequestException)
         {

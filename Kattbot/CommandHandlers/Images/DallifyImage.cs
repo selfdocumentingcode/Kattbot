@@ -178,14 +178,7 @@ public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
 
     private async Task<ImageStreamResult> DallifyImage(string imageUrl, ulong userId, string resultSize)
     {
-        (var image, var inputSize) = await _imageService.DownloadImageWithSize(imageUrl);
-
-        var sizeInMb = (double)inputSize / (1024 * 1024);
-
-        if (sizeInMb > MaxImageSizeInMb)
-        {
-            throw new Exception($"The image is larger than {MaxImageSizeInMb} MB");
-        }
+        var image = await _imageService.DownloadImage(imageUrl);
 
         var imageAsPng = await _imageService.ConvertImageToPng(image, MaxImageSizeInMb);
 
