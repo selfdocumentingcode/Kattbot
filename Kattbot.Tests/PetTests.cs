@@ -14,7 +14,13 @@ namespace Kattbot.Tests;
 public class PetTests
 {
     [TestMethod]
-    public async Task PetPetTest()
+    [DataRow("SamplePNGImage_100kbmb.png")]
+    [DataRow("SamplePNGImage_500kbmb.png")]
+    [DataRow("SamplePNGImage_1mbmb.png")]
+    [DataRow("SamplePNGImage_3mbmb.png")]
+    [DataRow("SamplePNGImage_10mbmb.png")]
+    [DataRow("SamplePNGImage_30mbmb.png")]
+    public async Task PetPetTest(string inputImage)
     {
         var puppeteerFactory = new PuppeteerFactory();
 
@@ -22,8 +28,8 @@ public class PetTests
 
         var makeEmojiClient = new PetPetClient(puppeteerFactory, logger);
 
-        string inputFile = Path.Combine(Path.GetTempPath(), "froge.png");
-        string ouputFile = Path.Combine(Path.GetTempPath(), "pet_froge.gif");
+        string inputFile = Path.Combine(Path.GetTempPath(), "test_images", inputImage);
+        string ouputFile = Path.Combine(Path.GetTempPath(), "pet-test-output", $"pet_{inputImage.Split(".")[0]}.gif");
 
         byte[] resultBytes = await makeEmojiClient.PetPet(inputFile);
 

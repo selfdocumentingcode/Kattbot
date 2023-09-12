@@ -20,7 +20,7 @@ public class ImageModule : BaseCommandModule
 
     [Command("deepfry")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task DeepFryEmote(CommandContext ctx, DiscordEmoji emoji)
+    public Task DeepFry(CommandContext ctx, DiscordEmoji emoji)
     {
         var request = new TransformImageEmoteRequest(ctx, emoji, TransformImageEffect.DeepFry);
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
@@ -28,7 +28,7 @@ public class ImageModule : BaseCommandModule
 
     [Command("deepfry")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task DeepFryEmote(CommandContext ctx, DiscordUser user)
+    public Task DeepFry(CommandContext ctx, DiscordUser user)
     {
         var request = new TransformImageUserRequest(ctx, user, TransformImageEffect.DeepFry);
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
@@ -37,7 +37,7 @@ public class ImageModule : BaseCommandModule
     [Command("deepfry")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
 #pragma warning disable SA1313 // Parameter names should begin with lower-case letter
-    public Task DeepFryEmote(CommandContext ctx, string _ = "")
+    public Task DeepFry(CommandContext ctx, string _ = "")
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
     {
         var request = new TransformImageMessageRequest(ctx, TransformImageEffect.DeepFry);
@@ -46,7 +46,7 @@ public class ImageModule : BaseCommandModule
 
     [Command("oilpaint")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task OilPaintEmote(CommandContext ctx, DiscordEmoji emoji)
+    public Task OilPaint(CommandContext ctx, DiscordEmoji emoji)
     {
         var request = new TransformImageEmoteRequest(ctx, emoji, TransformImageEffect.OilPaint);
 
@@ -55,7 +55,7 @@ public class ImageModule : BaseCommandModule
 
     [Command("oilpaint")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task OilPaintEmote(CommandContext ctx, DiscordUser user)
+    public Task OilPaint(CommandContext ctx, DiscordUser user)
     {
         var request = new TransformImageUserRequest(ctx, user, TransformImageEffect.OilPaint);
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
@@ -64,7 +64,7 @@ public class ImageModule : BaseCommandModule
     [Command("oilpaint")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
 #pragma warning disable SA1313 // Parameter names should begin with lower-case letter
-    public Task OilPaintEmote(CommandContext ctx, string _ = "")
+    public Task OilPaint(CommandContext ctx, string _ = "")
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
     {
         var request = new TransformImageMessageRequest(ctx, TransformImageEffect.OilPaint);
@@ -73,26 +73,27 @@ public class ImageModule : BaseCommandModule
 
     [Command("pet")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task PetEmote(CommandContext ctx, DiscordEmoji emoji, string? speed = null)
+    public Task Pet(CommandContext ctx, DiscordEmoji emoji, string? speed = null)
     {
-        var request = new PetEmoteRequest(ctx)
-        {
-            Emoji = emoji,
-            Speed = speed,
-        };
+        var request = new PetEmoteRequest(ctx, emoji, speed);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
     [Command("pet")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task PetUser(CommandContext ctx, DiscordUser user, string? speed = null)
+    public Task Pet(CommandContext ctx, DiscordUser user, string? speed = null)
     {
-        var request = new PetUserRequest(ctx)
-        {
-            User = user,
-            Speed = speed,
-        };
+        var request = new PetUserRequest(ctx, user, speed);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("pet")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+    public Task Pet(CommandContext ctx, string? speed = null)
+    {
+        var request = new PetImageRequest(ctx, speed);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }

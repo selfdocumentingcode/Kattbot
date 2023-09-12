@@ -83,9 +83,9 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
         using var imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;
 
-        var responseBuilder = new DiscordMessageBuilder();
-
         string fileName = $"{Guid.NewGuid()}.png";
+
+        var responseBuilder = new DiscordMessageBuilder();
 
         responseBuilder.AddFile($"{fileName}.{fileExtension}", imageStream);
 
@@ -111,9 +111,9 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
         using var imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;
 
-        var responseBuilder = new DiscordMessageBuilder();
-
         string imageFilename = user.GetNicknameOrUsername().ToSafeFilename(fileExtension);
+
+        var responseBuilder = new DiscordMessageBuilder();
 
         responseBuilder.AddFile(imageFilename, imageStream);
 
@@ -126,7 +126,7 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
         var message = ctx.Message;
         var effect = request.Effect;
 
-        var imageUrl = GetImageUrlFromMessage(message);
+        var imageUrl = message.GetImageUrlFromMessage();
 
         if (imageUrl == null)
         {
@@ -139,11 +139,11 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
         using var imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;
 
+        string imageFilename = $"{Guid.NewGuid()}.png";
+
         var responseBuilder = new DiscordMessageBuilder();
 
-        string fileName = $"{Guid.NewGuid()}.png";
-
-        responseBuilder.AddFile($"{fileName}.{fileExtension}", imageStream);
+        responseBuilder.AddFile($"{imageFilename}.{fileExtension}", imageStream);
 
         await ctx.RespondAsync(responseBuilder);
     }
@@ -173,33 +173,5 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
         }
 
         return imageStreamResult;
-    }
-
-    private string? GetImageUrlFromMessage(DiscordMessage message, bool isRootMessage = true)
-    {
-        if (message.Attachments.Count > 0)
-        {
-            var imgAttachment = message.Attachments.Where(a => a.MediaType.StartsWith("image")).FirstOrDefault();
-
-            if (imgAttachment != null)
-            {
-                return imgAttachment.Url;
-            }
-        }
-        else if (message.Embeds.Count > 0)
-        {
-            var imgEmbed = message.Embeds.Where(e => e.Type == "image").FirstOrDefault();
-
-            if (imgEmbed != null)
-            {
-                return imgEmbed.Url.AbsoluteUri;
-            }
-        }
-        else if (isRootMessage == true && message.ReferencedMessage != null)
-        {
-            return GetImageUrlFromMessage(message.ReferencedMessage, false);
-        }
-
-        return null;
     }
 }

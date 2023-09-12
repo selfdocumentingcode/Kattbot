@@ -91,7 +91,7 @@ public class HelpModule : BaseCommandModule
         sb.AppendLine($"`{commandPrefix}stats me -p 2 -i 2w`");
         sb.AppendLine($"`{commandPrefix}stats :a_server_emote:`");
 
-        var eb = EmbedBuilderHelper.BuildSimpleEmbed("Shows server-wide emote stats-or for a specific user", sb.ToString());
+        var eb = EmbedBuilderHelper.BuildSimpleEmbed("Check out random emote related stats", sb.ToString());
 
         return ctx.RespondAsync(eb);
     }
@@ -121,7 +121,7 @@ public class HelpModule : BaseCommandModule
         sb.AppendLine($"`{commandPrefix}pet @someUser fast`");
         sb.AppendLine($"`{commandPrefix}dallify <message_with_image>`");
 
-        var eb = EmbedBuilderHelper.BuildSimpleEmbed("Shows server-wide emote stats-or for a specific user", sb.ToString());
+        var eb = EmbedBuilderHelper.BuildSimpleEmbed("Stuff you can do with images", sb.ToString());
 
         return ctx.RespondAsync(eb);
     }
