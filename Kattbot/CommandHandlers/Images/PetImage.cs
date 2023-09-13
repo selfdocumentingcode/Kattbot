@@ -7,6 +7,7 @@ using Kattbot.Helpers;
 using Kattbot.Services.Images;
 using MediatR;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Kattbot.CommandHandlers.Images;
 
@@ -100,7 +101,7 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
                             ?? userAsMember.AvatarUrl
                             ?? throw new Exception("Couldn't load user avatar");
 
-        var imageStreamResult = await PetImage(imageUrl, request.Speed, _imageService.CropImageToCircle);
+        var imageStreamResult = await PetImage(imageUrl, request.Speed, _imageService.CropToCircle<Rgba32>);
 
         using var imageStream = imageStreamResult.MemoryStream;
         var fileExtension = imageStreamResult.FileExtension;
@@ -141,9 +142,9 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
         await ctx.RespondAsync(responseBuilder);
     }
 
-    private async Task<ImageStreamResult> PetImage(string imageUrl, string? speed, Func<Image, Image>? preTransform = null)
+    private async Task<ImageStreamResult> PetImage(string imageUrl, string? speed, ImageTransformDelegate<Rgba32>? preTransform = null)
     {
-        var inputImage = await _imageService.DownloadImage(imageUrl);
+        var inputImage = await _imageService.DownloadImage<Rgba32>(imageUrl);
 
         if (preTransform != null)
         {

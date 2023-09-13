@@ -8,6 +8,7 @@ using Kattbot.Helpers;
 using Kattbot.Services.Images;
 using MediatR;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Kattbot.CommandHandlers.Images;
 
@@ -16,6 +17,7 @@ public enum TransformImageEffect
 {
     DeepFry,
     OilPaint,
+    Twirl,
 }
 
 public class TransformImageEmoteRequest : CommandRequest
@@ -106,7 +108,7 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
                         ?? userAsMember.AvatarUrl
                         ?? throw new Exception("Couldn't load user avatar");
 
-        var imageStreamResult = await TransformImage(imageUrl, effect, _imageService.CropImageToCircle);
+        var imageStreamResult = await TransformImage(imageUrl, effect, _imageService.CropToCircle<Rgba32>);
 
         using var imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;
@@ -148,29 +150,35 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
         await ctx.RespondAsync(responseBuilder);
     }
 
-    private async Task<ImageStreamResult> TransformImage(string imageUrl, TransformImageEffect effect, Func<Image, Image>? preTransform = null)
+    private async Task<ImageStreamResult> TransformImage(string imageUrl, TransformImageEffect effect, ImageTransformDelegate<Rgba32>? preTransform = null)
     {
-        var inputImage = await _imageService.DownloadImage(imageUrl);
+        var inputImage = await _imageService.DownloadImage<Rgba32>(imageUrl);
 
         if (preTransform != null)
         {
-            inputImage = preTransform(inputImage);
+            inputImage = (Image<Rgba32>)preTransform(inputImage);
         }
 
-        ImageStreamResult imageStreamResult;
+        Image imageResult;
 
         if (effect == TransformImageEffect.DeepFry)
         {
-            imageStreamResult = await _imageService.DeepFryImage(inputImage);
+            imageResult = _imageService.DeepFryImage(inputImage);
         }
         else if (effect == TransformImageEffect.OilPaint)
         {
-            imageStreamResult = await _imageService.OilPaintImage(inputImage);
+            imageResult = _imageService.OilPaintImage(inputImage);
+        }
+        else if (effect == TransformImageEffect.Twirl)
+        {
+            imageResult = _imageService.TwirlImage(inputImage, 90);
         }
         else
         {
             throw new InvalidOperationException($"Unknown effect: {effect}");
         }
+
+        var imageStreamResult = await _imageService.GetImageStream(imageResult);
 
         return imageStreamResult;
     }

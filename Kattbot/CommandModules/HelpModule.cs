@@ -32,7 +32,7 @@ public class HelpModule : BaseCommandModule
         sb.AppendLine($"`{commandPrefix}stats me [?interval] [?page]`");
         sb.AppendLine($"`{commandPrefix}stats best [?interval] [?page]`");
         sb.AppendLine($"`{commandPrefix}stats [emote] [?interval]`");
-        sb.AppendLine($"`{commandPrefix}help stats .. More information about stats command`");
+        sb.AppendLine($"`{commandPrefix}help stats .. See all stats command`");
 
         sb.AppendLine();
         sb.AppendLine("Emote commands");
@@ -44,11 +44,10 @@ public class HelpModule : BaseCommandModule
         sb.AppendLine();
         sb.AppendLine("Image commands");
         sb.AppendLine($"`{commandPrefix}deepfry [emote|user|image]`");
-        sb.AppendLine($"`{commandPrefix}oilpaint [emote|user|image]`");
         sb.AppendLine($"`{commandPrefix}pet [emote|user|image] [?speed]`");
         sb.AppendLine($"`{commandPrefix}dallify [emote|user|image]`");
         sb.AppendLine($"`{commandPrefix}dalle [text]`");
-        sb.AppendLine($"`{commandPrefix}help images .. More information about image commands`");
+        sb.AppendLine($"`{commandPrefix}help images .. See all image commands`");
 
         sb.AppendLine();
         sb.AppendLine("Other commands");
@@ -103,6 +102,15 @@ public class HelpModule : BaseCommandModule
         var sb = new StringBuilder();
 
         string commandPrefix = _options.CommandPrefix;
+
+        sb.AppendLine();
+        sb.AppendLine("Commands");
+        sb.AppendLine($"`{commandPrefix}deepfry [emote|user|image]`");
+        sb.AppendLine($"`{commandPrefix}oilpaint [emote|user|image]`");
+        sb.AppendLine($"`{commandPrefix}twirl [emote|user|image]`");
+        sb.AppendLine($"`{commandPrefix}pet [emote|user|image] [?speed]`");
+        sb.AppendLine($"`{commandPrefix}dallify [emote|user|image]`");
+        sb.AppendLine($"`{commandPrefix}dalle [text]`");
 
         sb.AppendLine();
         sb.AppendLine($"Command arguments:");

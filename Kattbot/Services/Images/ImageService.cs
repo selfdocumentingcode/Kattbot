@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -15,9 +14,11 @@ using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Color = SixLabors.ImageSharp.Color;
-using Point = SixLabors.ImageSharp.Point;
 
 namespace Kattbot.Services.Images;
+
+public delegate Image<TPixel> ImageTransformDelegate<TPixel>(Image<TPixel> input)
+    where TPixel : unmanaged, IPixel<TPixel>;
 
 public class ImageService
 {
@@ -42,7 +43,7 @@ public class ImageService
         var sizeInMb = (double)pngMemoryStream.Length / (1024 * 1024);
 
         var imageLargerThanMaxSize = maxSizeInMb.HasValue && sizeInMb > maxSizeInMb;
-        var imageNotPng = !(image.Metadata.DecodedImageFormat is PngFormat);
+        var imageNotPng = image.Metadata.DecodedImageFormat is not PngFormat;
 
         if (!imageLargerThanMaxSize && !imageNotPng)
         {
@@ -55,7 +56,7 @@ public class ImageService
         if (imageLargerThanMaxSize)
         {
             double differenceRatio = sizeInMb / (int)maxSizeInMb!;
-            imageAsPng = ScaleImageSync(imageAsPng, 1 / differenceRatio);
+            imageAsPng = ScaleImage(imageAsPng, 1 / differenceRatio);
         }
 
         return imageAsPng;
@@ -63,17 +64,26 @@ public class ImageService
 
     public async Task<Image> DownloadImage(string url)
     {
-        byte[] imageBytes;
+        var bytes = await DownloadImageBytes(url);
 
+        return Image.Load(bytes);
+    }
+
+    public async Task<Image<TPixel>> DownloadImage<TPixel>(string url)
+        where TPixel : unmanaged, IPixel<TPixel>
+    {
+        var bytes = await DownloadImageBytes(url);
+
+        return Image.Load<TPixel>(bytes);
+    }
+
+    private async Task<byte[]> DownloadImageBytes(string url)
+    {
         try
         {
             HttpClient client = _httpClientFactory.CreateClient();
 
-            imageBytes = await client.GetByteArrayAsync(url);
-
-            var image = Image.Load(imageBytes);
-
-            return image;
+            return await client.GetByteArrayAsync(url);
         }
         catch (HttpRequestException)
         {
@@ -85,7 +95,7 @@ public class ImageService
         }
     }
 
-    public Image ScaleImageSync(Image image, double scaleFactor)
+    public Image ScaleImage(Image image, double scaleFactor)
     {
         int newWidth = (int)(image.Width * scaleFactor);
         int newHeight = (int)(image.Height * scaleFactor);
@@ -95,17 +105,7 @@ public class ImageService
         return image;
     }
 
-    public Task<ImageStreamResult> ScaleImage(Image image, double scaleFactor)
-    {
-        int newWidth = (int)(image.Width * scaleFactor);
-        int newHeight = (int)(image.Height * scaleFactor);
-
-        image.Mutate(i => i.Resize(newWidth, newHeight, KnownResamplers.Hermite));
-
-        return GetImageStream(image);
-    }
-
-    public Task<ImageStreamResult> DeepFryImage(Image image)
+    public Image DeepFryImage(Image image)
     {
         image.Mutate(i =>
         {
@@ -115,10 +115,10 @@ public class ImageService
             i.Saturate(5f);
         });
 
-        return GetImageStream(image);
+        return image;
     }
 
-    public Task<ImageStreamResult> OilPaintImage(Image image)
+    public Image OilPaintImage(Image image)
     {
         int paintLevel = 25;
 
@@ -127,10 +127,61 @@ public class ImageService
             i.OilPaint(paintLevel, paintLevel);
         });
 
-        return GetImageStream(image);
+        return image;
     }
 
-    public Image CropImageToCircle(Image image)
+    /// <summary>
+    /// Twirls an image
+    /// Source: jhlabs.com.
+    /// </summary>
+    /// <param name="src">Source image.</param>
+    /// <param name="angleDeg">Angle in degrees.</param>
+    /// <returns>Twirled image.</returns>
+    public Image TwirlImage(Image<Rgba32> src, float angleDeg = 180)
+    {
+        var dest = new Image<Rgba32>(src.Width, src.Height);
+
+        var centerX = src.Width / 2;
+        var centerY = src.Height / 2;
+        var radius = Math.Min(centerX, centerY);
+        var radius2 = radius * radius;
+        float angleRad = (float)(angleDeg * Math.PI / 180);
+
+        var transformFn = (int x, int y) =>
+        {
+            int newX = x;
+            int newY = x;
+
+            float dx = x - centerX;
+            float dy = y - centerY;
+            float distance = (dx * dx) + (dy * dy);
+
+            if (distance <= radius2)
+            {
+                distance = (float)Math.Sqrt(distance);
+                float a = (float)Math.Atan2(dy, dx) + (angleRad * (radius - distance) / radius);
+
+                newX = (int)Math.Floor(centerX + (distance * (float)Math.Cos(a)));
+                newY = (int)Math.Floor(centerY + (distance * (float)Math.Sin(a)));
+            }
+
+            return (x: newX, y: newY);
+        };
+
+        for (int x = 0; x < src.Width; x++)
+        {
+            for (int y = 0; y < src.Height; y++)
+            {
+                var trans = transformFn(x, y);
+                dest[x, y] = src[trans.x, trans.y];
+            }
+        }
+
+        return dest;
+    }
+
+    public Image<TPixel> CropToCircle<TPixel>(Image<TPixel> image)
+        where TPixel : unmanaged, IPixel<TPixel>
     {
         var ellipsePath = new EllipsePolygon(image.Width / 2, image.Height / 2, image.Width, image.Height);
 
@@ -145,7 +196,7 @@ public class ImageService
 
             stream.Position = 0;
 
-            imageAsPngWithTransparency = Image.Load(stream);
+            imageAsPngWithTransparency = Image.Load<TPixel>(stream);
         }
         else
         {
@@ -166,10 +217,10 @@ public class ImageService
             i.Fill(opts, Color.Black, ellipsePath);
         });
 
-        return cloned;
+        return (Image<TPixel>)cloned;
     }
 
-    public Task<ImageStreamResult> SquareImage(Image image)
+    public Task<ImageStreamResult> CropToSquare(Image image)
     {
         int newSize = Math.Min(image.Width, image.Height);
 
@@ -179,42 +230,6 @@ public class ImageService
         });
 
         return GetImageStream(image);
-    }
-
-    public async Task<ImageStreamResult> CombineImages(string[] base64Images)
-    {
-        IEnumerable<byte[]> bytesImages = base64Images.Select(Convert.FromBase64String);
-
-        var images = bytesImages.Select(x => Image.Load(x)).ToList();
-
-        // Assume all images have the same size. If this turns out to not be true,
-        // might have to upscale/downscale them to get them to be the same size.
-        int imageWidth = images.First().Width;
-        int imageHeight = images.First().Height;
-
-        int gridSize = (int)Math.Ceiling(Math.Sqrt(images.Count));
-
-        int canvasWidth = imageWidth * gridSize;
-        int canvasHeight = imageHeight * gridSize;
-
-        var outputImage = new Image<Rgba32>(canvasWidth, canvasHeight);
-
-        for (int i = 0; i < images.Count; i++)
-        {
-            int x = i % gridSize;
-            int y = i / gridSize;
-
-            Image image = images[i];
-
-            int positionX = imageWidth * x;
-            int positionY = imageHeight * y;
-
-            outputImage.Mutate(x => x.DrawImage(image, new Point(positionX, positionY), 1f));
-        }
-
-        ImageStreamResult outputImageStream = await GetImageStream(outputImage);
-
-        return outputImageStream;
     }
 
     public async Task<string> SaveImageToTempPath(Image image, string filename)

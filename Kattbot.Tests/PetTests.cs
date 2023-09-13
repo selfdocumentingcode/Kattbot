@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Kattbot.Tests;
 
@@ -45,13 +46,29 @@ public class PetTests
     public async Task CropToCircle(string inputFilename)
     {
         string inputFile = Path.Combine(Path.GetTempPath(), inputFilename);
-        string ouputFile = Path.Combine(Path.GetTempPath(), $"cropped_{inputFilename}");
+        string ouputFile = Path.Combine(Path.GetTempPath(), "kattbot", $"cropped_{inputFilename}");
 
         var imageService = new ImageService(null!);
 
-        using var image = Image.Load(inputFile);
+        using var image = Image.Load<Rgba32>(inputFile);
 
-        var croppedImage = imageService.CropImageToCircle(image);
+        var croppedImage = imageService.CropToCircle(image);
+
+        await croppedImage.SaveAsPngAsync(ouputFile);
+    }
+
+    [DataTestMethod]
+    [DataRow("froge.png")]
+    public async Task Twirl(string inputFilename)
+    {
+        string inputFile = Path.Combine(Path.GetTempPath(), inputFilename);
+        string ouputFile = Path.Combine(Path.GetTempPath(), "kattbot", $"twirled_{inputFilename}");
+
+        var imageService = new ImageService(null!);
+
+        using var image = Image.Load<Rgba32>(inputFile);
+
+        var croppedImage = imageService.TwirlImage(image);
 
         await croppedImage.SaveAsPngAsync(ouputFile);
     }

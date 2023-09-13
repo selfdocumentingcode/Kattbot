@@ -71,6 +71,33 @@ public class ImageModule : BaseCommandModule
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
+    [Command("twirl")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+    public Task Twirl(CommandContext ctx, DiscordEmoji emoji)
+    {
+        var request = new TransformImageEmoteRequest(ctx, emoji, TransformImageEffect.Twirl);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("twirl")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+    public Task Twirl(CommandContext ctx, DiscordUser user)
+    {
+        var request = new TransformImageUserRequest(ctx, user, TransformImageEffect.Twirl);
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("twirl")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    public Task Twirl(CommandContext ctx, string _ = "")
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
+    {
+        var request = new TransformImageMessageRequest(ctx, TransformImageEffect.Twirl);
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
     [Command("pet")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
     public Task Pet(CommandContext ctx, DiscordEmoji emoji, string? speed = null)

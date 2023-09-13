@@ -41,11 +41,14 @@ public class GetBigEmoteHandler : IRequestHandler<GetBigEmoteRequest>
 
         string url = emoji.GetEmojiImageUrl();
 
-        using var image = await _imageService.DownloadImage(url);
+        var image = await _imageService.DownloadImage(url);
 
-        var imageStreamResult = hasScaleFactor
-                ? await _imageService.ScaleImage(image, request.ScaleFactor!.Value)
-                : await _imageService.GetImageStream(image);
+        if (hasScaleFactor)
+        {
+            image = _imageService.ScaleImage(image, request.ScaleFactor!.Value);
+        }
+
+        var imageStreamResult = await _imageService.GetImageStream(image);
 
         MemoryStream imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;

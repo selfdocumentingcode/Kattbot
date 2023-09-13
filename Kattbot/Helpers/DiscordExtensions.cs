@@ -1,5 +1,5 @@
-﻿using DSharpPlus.Entities;
-using System.Linq;
+﻿using System.Linq;
+using DSharpPlus.Entities;
 
 namespace Kattbot.Helpers;
 
@@ -45,6 +45,10 @@ public static class DiscordExtensions
             {
                 return imgEmbed.Url.AbsoluteUri;
             }
+        }
+        else if (message.Stickers.Count > 0)
+        {
+            return message.Stickers[0].StickerUrl;
         }
         else if (isRootMessage == true && message.ReferencedMessage != null)
         {

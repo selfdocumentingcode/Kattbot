@@ -182,7 +182,7 @@ public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
 
         var imageAsPng = await _imageService.ConvertImageToPng(image, MaxImageSizeInMb);
 
-        var squaredImage = await _imageService.SquareImage(imageAsPng);
+        var squaredImage = await _imageService.CropToSquare(imageAsPng);
 
         var fileName = $"{Guid.NewGuid()}.png";
 
