@@ -45,11 +45,14 @@ public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
                                     IRequestHandler<DallifyUserRequest>,
                                     IRequestHandler<DallifyImageRequest>
 {
-    public static readonly string Size256 = "256x256";
-    public static readonly string Size512 = "512x512";
-    public static readonly string Size1024 = "1024x1024";
+    public static readonly int Size256 = 256;
+    public static readonly int Size512 = 512;
+    public static readonly int Size1024 = 1024;
 
     private const int MaxImageSizeInMb = 4;
+
+    private static readonly int[] ValidSizes = { Size256, Size512, Size1024 };
+
     private readonly DalleHttpClient _dalleHttpClient;
     private readonly ImageService _imageService;
     private readonly DiscordResolver _discordResolver;
@@ -176,20 +179,24 @@ public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
         }
     }
 
-    private async Task<ImageStreamResult> DallifyImage(string imageUrl, ulong userId, string resultSize)
+    private async Task<ImageStreamResult> DallifyImage(string imageUrl, ulong userId, int maxSize)
     {
         var image = await _imageService.DownloadImage(imageUrl);
 
         var imageAsPng = await _imageService.ConvertImageToPng(image, MaxImageSizeInMb);
 
-        var squaredImage = await _imageService.CropToSquare(imageAsPng);
+        var squaredImage = _imageService.CropToSquare(imageAsPng);
+
+        var resultSize = Math.Min(maxSize, ValidSizes.Reverse().First(s => squaredImage.Height > s));
 
         var fileName = $"{Guid.NewGuid()}.png";
 
+        var inputImageStream = await _imageService.GetImageStream(squaredImage);
+
         var imageVariationRequest = new CreateImageVariationRequest
         {
-            Image = squaredImage.MemoryStream.ToArray(),
-            Size = resultSize,
+            Image = inputImageStream.MemoryStream.ToArray(),
+            Size = $"{resultSize}x{resultSize}",
             User = userId.ToString(),
         };
 

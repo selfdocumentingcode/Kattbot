@@ -220,7 +220,7 @@ public class ImageService
         return (Image<TPixel>)cloned;
     }
 
-    public Task<ImageStreamResult> CropToSquare(Image image)
+    public Image CropToSquare(Image image)
     {
         int newSize = Math.Min(image.Width, image.Height);
 
@@ -229,7 +229,7 @@ public class ImageService
             i.Crop(newSize, newSize);
         });
 
-        return GetImageStream(image);
+        return image;
     }
 
     public async Task<string> SaveImageToTempPath(Image image, string filename)
