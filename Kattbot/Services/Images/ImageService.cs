@@ -185,7 +185,7 @@ public class ImageService
     {
         var ellipsePath = new EllipsePolygon(image.Width / 2, image.Height / 2, image.Width, image.Height);
 
-        Image imageAsPngWithTransparency;
+        Image<TPixel> imageAsPngWithTransparency;
 
         if (image.Metadata.DecodedImageFormat is not PngFormat ||
             image.Metadata.GetPngMetadata().ColorType is not PngColorType.RgbWithAlpha)
@@ -217,7 +217,7 @@ public class ImageService
             i.Fill(opts, Color.Black, ellipsePath);
         });
 
-        return (Image<TPixel>)cloned;
+        return cloned;
     }
 
     public Image CropToSquare(Image image)

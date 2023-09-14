@@ -120,7 +120,7 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
         var ctx = request.Ctx;
         var message = ctx.Message;
 
-        var imageUrl = message.GetImageUrlFromMessage();
+        var imageUrl = await message.GetImageUrlFromMessage();
 
         if (imageUrl == null)
         {

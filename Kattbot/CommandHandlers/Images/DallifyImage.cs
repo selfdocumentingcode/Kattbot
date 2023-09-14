@@ -145,7 +145,7 @@ public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
         var user = ctx.User;
         var message = ctx.Message;
 
-        var imageUrl = message.GetImageUrlFromMessage();
+        var imageUrl = await message.GetImageUrlFromMessage();
 
         if (imageUrl == null)
         {

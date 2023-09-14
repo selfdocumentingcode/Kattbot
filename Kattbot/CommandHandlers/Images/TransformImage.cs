@@ -128,7 +128,7 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
         var message = ctx.Message;
         var effect = request.Effect;
 
-        var imageUrl = message.GetImageUrlFromMessage();
+        var imageUrl = await message.GetImageUrlFromMessage();
 
         if (imageUrl == null)
         {
