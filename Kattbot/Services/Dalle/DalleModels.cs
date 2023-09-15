@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Kattbot.Services.Dalle;
 
+#pragma warning disable SA1402 // File may only contain a single type
 public record CreateImageRequest
 {
     /// <summary>
@@ -40,6 +41,48 @@ public record CreateImageRequest
     /// Gets or sets a unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
     /// https://platform.openai.com/docs/api-reference/chat/create#chat/create-user.
     /// </summary>
+    [JsonPropertyName("user")]
+    public string? User { get; set; }
+}
+
+public record CreateImageVariationRequest
+{
+    /// <summary>
+    /// Gets or sets the image to use as the basis for the variation(s). Must be a valid PNG file, less than 4MB, and square.
+    /// https://platform.openai.com/docs/api-reference/images/createVariation#image.
+    /// </summary>
+    [JsonPropertyName("image")]
+    public byte[] Image { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the number of images to generate. Must be between 1 and 10.
+    /// Defaults to 1.
+    /// https://platform.openai.com/docs/api-reference/images/createVariation#n.
+    /// </summary>
+    [JsonPropertyName("n")]
+    public int? N { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size of the generated images. Must be one of 256x256, 512x512, or 1024x1024.
+    /// Defaults to 1024x1024
+    /// https://platform.openai.com/docs/api-reference/images/createVariation#size.
+    /// </summary>
+    [JsonPropertyName("size")]
+    public string? Size { get; set; }
+
+    /// <summary>
+    /// Gets or sets the format in which the generated images are returned. Must be one of url or b64_json.
+    /// Defaults to url
+    /// https://platform.openai.com/docs/api-reference/images/createVariation#response_format.
+    /// </summary>
+    [JsonPropertyName("response_format")]
+    public string? ResponseFormat { get; set; }
+
+    /// <summary>
+    /// Gets or sets a unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
+    /// https://platform.openai.com/docs/api-reference/images/createVariation#user.
+    /// </summary>
+    [JsonPropertyName("user")]
     public string? User { get; set; }
 }
 

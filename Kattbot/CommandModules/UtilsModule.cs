@@ -13,13 +13,6 @@ namespace Kattbot.CommandModules;
 [Group("utils")]
 public class UtilsModule : BaseCommandModule
 {
-    private readonly DiscordErrorLogger _discordErrorLogger;
-
-    public UtilsModule(DiscordErrorLogger discordErrorLogger)
-    {
-        _discordErrorLogger = discordErrorLogger;
-    }
-
     [Command("emoji-code")]
     public Task GetEmojiCode(CommandContext ctx, DiscordEmoji emoji)
     {
@@ -61,16 +54,8 @@ public class UtilsModule : BaseCommandModule
     [Command("role-id")]
     public Task GetRoleId(CommandContext ctx, string roleName)
     {
-        TryResolveResult result = DiscordRoleResolver.TryResolveByName(ctx.Guild, roleName, out DiscordRole? discordRole);
+        TryResolveResult result = DiscordResolver.TryResolveRoleByName(ctx.Guild, roleName, out DiscordRole? discordRole);
 
         return !result.Resolved ? ctx.RespondAsync(result.ErrorMessage) : ctx.RespondAsync($"Role {roleName} has id {discordRole.Id}");
-    }
-
-    [Command("test-log-sync")]
-    public Task TestLogSync(CommandContext ctx)
-    {
-        _discordErrorLogger.LogError("Test error sync");
-
-        return Task.CompletedTask;
     }
 }

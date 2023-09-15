@@ -18,90 +18,147 @@ public class ImageModule : BaseCommandModule
         _commandParallelQueue = commandParallelQueue;
     }
 
-    [Command("big")]
+    [Command("deepfry")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task BigEmote(CommandContext ctx, DiscordEmoji emoji)
+    public Task DeepFry(CommandContext ctx, DiscordEmoji emoji)
     {
-        var request = new GetBigEmoteRequest(ctx)
-        {
-            Emoji = emoji,
-        };
-
-        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
-    }
-
-    [Command("bigger")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task BiggerEmote(CommandContext ctx, DiscordEmoji emoji)
-    {
-        var request = new GetBigEmoteRequest(ctx)
-        {
-            Emoji = emoji,
-            ScaleFactor = 2,
-        };
-
+        var request = new TransformImageEmoteRequest(ctx, emoji, TransformImageEffect.DeepFry);
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
     [Command("deepfry")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task DeepFryEmote(CommandContext ctx, DiscordEmoji emoji)
+    public Task DeepFry(CommandContext ctx, DiscordUser user)
     {
-        var request = new GetBigEmoteRequest(ctx)
-        {
-            Emoji = emoji,
-            ScaleFactor = 2,
-            Effect = GetBigEmoteRequest.EffectDeepFry,
-        };
+        var request = new TransformImageUserRequest(ctx, user, TransformImageEffect.DeepFry);
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("deepfry")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    public Task DeepFry(CommandContext ctx, string _ = "")
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
+    {
+        var request = new TransformImageMessageRequest(ctx, TransformImageEffect.DeepFry);
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("oilpaint")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+    public Task OilPaint(CommandContext ctx, DiscordEmoji emoji)
+    {
+        var request = new TransformImageEmoteRequest(ctx, emoji, TransformImageEffect.OilPaint);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
     [Command("oilpaint")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task OilPaintEmote(CommandContext ctx, DiscordEmoji emoji)
+    public Task OilPaint(CommandContext ctx, DiscordUser user)
     {
-        var request = new GetBigEmoteRequest(ctx)
-        {
-            Emoji = emoji,
-            ScaleFactor = 2,
-            Effect = GetBigEmoteRequest.EffectOilPaint,
-        };
+        var request = new TransformImageUserRequest(ctx, user, TransformImageEffect.OilPaint);
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("oilpaint")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    public Task OilPaint(CommandContext ctx, string _ = "")
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
+    {
+        var request = new TransformImageMessageRequest(ctx, TransformImageEffect.OilPaint);
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("twirl")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+    public Task Twirl(CommandContext ctx, DiscordEmoji emoji)
+    {
+        var request = new TransformImageEmoteRequest(ctx, emoji, TransformImageEffect.Twirl);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("twirl")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+    public Task Twirl(CommandContext ctx, DiscordUser user)
+    {
+        var request = new TransformImageUserRequest(ctx, user, TransformImageEffect.Twirl);
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("twirl")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    public Task Twirl(CommandContext ctx, string _ = "")
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
+    {
+        var request = new TransformImageMessageRequest(ctx, TransformImageEffect.Twirl);
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("pet")]
+    [Cooldown(5, 10, CooldownBucketType.Global)]
+    public Task Pet(CommandContext ctx, DiscordEmoji emoji, string? speed = null)
+    {
+        var request = new PetEmoteRequest(ctx, emoji, speed);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
     [Command("pet")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task PetEmote(CommandContext ctx, DiscordEmoji emoji, string speed = null)
+    public Task Pet(CommandContext ctx, DiscordUser user, string? speed = null)
     {
-        var request = new GetAnimatedEmoji(ctx)
-        {
-            Emoji = emoji,
-            Speed = speed,
-        };
+        var request = new PetUserRequest(ctx, user, speed);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
     [Command("pet")]
     [Cooldown(5, 10, CooldownBucketType.Global)]
-    public Task PetUser(CommandContext ctx, DiscordUser user, string speed = null)
+    public Task Pet(CommandContext ctx, string? speed = null)
     {
-        var request = new GetAnimatedUserAvatar(ctx)
-        {
-            User = user,
-            Speed = speed,
-        };
+        var request = new PetImageRequest(ctx, speed);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
     [Command("dalle")]
-    [Cooldown(5, 60, CooldownBucketType.Global)]
+    [Cooldown(5, 30, CooldownBucketType.Global)]
     public Task Dalle(CommandContext ctx, [RemainingText] string prompt)
     {
         var request = new DallePromptCommand(ctx, prompt);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("dallify")]
+    [Cooldown(5, 30, CooldownBucketType.Global)]
+    public Task Dallify(CommandContext ctx, DiscordEmoji emoji)
+    {
+        var request = new DallifyEmoteRequest(ctx, emoji);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("dallify")]
+    [Cooldown(5, 30, CooldownBucketType.Global)]
+    public Task Dallify(CommandContext ctx, DiscordUser user)
+    {
+        var request = new DallifyUserRequest(ctx, user);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("dallify")]
+    [Cooldown(5, 30, CooldownBucketType.Global)]
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
+    public Task Dallify(CommandContext ctx, string _ = "")
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
+    {
+        var request = new DallifyImageRequest(ctx);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }

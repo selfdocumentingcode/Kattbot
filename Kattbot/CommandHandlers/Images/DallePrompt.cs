@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using Kattbot.Helpers;
 using Kattbot.Services.Dalle;
 using Kattbot.Services.Images;
 using MediatR;
@@ -14,23 +14,23 @@ namespace Kattbot.CommandHandlers.Images;
 #pragma warning disable SA1402 // File may only contain a single type
 public class DallePromptCommand : CommandRequest
 {
-    public string Prompt { get; set; }
-
     public DallePromptCommand(CommandContext ctx, string prompt)
         : base(ctx)
     {
         Prompt = prompt;
     }
+
+    public string Prompt { get; set; }
 }
 
-public class DallePromptCommandHandler : IRequestHandler<DallePromptCommand>
+public class DallePromptHandler : IRequestHandler<DallePromptCommand>
 {
     private const int MaxEmbedTitleLength = 256;
 
     private readonly DalleHttpClient _dalleHttpClient;
     private readonly ImageService _imageService;
 
-    public DallePromptCommandHandler(DalleHttpClient dalleHttpClient, ImageService imageService)
+    public DallePromptHandler(DalleHttpClient dalleHttpClient, ImageService imageService)
     {
         _dalleHttpClient = dalleHttpClient;
         _imageService = imageService;
@@ -42,7 +42,7 @@ public class DallePromptCommandHandler : IRequestHandler<DallePromptCommand>
 
         try
         {
-            var response = await _dalleHttpClient.CreateImage(new CreateImageRequest { Prompt = request.Prompt });
+            var response = await _dalleHttpClient.CreateImage(new CreateImageRequest { Prompt = request.Prompt, User = request.Ctx.User.Id.ToString() });
 
             if (response.Data == null || !response.Data.Any()) throw new Exception("Empty result");
 
@@ -52,11 +52,7 @@ public class DallePromptCommandHandler : IRequestHandler<DallePromptCommand>
 
             var imageStream = await _imageService.GetImageStream(image);
 
-            string safeFileName = new(Encoding.ASCII.GetString(Encoding.ASCII.GetBytes(request.Prompt))
-                                    .Select(c => char.IsLetterOrDigit(c) ? c : '_')
-                                    .ToArray());
-
-            string fileName = $"{safeFileName}.{imageStream.FileExtension}";
+            var fileName = request.Prompt.ToSafeFilename(imageStream.FileExtension);
 
             var truncatedPrompt = request.Prompt.Length > MaxEmbedTitleLength
                 ? $"{request.Prompt[..(MaxEmbedTitleLength - 3)]}..."

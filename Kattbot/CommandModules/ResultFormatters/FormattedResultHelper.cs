@@ -96,11 +96,4 @@ public static class FormattedResultHelper
 
         return sb.ToString();
     }
-
-    public static string BuildMessage(string title, string message)
-    {
-        string result = $"{title}\r\n{message}";
-
-        return result;
-    }
 }
