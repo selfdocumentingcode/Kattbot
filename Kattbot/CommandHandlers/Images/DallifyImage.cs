@@ -122,7 +122,7 @@ public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
             using var imageStream = imageStreamResult.MemoryStream;
             var fileExtension = imageStreamResult.FileExtension;
 
-            var imageFilename = user.GetNicknameOrUsername().ToSafeFilename(fileExtension);
+            var imageFilename = userAsMember.DisplayName.ToSafeFilename(fileExtension);
 
             DiscordMessageBuilder mb = new DiscordMessageBuilder()
                 .AddFile(imageFilename, imageStream)

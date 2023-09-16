@@ -124,6 +124,7 @@ public class Program
         services.AddTransient<DiscordErrorLogger>();
         services.AddTransient<PetPetClient>();
         services.AddTransient<DiscordResolver>();
+        services.AddTransient<KattGptService>();
     }
 
     private static void AddRepositories(IServiceCollection services)

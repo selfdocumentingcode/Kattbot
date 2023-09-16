@@ -63,7 +63,7 @@ public class BotWorker : IHostedService
 
         _client.SocketOpened += OnClientConnected;
         _client.SocketClosed += OnClientDisconnected;
-        _client.Ready += OnClientReady;
+        _client.SessionCreated += OnClientReady;
 
         _commandEventHandler.RegisterHandlers(commands);
         _emoteEventHandler.RegisterHandlers();
@@ -89,6 +89,12 @@ public class BotWorker : IHostedService
             return;
         }
 
+        // Ignore messages from DMs
+        if (args.Guild is null)
+        {
+            return;
+        }
+
         await _eventQueue.Writer.WriteAsync(new MessageCreatedNotification(args), cancellationToken);
     }
 
@@ -106,7 +112,7 @@ public class BotWorker : IHostedService
         return Task.CompletedTask;
     }
 
-    private async Task OnClientReady(DiscordClient sender, ReadyEventArgs e)
+    private async Task OnClientReady(DiscordClient sender, SessionReadyEventArgs e)
     {
         _logger.LogInformation("Bot ready");
 

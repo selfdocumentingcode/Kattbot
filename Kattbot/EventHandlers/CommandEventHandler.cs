@@ -1,4 +1,6 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using System;
+using System.Threading.Tasks;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.Entities;
@@ -7,8 +9,6 @@ using Kattbot.Helpers;
 using Kattbot.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
-using System.Threading.Tasks;
 
 namespace Kattbot.EventHandlers
 {
@@ -23,8 +23,7 @@ namespace Kattbot.EventHandlers
             IOptions<BotOptions> options,
             ILogger<CommandEventHandler> logger,
             DiscordErrorLogger discordErrorLogger,
-            GuildSettingsService guildSettingsService
-            )
+            GuildSettingsService guildSettingsService)
         {
             _options = options.Value;
             _logger = logger;
@@ -53,18 +52,19 @@ namespace Kattbot.EventHandlers
         /// <summary>
         /// Try to find a suitable error message to return to the user
         /// if command was executed in a bot channel, otherwise add a reaction.
-        /// Log error to discord logger
+        /// Log error to discord logger.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        /// <returns></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task OnCommandErrored(CommandsNextExtension sender, CommandErrorEventArgs e)
         {
             var ctx = e.Context;
-            var guildId = ctx.Guild.Id;
             var channelId = ctx.Channel.Id;
             var message = ctx.Message;
             var exception = e.Exception;
+
+            var commandExecutedInDm = ctx.Channel.IsPrivate;
 
             var commandPrefix = _options.CommandPrefix;
             var commandHelpText = $"Type \"{commandPrefix}help\" to get some help.";
@@ -79,7 +79,8 @@ namespace Kattbot.EventHandlers
             const string unknownSubcommandErrorString = "No matching subcommands were found, and this group is not executable.";
             const string unknownOverloadErrorString = "Could not find a suitable overload for the command.";
 
-            var isChecksFailedException = exception is ChecksFailedException;
+            // DM commands are handled separately
+            var isChecksFailedException = !commandExecutedInDm && exception is ChecksFailedException;
 
             var isUnknownCommandException = exception is CommandNotFoundException;
             var isUnknownSubcommandException = exception.Message == unknownSubcommandErrorString;
@@ -119,11 +120,7 @@ namespace Kattbot.EventHandlers
 
                 var failedCheck = checksFailedException.FailedChecks[0];
 
-                if (failedCheck is BaseCommandCheck)
-                {
-                    errorMessage = "I do not care for DM commands.";
-                }
-                else if (failedCheck is RequireOwnerOrFriend)
+                if (failedCheck is RequireOwnerOrFriend)
                 {
                     errorMessage = "You do not have permission to do that.";
                 }
@@ -142,47 +139,51 @@ namespace Kattbot.EventHandlers
                 appendHelpText = true;
             }
 
-            var botChannelId = await _guildSettingsService.GetBotChannelId(guildId);
-
-            var isCommandInBotChannel = botChannelId != null && botChannelId.Value == channelId;
-
-            if (isCommandInBotChannel)
+            if (!commandExecutedInDm)
             {
-                if (string.IsNullOrWhiteSpace(errorMessage))
-                {
-                    errorMessage = "Something went wrong.";
-                }
+                var botChannelId = await _guildSettingsService.GetBotChannelId(ctx.Guild.Id);
 
-                if (appendHelpText)
-                {
-                    errorMessage += $" {commandHelpText}";
-                }
+                var isCommandInBotChannel = botChannelId.HasValue && botChannelId.Value == channelId;
 
-                await message.RespondAsync(errorMessage);
-            }
-            else
-            {
-                if (!isUnknownCommand)
+                if (isCommandInBotChannel)
+                {
+                    if (string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        errorMessage = "Something went wrong.";
+                    }
+
+                    if (appendHelpText)
+                    {
+                        errorMessage += $" {commandHelpText}";
+                    }
+
+                    await message.RespondAsync(errorMessage);
+                }
+                else if (!isUnknownCommand)
                 {
                     await ctx.Message.CreateReactionAsync(DiscordEmoji.FromUnicode(EmojiMap.RedX));
                 }
-
             }
 
-            // Log any unhandled exception
-            var shouldLogDiscordError =
+            var isUnhandledException =
                    !isUnknownCommandException
                 && !isUnknownSubcommandException
                 && !isCommandConfigException
                 && !isChecksFailedException
-                && !isPossiblyValidationException;
+                && !isPossiblyValidationException
+                && !commandExecutedInDm;
 
-            if (shouldLogDiscordError)
+            if (isUnhandledException)
             {
                 _discordErrorLogger.LogError(ctx, exception.ToString());
             }
 
-            _logger.LogWarning($"Message: {message.Content}\r\nCommand failed: {exception})");
+            if (commandExecutedInDm)
+            {
+                _discordErrorLogger.LogError(ctx, "Command executed in DM");
+            }
+
+            _logger.LogWarning("Message: {MessageContent}\r\nCommand failed: {Exception})", message.Content, exception);
         }
     }
 }

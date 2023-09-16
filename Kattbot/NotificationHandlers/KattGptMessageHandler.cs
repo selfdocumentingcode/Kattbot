@@ -17,29 +17,27 @@ namespace Kattbot.NotificationHandlers;
 public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotification>
 {
     private const string ChatGptModel = "gpt-3.5-turbo-16k";
-    private const string TokenizerModel = "gpt-3.5";
     private const string MetaMessagePrefix = "msg";
     private const float Temperature = 1.2f;
     private const int MaxTokens = 8192;
     private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
-    private const string ChannelWithTopicTemplateName = "ChannelWithTopic";
     private const string MessageSplitToken = "[cont.]";
 
     private readonly ChatGptHttpClient _chatGpt;
     private readonly KattGptOptions _kattGptOptions;
     private readonly KattGptChannelCache _cache;
-    private readonly TikToken _tokenizer;
+    private readonly KattGptService _kattGptService;
 
     public KattGptMessageHandler(
         ChatGptHttpClient chatGpt,
         IOptions<KattGptOptions> kattGptOptions,
-        KattGptChannelCache cache)
+        KattGptChannelCache cache,
+        KattGptService kattGptService)
     {
         _chatGpt = chatGpt;
         _kattGptOptions = kattGptOptions.Value;
         _cache = cache;
-
-        _tokenizer = TikToken.EncodingForModel(TokenizerModel);
+        _kattGptService = kattGptService;
     }
 
     public async Task Handle(MessageCreatedNotification notification, CancellationToken cancellationToken)
@@ -54,17 +52,19 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
             return;
         }
 
-        var systemPromptsMessages = BuildSystemPromptsMessages(channel);
+        var systemPromptsMessages = _kattGptService.BuildSystemPromptsMessages(channel);
 
-        var boundedMessageQueue = GetBoundedMessageQueue(channel, systemPromptsMessages);
+        var systemMessagesTokenCount = _kattGptService.GetTokenCount(systemPromptsMessages);
+
+        var boundedMessageQueue = GetBoundedMessageQueue(channel, systemMessagesTokenCount);
 
         // Add new message from notification
-        var newMessageContent = message.Content;
-        var newMessageUser = author.GetNicknameOrUsername();
+        var newMessageUser = author.GetDisplayName();
+        var newMessageContent = message.GetMessageWithTextMentions();
 
         var newUserMessage = ChatCompletionMessage.AsUser($"{newMessageUser}: {newMessageContent}");
 
-        boundedMessageQueue.Enqueue(newUserMessage, _tokenizer.Encode(newUserMessage.Content).Count);
+        boundedMessageQueue.Enqueue(newUserMessage, _kattGptService.GetTokenCount(newUserMessage.Content));
 
         if (ShouldReplyToMessage(message))
         {
@@ -91,7 +91,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
             await SendReply(chatGptResponse.Content, message);
 
             // Add the chat gpt response message to the bounded queue
-            boundedMessageQueue.Enqueue(chatGptResponse, _tokenizer.Encode(chatGptResponse.Content).Count);
+            boundedMessageQueue.Enqueue(chatGptResponse, _kattGptService.GetTokenCount(chatGptResponse.Content));
         }
 
         SaveBoundedMessageQueue(channel, boundedMessageQueue);
@@ -110,95 +110,20 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     }
 
     /// <summary>
-    /// Builds the system prompts messages for the given channel.
-    /// </summary>
-    /// <param name="channel">The channel.</param>
-    /// <returns>The system prompts messages.</returns>
-    private List<ChatCompletionMessage> BuildSystemPromptsMessages(DiscordChannel channel)
-    {
-        // Get core system prompt messages
-        var coreSystemPrompts = string.Join(" ", _kattGptOptions.CoreSystemPrompts);
-        var systemPromptsMessages = new List<ChatCompletionMessage>() { ChatCompletionMessage.AsSystem(coreSystemPrompts) };
-
-        var guild = channel.Guild;
-        var guildId = guild.Id;
-
-        // Get the channel options for this guild
-        var guildOptions = _kattGptOptions.GuildOptions.Where(x => x.Id == guildId).SingleOrDefault()
-                            ?? throw new Exception($"No guild options found for guild {guildId}");
-
-        // Get the guild system prompts if they exist
-        string[] guildPromptsArray = guildOptions.SystemPrompts ?? Array.Empty<string>();
-
-        // add them to the system prompts messages if not empty
-        if (guildPromptsArray.Length > 0)
-        {
-            string guildSystemPrompts = string.Join(" ", guildPromptsArray);
-            systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(guildSystemPrompts));
-        }
-
-        var channelOptions = GetChannelOptions(channel);
-
-        // if there are no channel options, return the system prompts messages
-        if (channelOptions == null)
-        {
-            return systemPromptsMessages;
-        }
-
-        // get the system prompts for this channel
-        string[] channelPromptsArray = channelOptions.SystemPrompts ?? Array.Empty<string>();
-
-        // add them to the system prompts messages if not empty
-        if (channelPromptsArray.Length > 0)
-        {
-            string channelSystemPrompts = string.Join(" ", channelPromptsArray);
-            systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(channelSystemPrompts));
-        }
-
-        // else if the channel options has UseChannelTopic set to true, add the channel topic to the system prompts messages
-        else if (channelOptions.UseChannelTopic)
-        {
-            // get the channel topic or use a fallback
-            var channelTopic = !string.IsNullOrWhiteSpace(channel.Topic) ? channel.Topic : "Whatever";
-
-            // get the text template from kattgpt options
-            var channelWithTopicTemplate = _kattGptOptions.Templates.Where(x => x.Name == ChannelWithTopicTemplateName).SingleOrDefault();
-
-            // if the temmplate is not null, format it with the channel name and topic and add it to the system prompts messages
-            if (channelWithTopicTemplate != null)
-            {
-                // get a sanitized channel name that only includes letters, digits, - and _
-                var channelName = Regex.Replace(channel.Name, @"[^a-zA-Z0-9-_]", string.Empty);
-
-                var formatedTemplatePrompt = string.Format(channelWithTopicTemplate.Content, channelName, channelTopic);
-                systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(formatedTemplatePrompt));
-            }
-
-            // else use the channelTopic as the system message
-            else
-            {
-                systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(channelTopic));
-            }
-        }
-
-        return systemPromptsMessages;
-    }
-
-    /// <summary>
     /// Gets the bounded message queue for the channel from the cache or creates a new one.
     /// </summary>
     /// <param name="channel">The channel.</param>
-    /// <param name="systemPromptsMessages">The system prompts messages.</param>
+    /// <param name="systemMessageTokenCount">The token count for the system messages.</param>
     /// <returns>The bounded message queue for the channel.</returns>
-    private BoundedQueue<ChatCompletionMessage> GetBoundedMessageQueue(DiscordChannel channel, List<ChatCompletionMessage> systemPromptsMessages)
+    private BoundedQueue<ChatCompletionMessage> GetBoundedMessageQueue(DiscordChannel channel, int systemMessageTokenCount)
     {
         var cacheKey = KattGptChannelCache.KattGptChannelCacheKey(channel.Id);
+
         var boundedMessageQueue = _cache.GetCache(cacheKey);
+
         if (boundedMessageQueue == null)
         {
-            var totalTokenCountForSystemMessages = systemPromptsMessages.Select(x => x.Content).Sum(m => _tokenizer.Encode(m).Count);
-
-            var remainingTokensForContextMessages = MaxTokens - totalTokenCountForSystemMessages;
+            var remainingTokensForContextMessages = MaxTokens - systemMessageTokenCount;
 
             boundedMessageQueue = new BoundedQueue<ChatCompletionMessage>(remainingTokensForContextMessages);
         }
@@ -226,7 +151,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     {
         var channel = message.Channel;
 
-        var channelOptions = GetChannelOptions(channel);
+        var channelOptions = _kattGptService.GetChannelOptions(channel);
 
         if (channelOptions == null)
         {
@@ -255,7 +180,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     {
         var channel = message.Channel;
 
-        var channelOptions = GetChannelOptions(channel);
+        var channelOptions = _kattGptService.GetChannelOptions(channel);
 
         if (channelOptions == null)
         {
@@ -284,34 +209,5 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
         // if it does, return false
         return !messageStartsWithMetaMessagePrefix;
-    }
-
-    private ChannelOptions? GetChannelOptions(DiscordChannel channel)
-    {
-        var guild = channel.Guild;
-        var guildId = guild.Id;
-
-        // First check if kattgpt is enabled for this guild
-        var guildOptions = _kattGptOptions.GuildOptions.Where(x => x.Id == guildId).SingleOrDefault();
-        if (guildOptions == null)
-        {
-            return null;
-        }
-
-        var guildChannelOptions = guildOptions.ChannelOptions;
-        var guildCategoryOptions = guildOptions.CategoryOptions;
-
-        // Get the channel options for this channel or for the category this channel is in
-        var channelOptions = guildChannelOptions.Where(x => x.Id == channel.Id).SingleOrDefault();
-        if (channelOptions == null)
-        {
-            var category = channel.Parent;
-            if (category != null)
-            {
-                channelOptions = guildCategoryOptions.Where(x => x.Id == category.Id).SingleOrDefault();
-            }
-        }
-
-        return channelOptions;
     }
 }

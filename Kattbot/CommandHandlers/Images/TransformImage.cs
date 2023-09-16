@@ -113,7 +113,7 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
         using var imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;
 
-        string imageFilename = user.GetNicknameOrUsername().ToSafeFilename(fileExtension);
+        string imageFilename = userAsMember.DisplayName.ToSafeFilename(fileExtension);
 
         var responseBuilder = new DiscordMessageBuilder();
 

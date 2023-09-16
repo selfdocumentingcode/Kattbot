@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
@@ -8,6 +9,7 @@ using Kattbot.Common.Models.BotRoles;
 using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
 using Kattbot.Services;
+using Kattbot.Services.KattGpt;
 using Microsoft.Extensions.Logging;
 
 namespace Kattbot.CommandModules
@@ -21,15 +23,21 @@ namespace Kattbot.CommandModules
         private readonly ILogger<AdminModule> _logger;
         private readonly BotUserRolesRepository _botUserRolesRepo;
         private readonly GuildSettingsService _guildSettingsService;
+        private readonly KattGptChannelCache _cache;
+        private readonly KattGptService _kattGptService;
 
         public AdminModule(
             ILogger<AdminModule> logger,
             BotUserRolesRepository botUserRolesRepo,
-            GuildSettingsService guildSettingsService)
+            GuildSettingsService guildSettingsService,
+            KattGptChannelCache cache,
+            KattGptService kattGptService)
         {
             _logger = logger;
             _botUserRolesRepo = botUserRolesRepo;
             _guildSettingsService = guildSettingsService;
+            _cache = cache;
+            _kattGptService = kattGptService;
         }
 
 
@@ -45,10 +53,10 @@ namespace Kattbot.CommandModules
         }
 
         [Command("add-friend")]
-        public async Task AddFriend(CommandContext ctx, DiscordMember user)
+        public async Task AddFriend(CommandContext ctx, DiscordMember member)
         {
-            var userId = user.Id;
-            var username = user.GetNicknameOrUsername();
+            var userId = member.Id;
+            var username = member.DisplayName;
             var friendRole = BotRoleType.Friend;
 
             var hasRole = await _botUserRolesRepo.UserHasRole(userId, friendRole);
@@ -65,10 +73,10 @@ namespace Kattbot.CommandModules
         }
 
         [Command("remove-friend")]
-        public async Task RemoveFriend(CommandContext ctx, DiscordMember user)
+        public async Task RemoveFriend(CommandContext ctx, DiscordMember member)
         {
-            var userId = user.Id;
-            var username = user.GetNicknameOrUsername();
+            var userId = member.Id;
+            var username = member.DisplayName;
             var friendRole = BotRoleType.Friend;
 
             var hasRole = await _botUserRolesRepo.UserHasRole(userId, friendRole);
@@ -93,6 +101,53 @@ namespace Kattbot.CommandModules
             await _guildSettingsService.SetBotChannel(guildId, channelId);
 
             await ctx.RespondAsync($"Set bot channel to #{channel.Name}");
+        }
+
+        [Command("dump-prompts")]
+        public async Task DumpPrompts(CommandContext ctx, DiscordChannel channel)
+        {
+            var systemPromptsMessages = _kattGptService.BuildSystemPromptsMessages(channel);
+            var tokenCount = _kattGptService.GetTokenCount(systemPromptsMessages);
+
+            var sb = new StringBuilder($"System prompt messages. Context size {tokenCount} tokens");
+            sb.AppendLine();
+
+            foreach (var message in systemPromptsMessages)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"> {message.Content}");
+            }
+
+            await ctx.RespondAsync(sb.ToString());
+        }
+
+        [Command("dump-context")]
+        public async Task DumpContext(CommandContext ctx, DiscordChannel channel)
+        {
+            var cacheKey = KattGptChannelCache.KattGptChannelCacheKey(channel.Id);
+
+            var boundedMessageQueue = _cache.GetCache(cacheKey);
+
+            if (boundedMessageQueue == null)
+            {
+                await ctx.RespondAsync("No prompts found");
+                return;
+            }
+
+            var contextMessages = boundedMessageQueue.GetAll();
+
+            var tokenCount = _kattGptService.GetTokenCount(contextMessages);
+
+            var sb = new StringBuilder($"Chat messages. Context size: {tokenCount} tokens");
+            sb.AppendLine();
+
+            foreach (var message in contextMessages)
+            {
+                sb.AppendLine($"{message.Role}:");
+                sb.AppendLine($"> {message.Content}");
+            }
+
+            await ctx.RespondAsync(sb.ToString());
         }
     }
 }
