@@ -1,4 +1,6 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using System;
+using System.Threading.Tasks;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Kattbot.Attributes;
@@ -7,12 +9,11 @@ using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
 using Kattbot.Services;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
 
 namespace Kattbot.CommandModules
 {
-    [BaseCommandCheck, RequireOwner]
+    [BaseCommandCheck]
+    [RequireOwner]
     [Group("admin")]
     [ModuleLifespan(ModuleLifespan.Transient)]
     public class AdminModule : BaseCommandModule
@@ -92,28 +93,6 @@ namespace Kattbot.CommandModules
             await _guildSettingsService.SetBotChannel(guildId, channelId);
 
             await ctx.RespondAsync($"Set bot channel to #{channel.Name}");
-        }
-
-        [Command("set-kattgpt-channel")]
-        public async Task SetKattGptChannel(CommandContext ctx, DiscordChannel channel)
-        {
-            var channelId = channel.Id;
-            var guildId = channel.GuildId!.Value;
-
-            await _guildSettingsService.SetKattGptChannel(guildId, channelId);
-
-            await ctx.RespondAsync($"Set KattGpt channel to #{channel.Name}");
-        }
-
-        [Command("set-kattgptish-channel")]
-        public async Task SetKattGptishChannel(CommandContext ctx, DiscordChannel channel)
-        {
-            var channelId = channel.Id;
-            var guildId = channel.GuildId!.Value;
-
-            await _guildSettingsService.SetKattGptishChannel(guildId, channelId);
-
-            await ctx.RespondAsync($"Set KattGptish channel to #{channel.Name}");
         }
     }
 }
