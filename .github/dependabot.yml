@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
@@ -11,7 +11,7 @@ updates:
         core-packages:
             patterns: 
                 - "Microsoft*"
-                - "Npgsql.EntityFramework.PostgreSQL"
+                - "Npgsql.EntityFrameworkCore.PostgreSQL"
             exclude-patterns:
                 - "Microsoft.NET.Test.Sdk"
         test-packages:
