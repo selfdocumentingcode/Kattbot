@@ -107,7 +107,10 @@ namespace Kattbot.CommandModules
         public async Task DumpPrompts(CommandContext ctx, DiscordChannel channel)
         {
             var systemPromptsMessages = _kattGptService.BuildSystemPromptsMessages(channel);
-            var tokenCount = _kattGptService.GetTokenCount(systemPromptsMessages);
+
+            var tokenizer = new KattGptTokenizer("gpt-3.5");
+
+            var tokenCount = tokenizer.GetTokenCount(systemPromptsMessages);
 
             var sb = new StringBuilder($"System prompt messages. Context size {tokenCount} tokens");
             sb.AppendLine();
@@ -136,7 +139,9 @@ namespace Kattbot.CommandModules
 
             var contextMessages = boundedMessageQueue.GetAll();
 
-            var tokenCount = _kattGptService.GetTokenCount(contextMessages);
+            var tokenizer = new KattGptTokenizer("gpt-3.5");
+
+            var tokenCount = tokenizer.GetTokenCount(contextMessages);
 
             var sb = new StringBuilder($"Chat messages. Context size: {tokenCount} tokens");
             sb.AppendLine();

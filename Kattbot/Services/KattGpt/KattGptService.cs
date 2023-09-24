@@ -5,14 +5,12 @@ using System.Text.RegularExpressions;
 using DSharpPlus.Entities;
 using Kattbot.Common.Models.KattGpt;
 using Microsoft.Extensions.Options;
-using TiktokenSharp;
 
 namespace Kattbot.Services.KattGpt;
 
 public class KattGptService
 {
     private const string ChannelWithTopicTemplateName = "ChannelWithTopic";
-    private const string TokenizerModel = "gpt-3.5";
 
     private readonly KattGptOptions _kattGptOptions;
 
@@ -116,28 +114,12 @@ public class KattGptService
         if (channelOptions == null)
         {
             var category = channel.Parent;
-            if (category != null)
+            if (category is not null)
             {
                 channelOptions = guildCategoryOptions.Where(x => x.Id == category.Id).SingleOrDefault();
             }
         }
 
         return channelOptions;
-    }
-
-    public int GetTokenCount(string messageText)
-    {
-        var tokenizer = TikToken.EncodingForModel(TokenizerModel);
-
-        return tokenizer.Encode(messageText).Count;
-    }
-
-    public int GetTokenCount(IEnumerable<ChatCompletionMessage> systemMessage)
-    {
-        var tokenizer = TikToken.EncodingForModel(TokenizerModel);
-
-        var totalTokenCountForSystemMessages = systemMessage.Select(x => x.Content).Sum(m => tokenizer.Encode(m).Count);
-
-        return totalTokenCountForSystemMessages;
     }
 }

@@ -5,7 +5,7 @@ namespace Kattbot.Common.Models.KattGpt;
 public record ChatCompletionCreateRequest
 {
     /// <summary>
-    /// Gets or sets iD of the model to use.
+    /// Gets or sets Id of the model to use.
     /// https://platform.openai.com/docs/api-reference/chat/create#chat/create-model.
     /// </summary>
     [JsonPropertyName("model")]
@@ -19,7 +19,25 @@ public record ChatCompletionCreateRequest
     public ChatCompletionMessage[] Messages { get; set; } = null!;
 
     /// <summary>
-    /// Gets or sets what sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
+    /// Gets or sets a list of functions the model may generate JSON inputs for.
+    /// https://platform.openai.com/docs/api-reference/chat/create#functions.
+    /// </summary>
+    [JsonPropertyName("functions")]
+    public ChatCompletionFunction[]? Functions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the mode for controlling the model responds to function calls. none means the model does not call a function,
+    /// and responds to the end-user. auto means the model can pick between an end-user or calling a function.
+    /// Specifying a particular function via {"name": "my_function"} forces the model to call that function.
+    /// Defaults to "none" when no functions are present and "auto" if functions are present.
+    /// https://platform.openai.com/docs/api-reference/chat/create#function_call.
+    /// </summary>
+    [JsonPropertyName("function_call")]
+    public string? FunctionCall { get; set; }
+
+    /// <summary>
+    /// Gets or sets what sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random,
+    /// while lower values like 0.2 will make it more focused and deterministic.
     /// We generally recommend altering this or top_p but not both.
     /// Defaults to 1.
     /// https://platform.openai.com/docs/api-reference/chat/create#chat/create-temperature.
