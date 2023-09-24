@@ -1,4 +1,5 @@
 ﻿using System;
+using Kattbot.Common.Models.KattGpt;
 using Kattbot.Helpers;
 using Microsoft.Extensions.Caching.Memory;
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using DSharpPlus.Entities;
+using Kattbot.Common.Models.KattGpt;
 using Microsoft.Extensions.Options;
 using TiktokenSharp;
 

@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Kattbot.Services.KattGpt;
+using Kattbot.Common.Models.KattGpt;
 using Microsoft.Extensions.Options;
 
 namespace Kattbot.Services.Dalle;

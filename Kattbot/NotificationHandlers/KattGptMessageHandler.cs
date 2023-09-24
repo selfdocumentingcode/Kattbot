@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
+using Kattbot.Common.Models.KattGpt;
 using Kattbot.Helpers;
 using Kattbot.Services.KattGpt;
 using MediatR;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using TiktokenSharp;
 
 namespace Kattbot.NotificationHandlers;
 

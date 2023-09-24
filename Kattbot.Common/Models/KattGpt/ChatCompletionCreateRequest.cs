@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace Kattbot.Services.KattGpt;
+namespace Kattbot.Common.Models.KattGpt;
 
-#pragma warning disable SA1402 // File may only contain a single type
 public record ChatCompletionCreateRequest
 {
     /// <summary>
@@ -96,88 +94,4 @@ public record ChatCompletionCreateRequest
     /// </summary>
     [JsonPropertyName("user")]
     public string? User { get; set; }
-}
-
-public record ChatCompletionMessage
-{
-    /// <summary>
-    /// Gets or sets can be either “system”, “user”, or “assistant”.
-    /// </summary>
-    [JsonPropertyName("role")]
-    public string Role { get; set; } = null!;
-
-    /// <summary>
-    /// Gets or sets the content of the message.
-    /// </summary>
-    [JsonPropertyName("content")]
-    public string Content { get; set; } = null!;
-
-    public static ChatCompletionMessage AsSystem(string content) => new() { Role = "system", Content = content };
-
-    public static ChatCompletionMessage AsUser(string content) => new() { Role = "user", Content = content };
-
-    public static ChatCompletionMessage AsAssistant(string content) => new() { Role = "assistant", Content = content };
-}
-
-public record ChatCompletionCreateResponse
-{
-    [JsonPropertyName("id")]
-    public string Id { get; set; } = null!;
-
-    [JsonPropertyName("object")]
-    public string Object { get; set; } = null!;
-
-    [JsonPropertyName("created")]
-    public int Created { get; set; }
-
-    [JsonPropertyName("choices")]
-    public List<Choice> Choices { get; set; } = new List<Choice>();
-
-    [JsonPropertyName("usage")]
-    public Usage Usage { get; set; } = null!;
-}
-
-public record Usage
-{
-    [JsonPropertyName("prompt_tokens")]
-    public int PromptTokens { get; set; }
-
-    [JsonPropertyName("completion_tokens")]
-    public int CompletionTokens { get; set; }
-
-    [JsonPropertyName("total_tokens")]
-    public int TotalTokens { get; set; }
-}
-
-public record Choice
-{
-    [JsonPropertyName("index")]
-    public int Index { get; set; }
-
-    [JsonPropertyName("message")]
-    public ChatCompletionMessage Message { get; set; } = null!;
-
-    [JsonPropertyName("finish_reason")]
-    public string FinishReason { get; set; } = null!;
-}
-
-public record ChatCompletionResponseErrorWrapper
-{
-    [JsonPropertyName("error")]
-    public ChatCompletionResponseError Error { get; set; } = null!;
-}
-
-public record ChatCompletionResponseError
-{
-    [JsonPropertyName("code")]
-    public string Code { get; set; } = null!;
-
-    [JsonPropertyName("message")]
-    public string Message { get; set; } = null!;
-
-    [JsonPropertyName("param")]
-    public string Param { get; set; } = null!;
-
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = null!;
 }
