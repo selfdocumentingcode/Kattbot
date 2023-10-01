@@ -94,7 +94,7 @@ public class KattGptService
             }
 
             replaceArgs.Add(TemplateChannelNameToken, channelDisplayName);
-            replaceArgs.Add(TemplateChannelTopicToken, channel.Topic ?? string.Empty);
+            replaceArgs.Add(TemplateChannelTopicToken, channelTopic ?? string.Empty);
         }
 
         var systemPromptsString = systemPromptBuilder.ToString();
