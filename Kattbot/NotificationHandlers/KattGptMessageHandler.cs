@@ -19,7 +19,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 {
     private const string ChatGptModel = "gpt-3.5-turbo-16k";
     private const string TokenizerModel = "gpt-3.5";
-    private const string MetaMessagePrefix = "msg";
+    private const string MetaMessagePrefix = "$";
     private const float Temperature = 1.2f;
     private const int MaxTokens = 8192;
     private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
@@ -293,7 +293,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         }
 
         // otherwise check if the message does not start with the MetaMessagePrefix
-        var messageStartsWithMetaMessagePrefix = message.Content.StartsWith(MetaMessagePrefix);
+        var messageStartsWithMetaMessagePrefix = message.Content.TrimStart().StartsWith(MetaMessagePrefix);
 
         // if it does, return false
         return !messageStartsWithMetaMessagePrefix;
@@ -333,7 +333,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         }
 
         // otherwise check if the message does not start with the MetaMessagePrefix
-        var messageStartsWithMetaMessagePrefix = message.Content.StartsWith(MetaMessagePrefix);
+        var messageStartsWithMetaMessagePrefix = message.Content.TrimStart().StartsWith(MetaMessagePrefix);
 
         // if it does, return false
         return !messageStartsWithMetaMessagePrefix;
