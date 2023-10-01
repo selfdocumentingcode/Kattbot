@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,12 +48,11 @@ public class BotWorker : IHostedService
     {
         _logger.LogInformation("Starting bot");
 
-        string commandPrefix = _options.CommandPrefix;
-        string altCommandPrefix = _options.AlternateCommandPrefix;
+        string[] commandPrefixes = new[] { _options.CommandPrefix, _options.AlternateCommandPrefix };
 
         CommandsNextExtension commands = _client.UseCommandsNext(new CommandsNextConfiguration()
         {
-            StringPrefixes = new[] { commandPrefix, altCommandPrefix },
+            StringPrefixes = commandPrefixes,
             Services = _serviceProvider,
             EnableDefaultHelp = false,
             EnableMentionPrefix = false,
@@ -68,7 +68,7 @@ public class BotWorker : IHostedService
         _commandEventHandler.RegisterHandlers(commands);
         _emoteEventHandler.RegisterHandlers();
 
-        _client.MessageCreated += (sender, args) => OnMessageCreated(args, cancellationToken);
+        _client.MessageCreated += (sender, args) => OnMessageCreated(args, commandPrefixes, cancellationToken);
 
         await _client.ConnectAsync();
     }
@@ -80,7 +80,7 @@ public class BotWorker : IHostedService
         await _client.DisconnectAsync();
     }
 
-    private async Task OnMessageCreated(MessageCreateEventArgs args, CancellationToken cancellationToken)
+    private async Task OnMessageCreated(MessageCreateEventArgs args, string[] commandPrefixes, CancellationToken cancellationToken)
     {
         var author = args.Author;
 
@@ -91,6 +91,12 @@ public class BotWorker : IHostedService
 
         // Ignore messages from DMs
         if (args.Guild is null)
+        {
+            return;
+        }
+
+        // Ignore message that starts with the bot's command prefix
+        if (commandPrefixes.Any(prefix => args.Message.Content.TrimStart().StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
         {
             return;
         }

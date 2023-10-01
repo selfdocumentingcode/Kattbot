@@ -74,7 +74,7 @@ public class Program
         services.AddSingleton((_) =>
         {
             var defaultLogLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default") ?? "Warning";
-            var botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken");
+            var botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken") ?? throw new Exception("Bot token not found");
 
             LogLevel logLevel = Enum.Parse<LogLevel>(defaultLogLevel);
 
