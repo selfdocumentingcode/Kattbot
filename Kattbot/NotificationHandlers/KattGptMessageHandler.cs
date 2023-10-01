@@ -21,9 +21,11 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     private const string TokenizerModel = "gpt-3.5";
     private const string MetaMessagePrefix = "$";
     private const float Temperature = 1.2f;
-    private const int MaxTokens = 8192;
+    private const int MaxTokens = 16_385;
     private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
     private const string MessageSplitToken = "[cont.]";
+    private const string RecipientMarkerToYou = "[to you]";
+    private const string RecipientMarkerToOthers = "[to others]";
 
     private readonly ChatGptHttpClient _chatGpt;
     private readonly KattGptChannelCache _cache;
@@ -72,11 +74,17 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         var newMessageUser = author.GetDisplayName();
         var newMessageContent = message.GetMessageWithTextMentions();
 
-        var newUserMessage = ChatCompletionMessage.AsUser($"{newMessageUser}: {newMessageContent}");
+        bool shouldReplyToMessage = ShouldReplyToMessage(message);
+
+        var recipientMarker = shouldReplyToMessage
+            ? RecipientMarkerToYou
+            : RecipientMarkerToOthers;
+
+        var newUserMessage = ChatCompletionMessage.AsUser($"{newMessageUser}{recipientMarker}: {newMessageContent}");
 
         boundedMessageQueue.Enqueue(newUserMessage, kattGptTokenizer.GetTokenCount(newUserMessage.Content));
 
-        if (ShouldReplyToMessage(message))
+        if (shouldReplyToMessage)
         {
             await channel.TriggerTypingAsync();
 
@@ -202,7 +210,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
             var dalleResult = await GetDalleResult(prompt, authorId.ToString());
 
             // Send request with function result
-            var functionCallResult = $"The prompt itself and the image result are attached to this post.";
+            var functionCallResult = $"The resulting image file will be attached to your next message.";
 
             var functionCallResultMessage = ChatCompletionMessage.AsFunctionCallResult(functionCallName, functionCallResult);
             var functionCallResultTokenCount = kattGptTokenizer.GetTokenCount(functionCallName, functionCallArguments, functionCallResult);
@@ -220,6 +228,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
             // Handle new response
             var chatGptResponse2 = response2.Choices[0].Message;
+            boundedMessageQueue.Enqueue(chatGptResponse2, kattGptTokenizer.GetTokenCount(chatGptResponse2.Content));
 
             await workingOnItMessage.DeleteAsync();
 

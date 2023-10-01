@@ -118,10 +118,23 @@ namespace Kattbot.CommandModules
             foreach (var message in systemPromptsMessages)
             {
                 sb.AppendLine();
-                sb.AppendLine($"> {message.Content}");
+                sb.AppendLine(message.Content);
             }
 
-            await ctx.RespondAsync(sb.ToString());
+            var responseMessage = sb.ToString();
+
+            if (responseMessage.Length <= DiscordConstants.MaxMessageLength)
+            {
+                await ctx.RespondAsync(responseMessage);
+                return;
+            }
+
+            var messageChunks = responseMessage.SplitString(DiscordConstants.MaxMessageLength, string.Empty);
+
+            foreach (var messageChunk in messageChunks)
+            {
+                await ctx.RespondAsync(messageChunk);
+            }
         }
 
         [Command("dump-context")]

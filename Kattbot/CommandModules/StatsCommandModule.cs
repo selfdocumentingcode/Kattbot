@@ -11,6 +11,7 @@ using Kattbot.CommandModules.ResultFormatters;
 using Kattbot.CommandModules.TypeReaders;
 using Kattbot.Common.Models;
 using Kattbot.Common.Models.Emotes;
+using Kattbot.Config;
 using Kattbot.Data;
 using Kattbot.Helpers;
 using Kattbot.Workers;

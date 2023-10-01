@@ -1,16 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using DSharpPlus.Entities;
 using Kattbot.Common.Models.KattGpt;
+using Kattbot.Config;
+using Kattbot.Helpers;
 using Microsoft.Extensions.Options;
 
 namespace Kattbot.Services.KattGpt;
 
 public class KattGptService
 {
-    private const string ChannelWithTopicTemplateName = "ChannelWithTopic";
+    private const string ChannelContextWithTopicTemplate = "ChannelContextWithTopic";
+    private const string ChannelContextWithoutTopicTemplate = "ChannelContextWithoutTopic";
+    private const string ChannelGuidelinesHeaderTemplate = "ChannelGuidelines";
+
+    private const string TemplateGuildNameToken = "{guildName}";
+    private const string TemplateChannelNameToken = "{channelName}";
+    private const string TemplateChannelTopicToken = "{channelTopic}";
 
     private readonly KattGptOptions _kattGptOptions;
 
@@ -26,9 +35,10 @@ public class KattGptService
     /// <returns>The system prompts messages.</returns>
     public List<ChatCompletionMessage> BuildSystemPromptsMessages(DiscordChannel channel)
     {
-        // Get core system prompt messages
-        var coreSystemPrompts = string.Join(" ", _kattGptOptions.CoreSystemPrompts);
-        var systemPromptsMessages = new List<ChatCompletionMessage>() { ChatCompletionMessage.AsSystem(coreSystemPrompts) };
+        var systemPromptBuilder = new StringBuilder();
+
+        var coreSystemPromptStringsa = _kattGptOptions.CoreSystemPrompts.ToList();
+        systemPromptBuilder.AppendLines(coreSystemPromptStringsa);
 
         var guild = channel.Guild;
         var guildId = guild.Id;
@@ -37,59 +47,65 @@ public class KattGptService
         var guildOptions = _kattGptOptions.GuildOptions.Where(x => x.Id == guildId).SingleOrDefault()
                             ?? throw new Exception($"No guild options found for guild {guildId}");
 
-        // Get the guild system prompts if they exist
-        string[] guildPromptsArray = guildOptions.SystemPrompts ?? Array.Empty<string>();
+        // Get the guild display name
+        var guildDisplayName = guildOptions.Name ?? channel.Guild.Name;
 
-        // add them to the system prompts messages if not empty
-        if (guildPromptsArray.Length > 0)
+        var replaceArgs = new Dictionary<string, string>
         {
-            string guildSystemPrompts = string.Join(" ", guildPromptsArray);
-            systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(guildSystemPrompts));
-        }
+            { TemplateGuildNameToken, guildDisplayName },
+        };
 
         var channelOptions = GetChannelOptions(channel);
 
         // if there are no channel options, return the system prompts messages
-        if (channelOptions == null)
+        if (channelOptions != null)
         {
-            return systemPromptsMessages;
-        }
+            // get a sanitized channel name that only includes letters, digits, - and _
+            var channelDisplayName = Regex.Replace(channel.Name, @"[^a-zA-Z0-9-_]", string.Empty);
 
-        // get the system prompts for this channel
-        string[] channelPromptsArray = channelOptions.SystemPrompts ?? Array.Empty<string>();
+            var channelTopic = channelOptions.Topic is not null
+                                ? channelOptions.Topic
+                                : channelOptions.FallbackToChannelTopic && !string.IsNullOrWhiteSpace(channel.Topic)
+                                    ? channel.Topic
+                                    : null;
 
-        // add them to the system prompts messages if not empty
-        if (channelPromptsArray.Length > 0)
-        {
-            string channelSystemPrompts = string.Join(" ", channelPromptsArray);
-            systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(channelSystemPrompts));
-        }
+            var channelContextTemplateName = channelTopic is not null
+                                            ? ChannelContextWithTopicTemplate
+                                            : ChannelContextWithoutTopicTemplate;
 
-        // else if the channel options has UseChannelTopic set to true, add the channel topic to the system prompts messages
-        else if (channelOptions.UseChannelTopic)
-        {
-            // get the channel topic or use a fallback
-            var channelTopic = !string.IsNullOrWhiteSpace(channel.Topic) ? channel.Topic : "Whatever";
+            var channelContextTemplate = _kattGptOptions.Templates.Where(x => x.Name == channelContextTemplateName).SingleOrDefault();
 
-            // get the text template from kattgpt options
-            var channelWithTopicTemplate = _kattGptOptions.Templates.Where(x => x.Name == ChannelWithTopicTemplateName).SingleOrDefault();
-
-            // if the temmplate is not null, format it with the channel name and topic and add it to the system prompts messages
-            if (channelWithTopicTemplate != null)
+            if (channelContextTemplate is not null)
             {
-                // get a sanitized channel name that only includes letters, digits, - and _
-                var channelName = Regex.Replace(channel.Name, @"[^a-zA-Z0-9-_]", string.Empty);
-
-                var formatedTemplatePrompt = string.Format(channelWithTopicTemplate.Content, channelName, channelTopic);
-                systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(formatedTemplatePrompt));
+                systemPromptBuilder.AppendLine();
+                systemPromptBuilder.AppendLine(channelContextTemplate.Content);
             }
 
-            // else use the channelTopic as the system message
-            else
+            var headerTemplate = _kattGptOptions.Templates.Where(x => x.Name == ChannelGuidelinesHeaderTemplate).SingleOrDefault();
+
+            // get the system prompts for this channel
+            string[] channelPromptStrings = channelOptions.SystemPrompts ?? Array.Empty<string>();
+
+            if (headerTemplate is not null && channelPromptStrings.Length > 0)
             {
-                systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(channelTopic));
+                systemPromptBuilder.AppendLine();
+                systemPromptBuilder.AppendLine(headerTemplate.Content);
+                systemPromptBuilder.AppendLines(channelPromptStrings);
             }
+
+            replaceArgs.Add(TemplateChannelNameToken, channelDisplayName);
+            replaceArgs.Add(TemplateChannelTopicToken, channel.Topic ?? string.Empty);
         }
+
+        var systemPromptsString = systemPromptBuilder.ToString();
+
+        // replace variables
+        foreach (var (key, value) in replaceArgs)
+        {
+            systemPromptsString = systemPromptsString.Replace(key, value);
+        }
+
+        var systemPromptsMessages = new List<ChatCompletionMessage>() { ChatCompletionMessage.AsSystem(systemPromptsString) };
 
         return systemPromptsMessages;
     }

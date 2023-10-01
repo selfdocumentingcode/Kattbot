@@ -5,6 +5,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.Entities;
 using Kattbot.Attributes;
+using Kattbot.Config;
 using Kattbot.Helpers;
 using Kattbot.Services;
 using Microsoft.Extensions.Logging;

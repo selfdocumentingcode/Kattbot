@@ -8,6 +8,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using Kattbot.CommandModules.TypeReaders;
+using Kattbot.Config;
 using Kattbot.EventHandlers;
 using Kattbot.NotificationHandlers;
 using Microsoft.Extensions.Hosting;

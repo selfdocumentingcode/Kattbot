@@ -2,6 +2,7 @@ using System;
 using System.Threading.Channels;
 using DSharpPlus;
 using Kattbot.CommandHandlers;
+using Kattbot.Config;
 using Kattbot.Data;
 using Kattbot.Data.Repositories;
 using Kattbot.EventHandlers;

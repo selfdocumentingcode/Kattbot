@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using Kattbot.Config;
 using Kattbot.NotificationHandlers;
 using Kattbot.NotificationHandlers.Emotes;
 using Kattbot.Services;

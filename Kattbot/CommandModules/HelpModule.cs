@@ -4,6 +4,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using Kattbot.Attributes;
 using Kattbot.CommandModules.ResultFormatters;
+using Kattbot.Config;
 using Kattbot.Helpers;
 using Microsoft.Extensions.Options;
 

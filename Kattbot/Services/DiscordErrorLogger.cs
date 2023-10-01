@@ -1,5 +1,6 @@
 ﻿using System;
 using DSharpPlus.CommandsNext;
+using Kattbot.Config;
 using Kattbot.Helpers;
 using Kattbot.NotificationHandlers;
 using Kattbot.Workers;
