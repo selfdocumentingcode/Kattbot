@@ -20,7 +20,8 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     private const string ChatGptModel = "gpt-3.5-turbo-16k";
     private const string TokenizerModel = "gpt-3.5";
     private const string MetaMessagePrefix = "$";
-    private const float Temperature = 1.2f;
+    private const float DefaultTemperature = 1.2f;
+    private const float FunctionCallTemperature = 0.8f;
     private const int MaxTotalTokens = 16_385;
     private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
     private const string MessageSplitToken = "[cont.]";
@@ -92,7 +93,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         {
             await channel.TriggerTypingAsync();
 
-            var request = BuildRequest(systemPromptsMessages, boundedMessageQueue);
+            var request = BuildRequest(systemPromptsMessages, boundedMessageQueue, DefaultTemperature);
 
             var response = await _chatGpt.ChatCompletionCreate(request);
 
@@ -114,7 +115,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         SaveBoundedMessageQueue(channel, boundedMessageQueue);
     }
 
-    private static ChatCompletionCreateRequest BuildRequest(List<ChatCompletionMessage> systemPromptsMessages, BoundedQueue<ChatCompletionMessage> boundedMessageQueue)
+    private static ChatCompletionCreateRequest BuildRequest(List<ChatCompletionMessage> systemPromptsMessages, BoundedQueue<ChatCompletionMessage> boundedMessageQueue, float temperature)
     {
         // Build functions
         var chatCompletionFunctions = new[] { DalleFunctionBuilder.BuildDalleImageFunctionDefinition() };
@@ -129,7 +130,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         {
             Model = ChatGptModel,
             Messages = requestMessages.ToArray(),
-            Temperature = Temperature,
+            Temperature = temperature,
             MaxTokens = MaxTokensToGenerate,
             Functions = chatCompletionFunctions,
         };
@@ -226,17 +227,17 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
             // Add function call result to the context
             boundedMessageQueue.Enqueue(functionCallResultMessage, functionCallResultTokenCount);
 
-            var request2 = BuildRequest(systemPromptsMessages, boundedMessageQueue);
+            var request = BuildRequest(systemPromptsMessages, boundedMessageQueue, FunctionCallTemperature);
 
-            var response2 = await _chatGpt.ChatCompletionCreate(request2);
+            var response = await _chatGpt.ChatCompletionCreate(request);
 
             // Handle new response
-            var chatGptResponse2 = response2.Choices[0].Message;
-            boundedMessageQueue.Enqueue(chatGptResponse2, kattGptTokenizer.GetTokenCount(chatGptResponse2.Content));
+            var functionCallResponse = response.Choices[0].Message;
+            boundedMessageQueue.Enqueue(functionCallResponse, kattGptTokenizer.GetTokenCount(functionCallResponse.Content));
 
             await workingOnItMessage.DeleteAsync();
 
-            await SendDalleResultReply(chatGptResponse2.Content!, message, prompt, dalleResult);
+            await SendDalleResultReply(functionCallResponse.Content!, message, prompt, dalleResult);
         }
         catch (Exception ex)
         {
