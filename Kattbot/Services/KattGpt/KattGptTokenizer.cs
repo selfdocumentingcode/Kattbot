@@ -47,12 +47,12 @@ public class KattGptTokenizer
         return count1 + count2 + count3;
     }
 
-    public int GetTokenCount(FunctionCall functionCall)
+    public int GetTokenCount(ChatCompletionFunction functionCall)
     {
         var tokenizer = TikToken.EncodingForModel(_modelName);
 
         var nameTokenCount = tokenizer.Encode(functionCall.Name).Count;
-        var argumentsTokenCount = tokenizer.Encode(functionCall.Arguments).Count;
+        var argumentsTokenCount = tokenizer.Encode(functionCall.Parameters.ToString()).Count;
 
         return nameTokenCount + argumentsTokenCount;
     }

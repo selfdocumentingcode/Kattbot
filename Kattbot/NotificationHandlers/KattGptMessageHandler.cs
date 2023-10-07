@@ -21,7 +21,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     private const string TokenizerModel = "gpt-3.5";
     private const string MetaMessagePrefix = "$";
     private const float Temperature = 1.2f;
-    private const int MaxTokens = 16_385;
+    private const int MaxTotalTokens = 16_385;
     private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
     private const string MessageSplitToken = "[cont.]";
     private const string RecipientMarkerToYou = "[to you]";
@@ -68,7 +68,11 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
         var systemMessagesTokenCount = kattGptTokenizer.GetTokenCount(systemPromptsMessages);
 
-        var boundedMessageQueue = GetBoundedMessageQueue(channel, systemMessagesTokenCount);
+        var functionsTokenCount = kattGptTokenizer.GetTokenCount(DalleFunctionBuilder.BuildDalleImageFunctionDefinition());
+
+        var reservedTokens = systemMessagesTokenCount + functionsTokenCount;
+
+        var boundedMessageQueue = GetBoundedMessageQueue(channel, reservedTokens);
 
         // Add new message from notification
         var newMessageUser = author.GetDisplayName();
@@ -250,9 +254,9 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     /// Gets the bounded message queue for the channel from the cache or creates a new one.
     /// </summary>
     /// <param name="channel">The channel.</param>
-    /// <param name="systemMessageTokenCount">The token count for the system messages.</param>
+    /// <param name="reservedTokenCount">The token count for the system messages and functions.</param>
     /// <returns>The bounded message queue for the channel.</returns>
-    private BoundedQueue<ChatCompletionMessage> GetBoundedMessageQueue(DiscordChannel channel, int systemMessageTokenCount)
+    private BoundedQueue<ChatCompletionMessage> GetBoundedMessageQueue(DiscordChannel channel, int reservedTokenCount)
     {
         var cacheKey = KattGptChannelCache.KattGptChannelCacheKey(channel.Id);
 
@@ -260,7 +264,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
         if (boundedMessageQueue == null)
         {
-            var remainingTokensForContextMessages = MaxTokens - systemMessageTokenCount;
+            var remainingTokensForContextMessages = MaxTotalTokens - MaxTokensToGenerate - reservedTokenCount;
 
             boundedMessageQueue = new BoundedQueue<ChatCompletionMessage>(remainingTokensForContextMessages);
         }
