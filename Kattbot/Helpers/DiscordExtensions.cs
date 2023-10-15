@@ -24,11 +24,6 @@ public static class DiscordExtensions
         return user.HasLegacyUsername() ? $"{user.Username}#{user.Discriminator}" : user.Username;
     }
 
-    private static bool HasLegacyUsername(this DiscordUser user)
-    {
-        return user.Discriminator != "0";
-    }
-
     public static string GetEmojiImageUrl(this DiscordEmoji emoji)
     {
         bool isEmote = emoji.Id != 0;
@@ -80,6 +75,11 @@ public static class DiscordExtensions
         imgUrl = await (await Task.WhenAny(waitTasks));
 
         return imgUrl;
+    }
+
+    private static bool HasLegacyUsername(this DiscordUser user)
+    {
+        return user.Discriminator != "0";
     }
 
     private static string? GetAttachmentOrStickerImage(this DiscordMessage message)
