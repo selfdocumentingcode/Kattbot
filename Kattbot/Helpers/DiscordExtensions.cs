@@ -9,18 +9,19 @@ namespace Kattbot.Helpers;
 
 public static class DiscordExtensions
 {
-    public static string GetNicknameOrUsername(this DiscordUser user)
+    public static string GetDisplayName(this DiscordUser user)
     {
-        string username = user.Username;
-
         if (user is DiscordMember member)
         {
-            username = !string.IsNullOrWhiteSpace(member.Nickname)
-                ? member.Nickname
-                : member.DisplayName;
+            return member.DisplayName;
         }
 
-        return username;
+        return user.GlobalName ?? user.Username;
+    }
+
+    public static string GetFullUsername(this DiscordUser user)
+    {
+        return user.HasLegacyUsername() ? $"{user.Username}#{user.Discriminator}" : user.Username;
     }
 
     public static string GetEmojiImageUrl(this DiscordEmoji emoji)
@@ -30,6 +31,29 @@ public static class DiscordExtensions
         return isEmote ? emoji.Url : EmoteHelper.GetExternalEmojiImageUrl(emoji.Name);
     }
 
+    public static string GetMessageWithTextMentions(this DiscordMessage message)
+    {
+        var newMessageContent = message.Content;
+
+        foreach (var user in message.MentionedUsers)
+        {
+            var userMentionAsText = user.Mention.Replace("!", string.Empty);
+            newMessageContent = newMessageContent.Replace(userMentionAsText, user.GetDisplayName());
+        }
+
+        foreach (var role in message.MentionedRoles)
+        {
+            newMessageContent = newMessageContent.Replace(role.Mention, role.Name);
+        }
+
+        foreach (var channel in message.MentionedChannels)
+        {
+            newMessageContent = newMessageContent.Replace(channel.Mention, $"#{channel.Name}");
+        }
+
+        return newMessageContent;
+    }
+
     public static async Task<string?> GetImageUrlFromMessage(this DiscordMessage message)
     {
         var imgUrl = message.GetAttachmentOrStickerImage();
@@ -37,7 +61,7 @@ public static class DiscordExtensions
         if (imgUrl != null)
             return imgUrl;
 
-        if (message.ReferencedMessage != null)
+        if (message.ReferencedMessage is not null)
             imgUrl = message.ReferencedMessage.GetAttachmentOrStickerImage();
 
         if (imgUrl != null)
@@ -45,12 +69,17 @@ public static class DiscordExtensions
 
         var waitTasks = new List<Task<string?>> { message.WaitForEmbedImage() };
 
-        if (message.ReferencedMessage != null)
+        if (message.ReferencedMessage is not null)
             waitTasks.Add(message.ReferencedMessage.WaitForEmbedImage());
 
         imgUrl = await (await Task.WhenAny(waitTasks));
 
         return imgUrl;
+    }
+
+    private static bool HasLegacyUsername(this DiscordUser user)
+    {
+        return user.Discriminator != "0";
     }
 
     private static string? GetAttachmentOrStickerImage(this DiscordMessage message)

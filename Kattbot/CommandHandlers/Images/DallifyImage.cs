@@ -122,7 +122,7 @@ public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
             using var imageStream = imageStreamResult.MemoryStream;
             var fileExtension = imageStreamResult.FileExtension;
 
-            var imageFilename = user.GetNicknameOrUsername().ToSafeFilename(fileExtension);
+            var imageFilename = userAsMember.DisplayName.ToSafeFilename(fileExtension);
 
             DiscordMessageBuilder mb = new DiscordMessageBuilder()
                 .AddFile(imageFilename, imageStream)
@@ -187,7 +187,7 @@ public class DallifyImageHandler : IRequestHandler<DallifyEmoteRequest>,
 
         var squaredImage = _imageService.CropToSquare(imageAsPng);
 
-        var resultSize = Math.Min(maxSize, Math.Max(ValidSizes.Reverse().FirstOrDefault(s => squaredImage.Height > s), ValidSizes[0]));
+        var resultSize = Math.Min(maxSize, Math.Max(ValidSizes.Reverse().FirstOrDefault(s => squaredImage.Height >= s), ValidSizes[0]));
 
         var fileName = $"{Guid.NewGuid()}.png";
 

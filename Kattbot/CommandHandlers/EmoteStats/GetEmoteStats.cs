@@ -88,25 +88,25 @@ public class GetEmoteStats
                 // Resolve display names
                 foreach (ExtendedEmoteUser? emoteUser in extendedEmoteUsers)
                 {
-                    DiscordMember user;
+                    DiscordMember member;
 
                     if (ctx.Guild.Members.ContainsKey(emoteUser.UserId))
                     {
-                        user = ctx.Guild.Members[emoteUser.UserId];
+                        member = ctx.Guild.Members[emoteUser.UserId];
                     }
                     else
                     {
                         try
                         {
-                            user = await ctx.Guild.GetMemberAsync(emoteUser.UserId);
+                            member = await ctx.Guild.GetMemberAsync(emoteUser.UserId);
                         }
                         catch
                         {
-                            user = null!;
+                            member = null!;
                         }
                     }
 
-                    emoteUser.DisplayName = user != null ? user.GetNicknameOrUsername() : "Unknown user";
+                    emoteUser.DisplayName = member?.DisplayName ?? "Unknown user";
                 }
 
                 result.AppendLine();

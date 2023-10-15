@@ -73,4 +73,14 @@ public static class StringExtensions
 
         return filename;
     }
+
+    public static StringBuilder AppendLines(this StringBuilder sb, IEnumerable<string> lines)
+    {
+        foreach (var line in lines)
+        {
+            sb.AppendLine(line);
+        }
+
+        return sb;
+    }
 }

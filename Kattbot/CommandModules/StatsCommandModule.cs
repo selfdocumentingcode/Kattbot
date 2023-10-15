@@ -11,6 +11,7 @@ using Kattbot.CommandModules.ResultFormatters;
 using Kattbot.CommandModules.TypeReaders;
 using Kattbot.Common.Models;
 using Kattbot.Common.Models.Emotes;
+using Kattbot.Config;
 using Kattbot.Data;
 using Kattbot.Helpers;
 using Kattbot.Workers;
@@ -87,7 +88,7 @@ public class StatsCommandModule : BaseCommandModule
 
         ulong userId = ctx.User.Id;
 
-        string mention = ctx.User.GetNicknameOrUsername();
+        string mention = ctx.User.GetDisplayName();
 
         return GetBestEmotesUser(ctx, userId, mention, args.Page, args.Interval);
     }
@@ -100,7 +101,7 @@ public class StatsCommandModule : BaseCommandModule
 
         ulong userId = user.Id;
 
-        string mention = user.GetNicknameOrUsername();
+        string mention = user.GetDisplayName();
 
         return GetBestEmotesUser(ctx, userId, mention, args.Page, args.Interval);
     }

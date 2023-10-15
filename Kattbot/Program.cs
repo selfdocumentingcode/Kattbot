@@ -2,6 +2,7 @@ using System;
 using System.Threading.Channels;
 using DSharpPlus;
 using Kattbot.CommandHandlers;
+using Kattbot.Config;
 using Kattbot.Data;
 using Kattbot.Data.Repositories;
 using Kattbot.EventHandlers;
@@ -74,7 +75,7 @@ public class Program
         services.AddSingleton((_) =>
         {
             var defaultLogLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default") ?? "Warning";
-            var botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken");
+            var botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken") ?? throw new Exception("Bot token not found");
 
             LogLevel logLevel = Enum.Parse<LogLevel>(defaultLogLevel);
 
@@ -124,6 +125,7 @@ public class Program
         services.AddTransient<DiscordErrorLogger>();
         services.AddTransient<PetPetClient>();
         services.AddTransient<DiscordResolver>();
+        services.AddTransient<KattGptService>();
     }
 
     private static void AddRepositories(IServiceCollection services)

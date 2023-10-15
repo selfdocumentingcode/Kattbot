@@ -25,8 +25,6 @@ public class DallePromptCommand : CommandRequest
 
 public class DallePromptHandler : IRequestHandler<DallePromptCommand>
 {
-    private const int MaxEmbedTitleLength = 256;
-
     private readonly DalleHttpClient _dalleHttpClient;
     private readonly ImageService _imageService;
 
@@ -54,8 +52,8 @@ public class DallePromptHandler : IRequestHandler<DallePromptCommand>
 
             var fileName = request.Prompt.ToSafeFilename(imageStream.FileExtension);
 
-            var truncatedPrompt = request.Prompt.Length > MaxEmbedTitleLength
-                ? $"{request.Prompt[..(MaxEmbedTitleLength - 3)]}..."
+            var truncatedPrompt = request.Prompt.Length > DiscordConstants.MaxEmbedTitleLength
+                ? $"{request.Prompt[..(DiscordConstants.MaxEmbedTitleLength - 3)]}..."
                 : request.Prompt;
 
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder()

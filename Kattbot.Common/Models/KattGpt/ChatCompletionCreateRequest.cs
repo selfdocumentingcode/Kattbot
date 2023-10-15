@@ -1,13 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace Kattbot.Services.KattGpt;
+namespace Kattbot.Common.Models.KattGpt;
 
-#pragma warning disable SA1402 // File may only contain a single type
 public record ChatCompletionCreateRequest
 {
     /// <summary>
-    /// Gets or sets iD of the model to use.
+    /// Gets or sets Id of the model to use.
     /// https://platform.openai.com/docs/api-reference/chat/create#chat/create-model.
     /// </summary>
     [JsonPropertyName("model")]
@@ -21,7 +19,25 @@ public record ChatCompletionCreateRequest
     public ChatCompletionMessage[] Messages { get; set; } = null!;
 
     /// <summary>
-    /// Gets or sets what sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
+    /// Gets or sets a list of functions the model may generate JSON inputs for.
+    /// https://platform.openai.com/docs/api-reference/chat/create#functions.
+    /// </summary>
+    [JsonPropertyName("functions")]
+    public ChatCompletionFunction[]? Functions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the mode for controlling the model responds to function calls. none means the model does not call a function,
+    /// and responds to the end-user. auto means the model can pick between an end-user or calling a function.
+    /// Specifying a particular function via {"name": "my_function"} forces the model to call that function.
+    /// Defaults to "none" when no functions are present and "auto" if functions are present.
+    /// https://platform.openai.com/docs/api-reference/chat/create#function_call.
+    /// </summary>
+    [JsonPropertyName("function_call")]
+    public string? FunctionCall { get; set; }
+
+    /// <summary>
+    /// Gets or sets what sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random,
+    /// while lower values like 0.2 will make it more focused and deterministic.
     /// We generally recommend altering this or top_p but not both.
     /// Defaults to 1.
     /// https://platform.openai.com/docs/api-reference/chat/create#chat/create-temperature.
@@ -96,88 +112,4 @@ public record ChatCompletionCreateRequest
     /// </summary>
     [JsonPropertyName("user")]
     public string? User { get; set; }
-}
-
-public record ChatCompletionMessage
-{
-    /// <summary>
-    /// Gets or sets can be either “system”, “user”, or “assistant”.
-    /// </summary>
-    [JsonPropertyName("role")]
-    public string Role { get; set; } = null!;
-
-    /// <summary>
-    /// Gets or sets the content of the message.
-    /// </summary>
-    [JsonPropertyName("content")]
-    public string Content { get; set; } = null!;
-
-    public static ChatCompletionMessage AsSystem(string content) => new() { Role = "system", Content = content };
-
-    public static ChatCompletionMessage AsUser(string content) => new() { Role = "user", Content = content };
-
-    public static ChatCompletionMessage AsAssistant(string content) => new() { Role = "assistant", Content = content };
-}
-
-public record ChatCompletionCreateResponse
-{
-    [JsonPropertyName("id")]
-    public string Id { get; set; } = null!;
-
-    [JsonPropertyName("object")]
-    public string Object { get; set; } = null!;
-
-    [JsonPropertyName("created")]
-    public int Created { get; set; }
-
-    [JsonPropertyName("choices")]
-    public List<Choice> Choices { get; set; } = new List<Choice>();
-
-    [JsonPropertyName("usage")]
-    public Usage Usage { get; set; } = null!;
-}
-
-public record Usage
-{
-    [JsonPropertyName("prompt_tokens")]
-    public int PromptTokens { get; set; }
-
-    [JsonPropertyName("completion_tokens")]
-    public int CompletionTokens { get; set; }
-
-    [JsonPropertyName("total_tokens")]
-    public int TotalTokens { get; set; }
-}
-
-public record Choice
-{
-    [JsonPropertyName("index")]
-    public int Index { get; set; }
-
-    [JsonPropertyName("message")]
-    public ChatCompletionMessage Message { get; set; } = null!;
-
-    [JsonPropertyName("finish_reason")]
-    public string FinishReason { get; set; } = null!;
-}
-
-public record ChatCompletionResponseErrorWrapper
-{
-    [JsonPropertyName("error")]
-    public ChatCompletionResponseError Error { get; set; } = null!;
-}
-
-public record ChatCompletionResponseError
-{
-    [JsonPropertyName("code")]
-    public string Code { get; set; } = null!;
-
-    [JsonPropertyName("message")]
-    public string Message { get; set; } = null!;
-
-    [JsonPropertyName("param")]
-    public string Param { get; set; } = null!;
-
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = null!;
 }

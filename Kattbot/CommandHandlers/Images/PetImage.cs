@@ -106,7 +106,7 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
         using var imageStream = imageStreamResult.MemoryStream;
         var fileExtension = imageStreamResult.FileExtension;
 
-        var imageFilename = user.GetNicknameOrUsername().ToSafeFilename(fileExtension);
+        var imageFilename = userAsMember.DisplayName.ToSafeFilename(fileExtension);
 
         var responseBuilder = new DiscordMessageBuilder();
 

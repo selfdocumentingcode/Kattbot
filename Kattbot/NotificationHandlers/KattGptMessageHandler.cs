@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
+using Kattbot.Common.Models.KattGpt;
 using Kattbot.Helpers;
+using Kattbot.Services;
+using Kattbot.Services.Dalle;
+using Kattbot.Services.Images;
 using Kattbot.Services.KattGpt;
 using MediatR;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
-using TiktokenSharp;
 
 namespace Kattbot.NotificationHandlers;
 
@@ -18,28 +19,36 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 {
     private const string ChatGptModel = "gpt-3.5-turbo-16k";
     private const string TokenizerModel = "gpt-3.5";
-    private const string MetaMessagePrefix = "msg";
-    private const float Temperature = 1.2f;
-    private const int MaxTokens = 8192;
+    private const string MetaMessagePrefix = "$";
+    private const float DefaultTemperature = 1.2f;
+    private const float FunctionCallTemperature = 0.8f;
+    private const int MaxTotalTokens = 16_385;
     private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
-    private const string ChannelWithTopicTemplateName = "ChannelWithTopic";
     private const string MessageSplitToken = "[cont.]";
+    private const string RecipientMarkerToYou = "[to you]";
+    private const string RecipientMarkerToOthers = "[to others]";
 
     private readonly ChatGptHttpClient _chatGpt;
-    private readonly KattGptOptions _kattGptOptions;
     private readonly KattGptChannelCache _cache;
-    private readonly TikToken _tokenizer;
+    private readonly KattGptService _kattGptService;
+    private readonly DalleHttpClient _dalleHttpClient;
+    private readonly ImageService _imageService;
+    private readonly DiscordErrorLogger _discordErrorLogger;
 
     public KattGptMessageHandler(
         ChatGptHttpClient chatGpt,
-        IOptions<KattGptOptions> kattGptOptions,
-        KattGptChannelCache cache)
+        KattGptChannelCache cache,
+        KattGptService kattGptService,
+        DalleHttpClient dalleHttpClient,
+        ImageService imageService,
+        DiscordErrorLogger discordErrorLogger)
     {
         _chatGpt = chatGpt;
-        _kattGptOptions = kattGptOptions.Value;
         _cache = cache;
-
-        _tokenizer = TikToken.EncodingForModel(TokenizerModel);
+        _kattGptService = kattGptService;
+        _dalleHttpClient = dalleHttpClient;
+        _imageService = imageService;
+        _discordErrorLogger = discordErrorLogger;
     }
 
     public async Task Handle(MessageCreatedNotification notification, CancellationToken cancellationToken)
@@ -54,47 +63,99 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
             return;
         }
 
-        var systemPromptsMessages = BuildSystemPromptsMessages(channel);
+        var kattGptTokenizer = new KattGptTokenizer(TokenizerModel);
 
-        var boundedMessageQueue = GetBoundedMessageQueue(channel, systemPromptsMessages);
+        var systemPromptsMessages = _kattGptService.BuildSystemPromptsMessages(channel);
+
+        var systemMessagesTokenCount = kattGptTokenizer.GetTokenCount(systemPromptsMessages);
+
+        var functionsTokenCount = kattGptTokenizer.GetTokenCount(DalleFunctionBuilder.BuildDalleImageFunctionDefinition());
+
+        var reservedTokens = systemMessagesTokenCount + functionsTokenCount;
+
+        var boundedMessageQueue = GetBoundedMessageQueue(channel, reservedTokens);
 
         // Add new message from notification
-        var newMessageContent = message.Content;
-        var newMessageUser = author.GetNicknameOrUsername();
+        var newMessageUser = author.GetDisplayName();
+        var newMessageContent = message.GetMessageWithTextMentions();
 
-        var newUserMessage = ChatCompletionMessage.AsUser($"{newMessageUser}: {newMessageContent}");
+        bool shouldReplyToMessage = ShouldReplyToMessage(message);
 
-        boundedMessageQueue.Enqueue(newUserMessage, _tokenizer.Encode(newUserMessage.Content).Count);
+        var recipientMarker = shouldReplyToMessage
+            ? RecipientMarkerToYou
+            : RecipientMarkerToOthers;
 
-        if (ShouldReplyToMessage(message))
+        var newUserMessage = ChatCompletionMessage.AsUser($"{newMessageUser}{recipientMarker}: {newMessageContent}");
+
+        boundedMessageQueue.Enqueue(newUserMessage, kattGptTokenizer.GetTokenCount(newUserMessage.Content));
+
+        if (shouldReplyToMessage)
         {
             await channel.TriggerTypingAsync();
 
-            // Collect request messages
-            var requestMessages = new List<ChatCompletionMessage>();
-            requestMessages.AddRange(systemPromptsMessages);
-            requestMessages.AddRange(boundedMessageQueue.GetAll());
-
-            // Make request
-            var request = new ChatCompletionCreateRequest()
-            {
-                Model = ChatGptModel,
-                Messages = requestMessages.ToArray(),
-                Temperature = Temperature,
-                MaxTokens = MaxTokensToGenerate,
-            };
+            var request = BuildRequest(systemPromptsMessages, boundedMessageQueue, DefaultTemperature);
 
             var response = await _chatGpt.ChatCompletionCreate(request);
 
             var chatGptResponse = response.Choices[0].Message;
 
-            await SendReply(chatGptResponse.Content, message);
+            if (chatGptResponse.FunctionCall != null)
+            {
+                await HandleFunctionCallResponse(message, kattGptTokenizer, systemPromptsMessages, boundedMessageQueue, chatGptResponse);
+            }
+            else
+            {
+                await SendReply(chatGptResponse.Content!, message);
 
-            // Add the chat gpt response message to the bounded queue
-            boundedMessageQueue.Enqueue(chatGptResponse, _tokenizer.Encode(chatGptResponse.Content).Count);
+                // Add the chat gpt response message to the bounded queue
+                boundedMessageQueue.Enqueue(chatGptResponse, kattGptTokenizer.GetTokenCount(chatGptResponse.Content));
+            }
         }
 
         SaveBoundedMessageQueue(channel, boundedMessageQueue);
+    }
+
+    private static ChatCompletionCreateRequest BuildRequest(List<ChatCompletionMessage> systemPromptsMessages, BoundedQueue<ChatCompletionMessage> boundedMessageQueue, float temperature)
+    {
+        // Build functions
+        var chatCompletionFunctions = new[] { DalleFunctionBuilder.BuildDalleImageFunctionDefinition() };
+
+        // Collect request messages
+        var requestMessages = new List<ChatCompletionMessage>();
+        requestMessages.AddRange(systemPromptsMessages);
+        requestMessages.AddRange(boundedMessageQueue.GetAll());
+
+        // Make request
+        var request = new ChatCompletionCreateRequest()
+        {
+            Model = ChatGptModel,
+            Messages = requestMessages.ToArray(),
+            Temperature = temperature,
+            MaxTokens = MaxTokensToGenerate,
+            Functions = chatCompletionFunctions,
+        };
+
+        return request;
+    }
+
+    private static async Task SendDalleResultReply(string responseMessage, DiscordMessage messageToReplyTo, string prompt, ImageStreamResult imageStream)
+    {
+        var truncatedPrompt = prompt.Length > DiscordConstants.MaxEmbedTitleLength
+            ? $"{prompt[..(DiscordConstants.MaxEmbedTitleLength - 3)]}..."
+            : prompt;
+
+        var filename = prompt.ToSafeFilename(imageStream.FileExtension);
+
+        DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
+            .WithTitle(truncatedPrompt)
+            .WithImageUrl($"attachment://{filename}");
+
+        DiscordMessageBuilder mb = new DiscordMessageBuilder()
+            .AddFile(filename, imageStream.MemoryStream)
+            .WithEmbed(eb)
+            .WithContent(responseMessage);
+
+        await messageToReplyTo.RespondAsync(mb);
     }
 
     private static async Task SendReply(string responseMessage, DiscordMessage messageToReplyTo)
@@ -109,96 +170,102 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         }
     }
 
-    /// <summary>
-    /// Builds the system prompts messages for the given channel.
-    /// </summary>
-    /// <param name="channel">The channel.</param>
-    /// <returns>The system prompts messages.</returns>
-    private List<ChatCompletionMessage> BuildSystemPromptsMessages(DiscordChannel channel)
+    private async Task<ImageStreamResult> GetDalleResult(string prompt, string userId)
     {
-        // Get core system prompt messages
-        var coreSystemPrompts = string.Join(" ", _kattGptOptions.CoreSystemPrompts);
-        var systemPromptsMessages = new List<ChatCompletionMessage>() { ChatCompletionMessage.AsSystem(coreSystemPrompts) };
+        var response = await _dalleHttpClient.CreateImage(new CreateImageRequest { Prompt = prompt, User = userId });
+        if (response.Data == null || !response.Data.Any()) throw new Exception("Empty result");
 
-        var guild = channel.Guild;
-        var guildId = guild.Id;
+        var imageUrl = response.Data.First();
 
-        // Get the channel options for this guild
-        var guildOptions = _kattGptOptions.GuildOptions.Where(x => x.Id == guildId).SingleOrDefault()
-                            ?? throw new Exception($"No guild options found for guild {guildId}");
+        var image = await _imageService.DownloadImage(imageUrl.Url);
 
-        // Get the guild system prompts if they exist
-        string[] guildPromptsArray = guildOptions.SystemPrompts ?? Array.Empty<string>();
+        var imageStream = await _imageService.GetImageStream(image);
 
-        // add them to the system prompts messages if not empty
-        if (guildPromptsArray.Length > 0)
+        return imageStream;
+    }
+
+    private async Task HandleFunctionCallResponse(
+        DiscordMessage message,
+        KattGptTokenizer kattGptTokenizer,
+        List<ChatCompletionMessage> systemPromptsMessages,
+        BoundedQueue<ChatCompletionMessage> boundedMessageQueue,
+        ChatCompletionMessage chatGptResponse)
+    {
+        DiscordMessage? workingOnItMessage = null;
+
+        try
         {
-            string guildSystemPrompts = string.Join(" ", guildPromptsArray);
-            systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(guildSystemPrompts));
+            var authorId = message.Author.Id;
+
+            // Force a content value for the chat gpt response due the api not allowing nulls even though it says it does
+            chatGptResponse.Content ??= "null";
+
+            // Parse and execute function call
+            var functionCallName = chatGptResponse.FunctionCall!.Name;
+            var functionCallArguments = chatGptResponse.FunctionCall.Arguments;
+
+            var parsedArguments = JsonNode.Parse(functionCallArguments)
+                ?? throw new Exception("Could not parse function call arguments.");
+
+            var prompt = parsedArguments["prompt"]?.GetValue<string>()
+                ?? throw new Exception("Function call arguments are invalid.");
+
+            workingOnItMessage = await message.RespondAsync($"Kattbot used: {prompt}");
+
+            var dalleResult = await GetDalleResult(prompt, authorId.ToString());
+
+            // Send request with function result
+            var functionCallResult = $"The resulting image file will be attached to your next message.";
+
+            var functionCallResultMessage = ChatCompletionMessage.AsFunctionCallResult(functionCallName, functionCallResult);
+            var functionCallResultTokenCount = kattGptTokenizer.GetTokenCount(functionCallName, functionCallArguments, functionCallResult);
+
+            // Add chat gpt response to the context
+            var chatGptResponseTokenCount = kattGptTokenizer.GetTokenCount(chatGptResponse.Content);
+            boundedMessageQueue.Enqueue(chatGptResponse, chatGptResponseTokenCount);
+
+            // Add function call result to the context
+            boundedMessageQueue.Enqueue(functionCallResultMessage, functionCallResultTokenCount);
+
+            var request = BuildRequest(systemPromptsMessages, boundedMessageQueue, FunctionCallTemperature);
+
+            var response = await _chatGpt.ChatCompletionCreate(request);
+
+            // Handle new response
+            var functionCallResponse = response.Choices[0].Message;
+            boundedMessageQueue.Enqueue(functionCallResponse, kattGptTokenizer.GetTokenCount(functionCallResponse.Content));
+
+            await workingOnItMessage.DeleteAsync();
+
+            await SendDalleResultReply(functionCallResponse.Content!, message, prompt, dalleResult);
         }
-
-        var channelOptions = GetChannelOptions(channel);
-
-        // if there are no channel options, return the system prompts messages
-        if (channelOptions == null)
+        catch (Exception ex)
         {
-            return systemPromptsMessages;
-        }
-
-        // get the system prompts for this channel
-        string[] channelPromptsArray = channelOptions.SystemPrompts ?? Array.Empty<string>();
-
-        // add them to the system prompts messages if not empty
-        if (channelPromptsArray.Length > 0)
-        {
-            string channelSystemPrompts = string.Join(" ", channelPromptsArray);
-            systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(channelSystemPrompts));
-        }
-
-        // else if the channel options has UseChannelTopic set to true, add the channel topic to the system prompts messages
-        else if (channelOptions.UseChannelTopic)
-        {
-            // get the channel topic or use a fallback
-            var channelTopic = !string.IsNullOrWhiteSpace(channel.Topic) ? channel.Topic : "Whatever";
-
-            // get the text template from kattgpt options
-            var channelWithTopicTemplate = _kattGptOptions.Templates.Where(x => x.Name == ChannelWithTopicTemplateName).SingleOrDefault();
-
-            // if the temmplate is not null, format it with the channel name and topic and add it to the system prompts messages
-            if (channelWithTopicTemplate != null)
+            if (workingOnItMessage is not null)
             {
-                // get a sanitized channel name that only includes letters, digits, - and _
-                var channelName = Regex.Replace(channel.Name, @"[^a-zA-Z0-9-_]", string.Empty);
-
-                var formatedTemplatePrompt = string.Format(channelWithTopicTemplate.Content, channelName, channelTopic);
-                systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(formatedTemplatePrompt));
+                await workingOnItMessage.DeleteAsync();
             }
 
-            // else use the channelTopic as the system message
-            else
-            {
-                systemPromptsMessages.Add(ChatCompletionMessage.AsSystem(channelTopic));
-            }
+            await SendReply("Something went wrong", message);
+            _discordErrorLogger.LogError(ex.Message);
         }
-
-        return systemPromptsMessages;
     }
 
     /// <summary>
     /// Gets the bounded message queue for the channel from the cache or creates a new one.
     /// </summary>
     /// <param name="channel">The channel.</param>
-    /// <param name="systemPromptsMessages">The system prompts messages.</param>
+    /// <param name="reservedTokenCount">The token count for the system messages and functions.</param>
     /// <returns>The bounded message queue for the channel.</returns>
-    private BoundedQueue<ChatCompletionMessage> GetBoundedMessageQueue(DiscordChannel channel, List<ChatCompletionMessage> systemPromptsMessages)
+    private BoundedQueue<ChatCompletionMessage> GetBoundedMessageQueue(DiscordChannel channel, int reservedTokenCount)
     {
         var cacheKey = KattGptChannelCache.KattGptChannelCacheKey(channel.Id);
+
         var boundedMessageQueue = _cache.GetCache(cacheKey);
+
         if (boundedMessageQueue == null)
         {
-            var totalTokenCountForSystemMessages = systemPromptsMessages.Select(x => x.Content).Sum(m => _tokenizer.Encode(m).Count);
-
-            var remainingTokensForContextMessages = MaxTokens - totalTokenCountForSystemMessages;
+            var remainingTokensForContextMessages = MaxTotalTokens - MaxTokensToGenerate - reservedTokenCount;
 
             boundedMessageQueue = new BoundedQueue<ChatCompletionMessage>(remainingTokensForContextMessages);
         }
@@ -226,7 +293,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     {
         var channel = message.Channel;
 
-        var channelOptions = GetChannelOptions(channel);
+        var channelOptions = _kattGptService.GetChannelOptions(channel);
 
         if (channelOptions == null)
         {
@@ -240,7 +307,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         }
 
         // otherwise check if the message does not start with the MetaMessagePrefix
-        var messageStartsWithMetaMessagePrefix = message.Content.StartsWith(MetaMessagePrefix);
+        var messageStartsWithMetaMessagePrefix = message.Content.TrimStart().StartsWith(MetaMessagePrefix);
 
         // if it does, return false
         return !messageStartsWithMetaMessagePrefix;
@@ -255,7 +322,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     {
         var channel = message.Channel;
 
-        var channelOptions = GetChannelOptions(channel);
+        var channelOptions = _kattGptService.GetChannelOptions(channel);
 
         if (channelOptions == null)
         {
@@ -280,38 +347,9 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         }
 
         // otherwise check if the message does not start with the MetaMessagePrefix
-        var messageStartsWithMetaMessagePrefix = message.Content.StartsWith(MetaMessagePrefix);
+        var messageStartsWithMetaMessagePrefix = message.Content.TrimStart().StartsWith(MetaMessagePrefix);
 
         // if it does, return false
         return !messageStartsWithMetaMessagePrefix;
-    }
-
-    private ChannelOptions? GetChannelOptions(DiscordChannel channel)
-    {
-        var guild = channel.Guild;
-        var guildId = guild.Id;
-
-        // First check if kattgpt is enabled for this guild
-        var guildOptions = _kattGptOptions.GuildOptions.Where(x => x.Id == guildId).SingleOrDefault();
-        if (guildOptions == null)
-        {
-            return null;
-        }
-
-        var guildChannelOptions = guildOptions.ChannelOptions;
-        var guildCategoryOptions = guildOptions.CategoryOptions;
-
-        // Get the channel options for this channel or for the category this channel is in
-        var channelOptions = guildChannelOptions.Where(x => x.Id == channel.Id).SingleOrDefault();
-        if (channelOptions == null)
-        {
-            var category = channel.Parent;
-            if (category != null)
-            {
-                channelOptions = guildCategoryOptions.Where(x => x.Id == category.Id).SingleOrDefault();
-            }
-        }
-
-        return channelOptions;
     }
 }
