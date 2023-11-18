@@ -11,7 +11,7 @@
     <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-01880" />
     <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-01880" />
     <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-01880" />
-    <PackageReference Include="MediatR" Version="12.1.1" />
+    <PackageReference Include="MediatR" Version="12.2.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
