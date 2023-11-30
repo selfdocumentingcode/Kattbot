@@ -25,6 +25,8 @@ public class DallePromptCommand : CommandRequest
 
 public class DallePromptHandler : IRequestHandler<DallePromptCommand>
 {
+    private const string CreateImageModel = "dall-e-3";
+
     private readonly DalleHttpClient _dalleHttpClient;
     private readonly ImageService _imageService;
 
@@ -40,7 +42,14 @@ public class DallePromptHandler : IRequestHandler<DallePromptCommand>
 
         try
         {
-            var response = await _dalleHttpClient.CreateImage(new CreateImageRequest { Prompt = request.Prompt, User = request.Ctx.User.Id.ToString() });
+            var imageRequest = new CreateImageRequest
+            {
+                Prompt = request.Prompt,
+                Model = CreateImageModel,
+                User = request.Ctx.User.Id.ToString(),
+            };
+
+            var response = await _dalleHttpClient.CreateImage(imageRequest);
 
             if (response.Data == null || !response.Data.Any()) throw new Exception("Empty result");
 

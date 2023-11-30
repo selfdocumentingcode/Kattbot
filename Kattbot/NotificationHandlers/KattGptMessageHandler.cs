@@ -17,12 +17,13 @@ namespace Kattbot.NotificationHandlers;
 
 public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotification>
 {
-    private const string ChatGptModel = "gpt-3.5-turbo-16k";
-    private const string TokenizerModel = "gpt-3.5";
+    private const string ChatGptModel = "gpt-4-1106-preview";
+    private const string TokenizerModel = "gpt-4";
+    private const string CreateImageModel = "dall-e-3";
     private const string MetaMessagePrefix = "$";
     private const float DefaultTemperature = 1.2f;
     private const float FunctionCallTemperature = 0.8f;
-    private const int MaxTotalTokens = 16_385;
+    private const int MaxTotalTokens = 32_768;
     private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
     private const string MessageSplitToken = "[cont.]";
     private const string RecipientMarkerToYou = "[to you]";
@@ -172,7 +173,14 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
     private async Task<ImageStreamResult> GetDalleResult(string prompt, string userId)
     {
-        var response = await _dalleHttpClient.CreateImage(new CreateImageRequest { Prompt = prompt, User = userId });
+        var imageRequest = new CreateImageRequest
+        {
+            Prompt = prompt,
+            Model = CreateImageModel,
+            User = userId,
+        };
+
+        var response = await _dalleHttpClient.CreateImage(imageRequest);
         if (response.Data == null || !response.Data.Any()) throw new Exception("Empty result");
 
         var imageUrl = response.Data.First();
