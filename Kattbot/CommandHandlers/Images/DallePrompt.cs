@@ -71,7 +71,7 @@ public class DallePromptHandler : IRequestHandler<DallePromptCommand>
 
             DiscordMessageBuilder mb = new DiscordMessageBuilder()
                 .AddFile(fileName, imageStream.MemoryStream)
-                .WithEmbed(eb)
+                .AddEmbed(eb)
                 .WithContent($"There you go {request.Ctx.Member?.Mention ?? "Unknown user"}");
 
             await message.DeleteAsync();

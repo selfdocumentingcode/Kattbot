@@ -6,9 +6,11 @@ public record KattGptOptions
 {
     public const string OptionsKey = "KattGpt";
 
-    public string[] CoreSystemPrompts { get; set; } = Array.Empty<string>();
+    public string[] AlwaysOnIgnoreMessagePrefixes { get; set; } = [];
 
-    public GuildOptions[] GuildOptions { get; set; } = Array.Empty<GuildOptions>();
+    public string[] CoreSystemPrompts { get; set; } = [];
 
-    public Template[] Templates { get; set; } = Array.Empty<Template>();
+    public GuildOptions[] GuildOptions { get; set; } = [];
+
+    public Template[] Templates { get; set; } = [];
 }

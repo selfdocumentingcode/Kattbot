@@ -6,12 +6,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using Kattbot.Common.Models.KattGpt;
+using Kattbot.Config;
 using Kattbot.Helpers;
 using Kattbot.Services;
 using Kattbot.Services.Dalle;
 using Kattbot.Services.Images;
 using Kattbot.Services.KattGpt;
 using MediatR;
+using Microsoft.Extensions.Options;
 
 namespace Kattbot.NotificationHandlers;
 
@@ -20,7 +22,6 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     private const string ChatGptModel = "gpt-4-1106-preview";
     private const string TokenizerModel = "gpt-4";
     private const string CreateImageModel = "dall-e-3";
-    private const string MetaMessagePrefix = "$";
     private const float DefaultTemperature = 1.2f;
     private const float FunctionCallTemperature = 0.8f;
     private const int MaxTotalTokens = 32_768;
@@ -35,6 +36,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     private readonly DalleHttpClient _dalleHttpClient;
     private readonly ImageService _imageService;
     private readonly DiscordErrorLogger _discordErrorLogger;
+    private readonly KattGptOptions _kattGptOptions;
 
     public KattGptMessageHandler(
         ChatGptHttpClient chatGpt,
@@ -42,7 +44,8 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         KattGptService kattGptService,
         DalleHttpClient dalleHttpClient,
         ImageService imageService,
-        DiscordErrorLogger discordErrorLogger)
+        DiscordErrorLogger discordErrorLogger,
+        IOptions<KattGptOptions> kattGptOptions)
     {
         _chatGpt = chatGpt;
         _cache = cache;
@@ -50,6 +53,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         _dalleHttpClient = dalleHttpClient;
         _imageService = imageService;
         _discordErrorLogger = discordErrorLogger;
+        _kattGptOptions = kattGptOptions.Value;
     }
 
     public async Task Handle(MessageCreatedNotification notification, CancellationToken cancellationToken)
@@ -153,7 +157,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
         DiscordMessageBuilder mb = new DiscordMessageBuilder()
             .AddFile(filename, imageStream.MemoryStream)
-            .WithEmbed(eb)
+            .AddEmbed(eb)
             .WithContent(responseMessage);
 
         await messageToReplyTo.RespondAsync(mb);
@@ -315,7 +319,8 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         }
 
         // otherwise check if the message does not start with the MetaMessagePrefix
-        var messageStartsWithMetaMessagePrefix = message.Content.TrimStart().StartsWith(MetaMessagePrefix);
+        var metaMessagePrefixes = _kattGptOptions.AlwaysOnIgnoreMessagePrefixes;
+        var messageStartsWithMetaMessagePrefix = metaMessagePrefixes.Any(message.Content.TrimStart().StartsWith);
 
         // if it does, return false
         return !messageStartsWithMetaMessagePrefix;
@@ -355,7 +360,8 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
         }
 
         // otherwise check if the message does not start with the MetaMessagePrefix
-        var messageStartsWithMetaMessagePrefix = message.Content.TrimStart().StartsWith(MetaMessagePrefix);
+        var metaMessagePrefixes = _kattGptOptions.AlwaysOnIgnoreMessagePrefixes;
+        var messageStartsWithMetaMessagePrefix = metaMessagePrefixes.Any(message.Content.TrimStart().StartsWith);
 
         // if it does, return false
         return !messageStartsWithMetaMessagePrefix;
