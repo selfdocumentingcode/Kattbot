@@ -4,7 +4,47 @@ on: workflow_dispatch
         
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
-    - name: Say hello
-      run: echo "Hello, world!"
+    - uses: actions/checkout@v3
+
+    - name: Replace tokens in appsettings
+      uses: cschleiden/replace-tokens@v1
+      with:
+        tokenPrefix: '__'
+        tokenSuffix: '__'
+        files: 'Kattbot/appsettings.json'
+      env:
+        CONNECTION_STRING: ${{secrets.DB_CONNECTION_STRING}}
+        BOT_TOKEN: ${{secrets.BOT_TOKEN}}
+        OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
+    
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Test
+      run: dotnet test
+
+    - name: Generate database migration
+      run: |
+        dotnet tool restore
+        dotnet ef migrations bundle -p Kattbot.Data.Migrations -r linux-x64 -o artifact-staging/efbundle
+
+        tar czvf artifact-staging/efbundle.tar.gz artifact-staging/efbundle
+      env:
+        DOTNET_ENVIRONMENT: Production
+
+    - name: Upload migration bundle
+      uses: actions/upload-artifact@v2
+      with:
+        name: efbundle
+        path: artifact-staging/efbundle.tar.gz
+    
+    # - name: Build Docker image
+    #   run: docker build -t kattbot:latest ./Kattbot

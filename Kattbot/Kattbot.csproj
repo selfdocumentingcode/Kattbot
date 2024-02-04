@@ -3,10 +3,12 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <UserSecretsId>dotnet-Kattbot-79CAD254-2C56-430B-8B4B-16AA8DA8808D</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
 	<PackageReference Include="TiktokenSharp" Version="1.0.9" />
+	<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
 	<PackageReference Include="CommandLineArgumentsParser" Version="3.0.23" />
     <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02034" />
     <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-01947" />

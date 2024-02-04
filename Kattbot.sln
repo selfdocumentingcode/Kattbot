@@ -12,12 +12,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
-		.github\dependabot.yml = .github\dependabot.yml
 		Directory.Build.props = Directory.Build.props
 		Dotnet_cheatsheet.md = Dotnet_cheatsheet.md
 		Readme.md = Readme.md
-		.github\workflows\release.yml = .github\workflows\release.yml
-		.github\workflows\restart.yml = .github\workflows\restart.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot.Data", "Kattbot.Data\Kattbot.Data.csproj", "{F454BCE5-C964-4720-AD84-96A07FA7B8B1}"
@@ -31,6 +28,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deploy", "deploy", "{727EE4
 		deploy\kattbot-backup-db.sh = deploy\kattbot-backup-db.sh
 		deploy\kattbot-deploy.sh = deploy\kattbot-deploy.sh
 		deploy\kattbot.service = deploy\kattbot.service
+	EndProjectSection
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{642D827F-5BA9-4177-AE3D-4BAEE013BC3F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".config", ".config", "{524F91BA-735B-4F73-BEDD-A3CC1DEB452C}"
+	ProjectSection(SolutionItems) = preProject
+		.config\dotnet-tools.json = .config\dotnet-tools.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{DC675219-AB3D-40B1-BA7C-27C5613023BC}"
+	ProjectSection(SolutionItems) = preProject
+		.github\dependabot.yml = .github\dependabot.yml
+		.github\workflows\build.yml = .github\workflows\build.yml
+		.github\workflows\release.yml = .github\workflows\release.yml
+		.github\workflows\restart.yml = .github\workflows\restart.yml
 	EndProjectSection
 EndProject
 Global
@@ -59,12 +71,18 @@ Global
 		{D26776E6-F360-425C-9281-F4E7B176197E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D26776E6-F360-425C-9281-F4E7B176197E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D26776E6-F360-425C-9281-F4E7B176197E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{642D827F-5BA9-4177-AE3D-4BAEE013BC3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{642D827F-5BA9-4177-AE3D-4BAEE013BC3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{642D827F-5BA9-4177-AE3D-4BAEE013BC3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{642D827F-5BA9-4177-AE3D-4BAEE013BC3F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{727EE4ED-CFEC-4BBC-B67A-3DA7F8EE3F1E} = {2D6F1BD9-5D5D-4C85-B254-B773679A5AF9}
+		{524F91BA-735B-4F73-BEDD-A3CC1DEB452C} = {2D6F1BD9-5D5D-4C85-B254-B773679A5AF9}
+		{DC675219-AB3D-40B1-BA7C-27C5613023BC} = {2D6F1BD9-5D5D-4C85-B254-B773679A5AF9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {49047B12-10BC-4E9D-9DA6-758947DF9CE8}
