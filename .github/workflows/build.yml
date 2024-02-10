@@ -1,14 +1,21 @@
 name: Build
 
 on: workflow_dispatch
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
         
 jobs:
   build:
     name: Build
+
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
+
     steps:
     - uses: actions/checkout@v3
 
@@ -31,6 +38,31 @@ jobs:
     - name: Test
       run: dotnet test
 
+    - name: Log in to the Container registry
+      uses: docker/login-action@v3
+      with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5.5.1
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}        
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5.1.0
+      with:
+        context: .
+        file: ./Kattbot/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+    # - name: Build Docker image
+    #   run: docker build -t kattbot:latest ./Kattbot
+
     - name: Generate database migration
       run: |
         dotnet tool restore
@@ -46,5 +78,4 @@ jobs:
         name: efbundle
         path: artifact-staging/efbundle.tar.gz
     
-    # - name: Build Docker image
-    #   run: docker build -t kattbot:latest ./Kattbot
+
