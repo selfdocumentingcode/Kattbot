@@ -1,4 +1,4 @@
-name: Release
+name: Release-v2
 
 on:
   workflow_dispatch:
@@ -11,29 +11,68 @@ on:
         description: 'Docker image tag'
         required: false
         default: 'latest'
-        
+
+env:
+  REGISTRY: ghcr.io
+  REPOSITORY_OWNER: ${{ github.repository_owner }}
+  IMAGE_NAME: kattbot
+  IMAGE_TAG: ${{ inputs.imageTag }}
+  APP_CONTAINER_NAME: kattbot
+  DB_NAME: kattbot
+  DB_BACKUP_SCRIPT: kattbot-backup-db.sh
+  DB_MIGRATION_SCRIPT: database_migration.sql
+
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     steps:
-    - name: Do stuff
+    - name: Release
       uses: appleboy/ssh-action@v1.0.3
       env:
         GHCR_USERNAME: ${{secrets.GHCR_USERNAME}}
         GHCR_PASSWORD: ${{secrets.GHCR_PASSWORD}}
-        IMAGE_TAG: ${{ inputs.imageTag }}
       with:  
         host: ${{secrets.VPS_HOST}}
         port: ${{secrets.VPS_PORT}}
         username: ${{secrets.KATTBOT_USER}}
         key: ${{secrets.KATTBOT_KEY}}
         passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
+        debug: ${{vars.ACTIONS_RUNNER_DEBUG}}
+        script_stop: true
         script: |
-          docker login ghcr.io -u $GHCR_USERNAME -p $GHCR_PASSWORD
-          docker pull ghcr.io/selfdocumentingcode/kattbot:$IMAGE_TAG
-          docker stop kattbot
-          docker rm kattbot
-          docker run -d --name kattbot --add-host=host.docker.internal:172.17.0.1 --restart unless-stopped ghcr.io/selfdocumentingcode/kattbot:$IMAGE_TAG
-        envs: GHCR_USERNAME, GHCR_PASSWORD, IMAGE_TAG
-      
-        
+          FULL_IMAGE_NAME="$REGISTRY/$REPOSITORY_OWNER/$IMAGE_NAME:$IMAGE_TAG"
+          MIGRATIONS_CONTAINER_NAME="$APP_CONTAINER_NAME-migrations"
+
+          echo "Deploying $FULL_IMAGE_NAME"
+
+          # Pull the image from the registry
+          echo $GHCR_PASSWORD | docker login $REGISTRY -u $GHCR_USERNAME --password-stdin
+          docker pull $FULL_IMAGE_NAME
+          
+          # Create a temporary container to extract the migration files
+          docker create --name $MIGRATIONS_CONTAINER_NAME --add-host=host.docker.internal:172.17.0.1 $FULL_IMAGE_NAME
+
+          # Extract the migration files into a temporary directory
+          TMP_MIGRATIONS_DIR=$(mktemp -d -t "$MIGRATIONS_CONTAINER_NAME-XXXXXX")
+          docker cp $MIGRATIONS_CONTAINER_NAME:/app/migrations/. $TMP_MIGRATIONS_DIR
+
+          # Remove the temporary container
+          docker rm $MIGRATIONS_CONTAINER_NAME
+
+          # Stop the running container
+          docker stop $APP_CONTAINER_NAME
+
+          # Copy the database backup script, if newer, to home directory and run it
+          cp -u "$TMP_MIGRATIONS_DIR/$DB_BACKUP_SCRIPT" ~
+          chmod +x "$HOME/$DB_BACKUP_SCRIPT"
+          "$HOME/$DB_BACKUP_SCRIPT"
+
+          # Run the database migration script
+          psql -d $DB_NAME -q -f "$TMP_MIGRATIONS_DIR/$DB_MIGRATION_SCRIPT"
+
+          # Remove the old container
+          docker rm $APP_CONTAINER_NAME
+
+          # Deploy the new image 
+          docker run -d --name $APP_CONTAINER_NAME --add-host=host.docker.internal:172.17.0.1 --restart unless-stopped $FULL_IMAGE_NAME
+        envs: REGISTRY, REPOSITORY_OWNER, IMAGE_NAME, IMAGE_TAG, APP_CONTAINER_NAME, DB_NAME, DB_BACKUP_SCRIPT, DB_MIGRATION_SCRIPT, GHCR_USERNAME, GHCR_PASSWORD

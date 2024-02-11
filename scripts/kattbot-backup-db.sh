@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # create db backup in tmp folder
-su - postgres -c pg_dump kattbot > /tmp/kattbot.bak
+pg_dump kattbot > /tmp/kattbot.bak
 
 # create folder if it doesnt'exit
 mkdir -p $HOME/kattbot-db-backups

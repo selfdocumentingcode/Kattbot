@@ -1,5 +1,3 @@
-#See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
 FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
 USER app
 
@@ -22,9 +20,10 @@ RUN dotnet publish "./Kattbot/Kattbot.csproj" -c $BUILD_CONFIGURATION -o /output
 FROM build AS migrations
 RUN dotnet tool restore
 RUN dotnet ef migrations script --idempotent -p Kattbot.Data.Migrations -o /output/migrations/database_migration.sql
-COPY --from=build /src/deploy/kattbot-backup-db.sh /output/migrations/
-# Double it up for testing
-RUN dotnet ef migrations bundle -p Kattbot.Data.Migrations -r linux-x64 -o /output/migrations/efbundle
+COPY --from=build /src/scripts/kattbot-backup-db.sh /output/migrations/
+
+# TODO try to bundle the migrations as an executable
+# RUN dotnet ef migrations bundle -p Kattbot.Data.Migrations -r linux-x64 -o /output/migrations/efbundle
 
 FROM base AS final
 WORKDIR /app

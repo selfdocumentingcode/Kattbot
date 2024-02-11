@@ -4,7 +4,7 @@ on:
   workflow_dispatch
   
 jobs:
-  build:
+  restart:
     runs-on: ubuntu-latest
     steps:
     - name: Restart container
