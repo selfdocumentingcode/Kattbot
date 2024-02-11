@@ -24,11 +24,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot.Common", "Kattbot.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot.Data.Migrations", "Kattbot.Data.Migrations\Kattbot.Data.Migrations.csproj", "{D26776E6-F360-425C-9281-F4E7B176197E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deploy", "deploy", "{727EE4ED-CFEC-4BBC-B67A-3DA7F8EE3F1E}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{727EE4ED-CFEC-4BBC-B67A-3DA7F8EE3F1E}"
 	ProjectSection(SolutionItems) = preProject
-		deploy\kattbot-backup-db.sh = deploy\kattbot-backup-db.sh
-		deploy\kattbot-deploy.sh = deploy\kattbot-deploy.sh
-		deploy\kattbot.service = deploy\kattbot.service
+		scripts\kattbot-backup-db.sh = scripts\kattbot-backup-db.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".config", ".config", "{524F91BA-735B-4F73-BEDD-A3CC1DEB452C}"
