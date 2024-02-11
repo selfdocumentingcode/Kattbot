@@ -1,10 +1,39 @@
-name: Release-v2
+name: Release
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      updateDatabase:
+        description: 'Update database (allowed values: no, auto, manual)'
+        required: false
+        default: 'no'
+      imageTag:
+        description: 'Docker image tag'
+        required: false
+        default: 'latest'
         
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Say hello
-      run: echo "Hello, world!"
+    - name: Do stuff
+      uses: appleboy/ssh-action@v1.0.3
+      env:
+        GHCR_USERNAME: ${{secrets.GHCR_USERNAME}}
+        GHCR_PASSWORD: ${{secrets.GHCR_PASSWORD}}
+        IMAGE_TAG: ${{ inputs.imageTag }}
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.KATTBOT_USER}}
+        key: ${{secrets.KATTBOT_KEY}}
+        passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
+        script: |
+          docker login ghcr.io -u $GHCR_USERNAME -p $GHCR_PASSWORD
+          docker pull ghcr.io/selfdocumentingcode/kattbot:$IMAGE_TAG
+          docker stop kattbot
+          docker rm kattbot
+          docker run -d --name kattbot --add-host=host.docker.internal:172.17.0.1 --restart unless-stopped ghcr.io/selfdocumentingcode/kattbot:$IMAGE_TAG
+        envs: GHCR_USERNAME, GHCR_PASSWORD, IMAGE_TAG
+      
+        

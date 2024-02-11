@@ -92,6 +92,10 @@ dotnet_diagnostic.SA1202.severity   = suggestion  # Elements should be ordered b
 
 dotnet_diagnostic.SA1309.severity   = none        # Field names should not begin with underscore
 
+# Maintainability
+
+dotnet_diagnostic.SA1402.severity   = suggestion  # File may only contain a single type
+
 # Layout rules
 
 dotnet_diagnostic.SA1502.severity   = none        # Element should not be on a single line
@@ -122,6 +126,7 @@ dotnet_diagnostic.IDE1006.severity      = warning     # Naming rule violation
 # Unnecessary code rules
 
 dotnet_diagnostic.IDE0058.severity      = none        # Remove unnecessary expression value
+dotnet_diagnostic.IDE0290.severity      = none        # Use primary constructor
 
 ### .NET Code-quality rules ###
 
