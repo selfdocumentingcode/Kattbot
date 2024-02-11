@@ -1,10 +1,18 @@
-name: Restart-v2
+name: Restart
 
-on: workflow_dispatch
-        
+on:
+  workflow_dispatch
+  
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Say hello
-      run: echo "Hello, world!"
+    - name: Restart container
+      uses: appleboy/ssh-action@v1.0.3
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.KATTBOT_USER}}
+        key: ${{secrets.KATTBOT_KEY}}
+        passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
+        script: docker restart kattbot
