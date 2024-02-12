@@ -2,6 +2,7 @@
 
 # create db backup in tmp folder
 pg_dump kattbot > /tmp/kattbot.bak
+# pg_dump --data-only --exclude-table-data=public.\"__EFMigrationsHistory\" kattbot > /tmp/kattbot.bak
 
 # create folder if it doesnt'exit
 mkdir -p $HOME/kattbot-db-backups

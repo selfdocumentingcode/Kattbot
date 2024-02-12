@@ -41,9 +41,12 @@ jobs:
         script_stop: true
         script: |
           FULL_IMAGE_NAME="$REGISTRY/$REPOSITORY_OWNER/$IMAGE_NAME:$IMAGE_TAG"
+          FULL_IMAGE_NAME_PREVIOUS="$REGISTRY/$REPOSITORY_OWNER/$IMAGE_NAME:$IMAGE_TAG-previous"
+
           MIGRATIONS_CONTAINER_NAME="$APP_CONTAINER_NAME-migrations"
 
-          echo "Deploying $FULL_IMAGE_NAME"
+          # Tag the previous image with the previous tag, if it exists
+          docker image tag $FULL_IMAGE_NAME $FULL_IMAGE_NAME_PREVIOUS || true
 
           # Pull the image from the registry
           echo $GHCR_PASSWORD | docker login $REGISTRY -u $GHCR_USERNAME --password-stdin
@@ -75,4 +78,11 @@ jobs:
 
           # Deploy the new app image 
           docker run -d --name $APP_CONTAINER_NAME --add-host=host.docker.internal:172.17.0.1 --restart unless-stopped $FULL_IMAGE_NAME
+
+          # Prune untagged images
+          docker image prune -f
+
+          # Remove the temporary directory
+          rm -rf $TMP_MIGRATIONS_DIR
+
         envs: REGISTRY, REPOSITORY_OWNER, IMAGE_NAME, IMAGE_TAG, APP_CONTAINER_NAME, DB_NAME, DB_BACKUP_SCRIPT, DB_MIGRATION_SCRIPT, GHCR_USERNAME, GHCR_PASSWORD
