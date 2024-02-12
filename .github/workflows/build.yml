@@ -59,22 +59,3 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-
-    - name: Generate database migration
-      run: |
-        dotnet tool restore
-        dotnet ef migrations bundle -p Kattbot.Data.Migrations -r linux-x64 -o artifact-staging/migrations/efbundle
-
-        cp deploy/kattbot-backup-db.sh artifact-staging/migrations/
-
-        tar czvf artifact-staging/migrations.tar.gz --directory=artifact-staging/migrations .
-      env:
-        DOTNET_ENVIRONMENT: Production
-
-    - name: Upload migration bundle
-      uses: actions/upload-artifact@v2
-      with:
-        name: migrations
-        path: artifact-staging/migrations.tar.gz
-    
-

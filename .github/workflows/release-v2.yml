@@ -59,7 +59,7 @@ jobs:
           # Remove the temporary container
           docker rm $MIGRATIONS_CONTAINER_NAME
 
-          # Stop the running container
+          # Stop the running app container
           docker stop $APP_CONTAINER_NAME
 
           # Copy the database backup script, if newer, to home directory and run it
@@ -70,9 +70,9 @@ jobs:
           # Run the database migration script
           psql -d $DB_NAME -q -f "$TMP_MIGRATIONS_DIR/$DB_MIGRATION_SCRIPT"
 
-          # Remove the old container
+          # Remove the old app container
           docker rm $APP_CONTAINER_NAME
 
-          # Deploy the new image 
+          # Deploy the new app image 
           docker run -d --name $APP_CONTAINER_NAME --add-host=host.docker.internal:172.17.0.1 --restart unless-stopped $FULL_IMAGE_NAME
         envs: REGISTRY, REPOSITORY_OWNER, IMAGE_NAME, IMAGE_TAG, APP_CONTAINER_NAME, DB_NAME, DB_BACKUP_SCRIPT, DB_MIGRATION_SCRIPT, GHCR_USERNAME, GHCR_PASSWORD
