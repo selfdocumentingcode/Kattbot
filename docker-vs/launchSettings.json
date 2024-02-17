@@ -1,0 +1,22 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "serviceActions": {
+        "kattbot": "StartDebugging",
+        "kattbot-pgadmin": "StartWithoutDebugging",
+        "kattbot-pgsql": "DoNotStart"
+      }
+    },
+    "Compose \\W PgAdmin": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "serviceActions": {
+        "kattbot": "StartDebugging",
+        "kattbot-pgadmin": "StartWithoutDebugging",
+        "kattbot-pgsql": "StartWithoutDebugging"
+      }
+    }
+  }
+}

@@ -12,41 +12,69 @@ Hey there! This is Kattbot. It's a small bot I developed for fun, and it comes w
 
 If you're a dev and think of any improvements or have some cool ideas, contributions are always welcome. Thanks for checking out Kattbot!
 
-## Bot permissions
-
-General: View Channels, Change Nickname
-
-Text permissions: Send Messages, Send Message in Threads, Embed Links, Attach Files, Read Message History
-
 ## Local developement
 
 ### Requirements
 
--   [.NET 7 SDK](https://dotnet.microsoft.com/download/visual-studio-sdks)
+-   [.NET 8 SDK](https://dotnet.microsoft.com/download/visual-studio-sdks)
 -   [Visual Studio](https://visualstudio.microsoft.com/) (or any other preferred editor + dotnet command line tool)
--   [PostgreSQL 12+](https://www.postgresql.org/)
-
-### Build from Visual Studio
-
-Build solution
-
-### Build from dotnet command line tool
-
-`dotnet build`
-
-### Connection string format
-
-`Server=_DB_SERVER_IP_;Database=_DB_NAME_;User Id=_DB_USER_;Password=_DB_PASSWORD_;`
+-   [PostgreSQL 15+](https://www.postgresql.org/)
 
 ### Secrets
 
-Connection string
+Configure the bot token, the "Open"AI key, and connection string in user secrets:
 
-`"Kattbot:ConnectionString" "CONN_STRING_GOES_HERE"​`
+```
+"Kattbot:BotToken": "TOKEN_GOES_HERE"​
+"Kattbot:OpenAiApiKey": "API_KEY_GOES_HERE"​
+"Kattbot:ConnectionString": "CONN_STRING_GOES_HERE"​
+```
 
-Bot token
+or as environment variables:
 
-`"Kattbot:BotToken" "TOKEN_GOES_HERE"​`
+```
+Kattbot__BotToken=TOKEN_GOES_HERE
+Kattbot__OpenAiApiKey=API_KEY_GOES_HERE
+Kattbot__ConnectionString=CONN_STRING_GOES_HERE
+```
+
+#### Connection string format
+
+`Server=_DB_SERVER_IP_;Database=_DB_NAME_;User Id=_DB_USER_;Password=_DB_PASSWORD_;`
+
+### Run from Visual Studio or VS Code with C# Dev Kit extension
+
+Set `Kattbot` as the startup project and run the project using `Kattbot` profile.
+
+### Run from dotnet command line tool
+
+`dotnet run --project Kattbot`
+
+### Run as a Docker container in Visual Studio using Fast Mode
+
+#### Kattbot project only
+
+Set `Kattbot` as the startup project and run the project using `Docker` profile.
+
+#### Kattbot and PostgreSQL
+
+Set `docker-vs` as the startup project and run the project using `Docker Compose` profile.
+
+Optionally, use `Compose \W PgAdmin` profile to include a PgAdmin container.
+
+### Run as a Docker container from the command line
+
+#### Kattbot project only
+
+`docker build -t kattbot -f docker/Dockerfile .`
+
+`docker run -d --name kattbot kattbot`
+
+#### Kattbot and PostgreSQL
+
+`docker-compose -f docker/docker-compose.yml up`
+
+Optionally, pass the `--profile tools` flag to include a PgAdmin container.
 
 ## Credits
 

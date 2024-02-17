@@ -340,3 +340,5 @@ ASALocalRun/
 healthchecksdb
 
 Kattbot.Data.Migrations/database_migration.sql
+
+.env.local
