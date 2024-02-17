@@ -19,6 +19,18 @@ services:
     volumes:
       - kattbot-pgdata:/var/lib/postgresql/data
 
+  kattbot-pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "5444:80"
+    profiles:
+      - tools
+    depends_on:
+      - kattbot-pgsql
+    environment:
+      PGADMIN_DEFAULT_EMAIL: katt@bot.local
+      PGADMIN_DEFAULT_PASSWORD: hunter2
+
 volumes:
   kattbot-pgdata:
     
