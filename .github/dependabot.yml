@@ -5,6 +5,8 @@ updates:
     schedule:
       interval: "weekly"
       day: "saturday"
+    commit-message:
+      prefix: "[skip ci] "
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
