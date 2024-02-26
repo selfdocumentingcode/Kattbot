@@ -1,0 +1,13 @@
+version: '3.4'
+
+services:
+  kattbot:
+    image: ghcr.io/selfdocumentingcode/kattbot:$IMAGE_TAG
+    restart: unless-stopped
+    tty: true
+    extra_hosts:
+      - "host.docker.internal=$HOST_GATEWAY_IP"
+    environment:
+       Kattbot__BotToken: $BOT_TOKEN
+       Kattbot__OpenAiApiKey: $OPENAI_API_KEY
+       Kattbot__ConnectionString: $DB_CONNECTION_STRING
