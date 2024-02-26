@@ -13,11 +13,13 @@ on:
         default: 'latest'
 
 env:
+  HOST_GATEWAY_IP: "172.17.0.1"
   REGISTRY: ghcr.io
   REPOSITORY_OWNER: ${{ github.repository_owner }}
   IMAGE_NAME: kattbot
   IMAGE_TAG: ${{ inputs.imageTag }}
-  APP_CONTAINER_NAME: kattbot
+  COMPOSE_PROJECT_NAME: kattbot
+  COMPOSE_FILE_NAME: prod-compose.yml
   DB_NAME: kattbot
   DB_BACKUP_SCRIPT: kattbot-backup-db.sh
   DB_MIGRATION_SCRIPT: database_migration.sql
@@ -26,11 +28,29 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v3
+  
+    - name: Upload compose.yml
+      uses: appleboy/scp-action@v0.1.7
+      with:  
+        host: ${{secrets.VPS_HOST}}
+        port: ${{secrets.VPS_PORT}}
+        username: ${{secrets.KATTBOT_USER}}
+        key: ${{secrets.KATTBOT_KEY}}
+        passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
+        source: "docker/${{ env.COMPOSE_FILE_NAME }}"
+        target: "$HOME/"
+        strip_components: 1
+        overwrite: true
+
     - name: Release
       uses: appleboy/ssh-action@v1.0.3
       env:
         GHCR_USERNAME: ${{secrets.GHCR_USERNAME}}
         GHCR_PASSWORD: ${{secrets.GHCR_PASSWORD}}
+        DB_CONNECTION_STRING: ${{secrets.DB_CONNECTION_STRING}}
+        BOT_TOKEN: ${{secrets.BOT_TOKEN}}
+        OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
       with:  
         host: ${{secrets.VPS_HOST}}
         port: ${{secrets.VPS_PORT}}
@@ -43,7 +63,7 @@ jobs:
           FULL_IMAGE_NAME="$REGISTRY/$REPOSITORY_OWNER/$IMAGE_NAME:$IMAGE_TAG"
           FULL_IMAGE_NAME_PREVIOUS="$REGISTRY/$REPOSITORY_OWNER/$IMAGE_NAME:$IMAGE_TAG-previous"
 
-          MIGRATIONS_CONTAINER_NAME="$APP_CONTAINER_NAME-migrations"
+          MIGRATIONS_CONTAINER_NAME="$COMPOSE_PROJECT_NAME-migrations"
 
           # Tag the previous image with the previous tag, if it exists
           docker image tag $FULL_IMAGE_NAME $FULL_IMAGE_NAME_PREVIOUS || true
@@ -53,7 +73,7 @@ jobs:
           docker pull $FULL_IMAGE_NAME
           
           # Create a temporary container to extract the migration files
-          docker create --name $MIGRATIONS_CONTAINER_NAME --add-host=host.docker.internal:172.17.0.1 $FULL_IMAGE_NAME
+          docker create --name $MIGRATIONS_CONTAINER_NAME --add-host=host.docker.internal:$HOST_GATEWAY_IP $FULL_IMAGE_NAME
 
           # Extract the migration files into a temporary directory
           TMP_MIGRATIONS_DIR=$(mktemp -d -t "$MIGRATIONS_CONTAINER_NAME-XXXXXX")
@@ -62,8 +82,8 @@ jobs:
           # Remove the temporary container
           docker rm $MIGRATIONS_CONTAINER_NAME
 
-          # Stop the running app container
-          docker stop $APP_CONTAINER_NAME
+          # Stop the running compose project, if it exists
+          docker compose -p $COMPOSE_PROJECT_NAME stop -t 30 || true
 
           # Copy the database backup script, if newer, to home directory and run it
           cp -u "$TMP_MIGRATIONS_DIR/$DB_BACKUP_SCRIPT" ~
@@ -73,16 +93,30 @@ jobs:
           # Run the database migration script
           psql -d $DB_NAME -q -f "$TMP_MIGRATIONS_DIR/$DB_MIGRATION_SCRIPT"
 
-          # Remove the old app container
-          docker rm $APP_CONTAINER_NAME
+          # Take down the old compose project, if it exists
+          docker compose -p $COMPOSE_PROJECT_NAME down || true
 
-          # Deploy the new app image 
-          docker run -d --name $APP_CONTAINER_NAME --add-host=host.docker.internal:172.17.0.1 --restart unless-stopped $FULL_IMAGE_NAME
+          # Start the new compose project
+          docker compose -p $COMPOSE_PROJECT_NAME -f "$HOME/$COMPOSE_FILE_NAME" up -d
 
           # Prune untagged images
           docker image prune -f
 
           # Remove the temporary directory
           rm -rf $TMP_MIGRATIONS_DIR
-
-        envs: REGISTRY, REPOSITORY_OWNER, IMAGE_NAME, IMAGE_TAG, APP_CONTAINER_NAME, DB_NAME, DB_BACKUP_SCRIPT, DB_MIGRATION_SCRIPT, GHCR_USERNAME, GHCR_PASSWORD
+        envs: >-
+          HOST_GATEWAY_IP,
+          REGISTRY,
+          REPOSITORY_OWNER,
+          IMAGE_NAME,
+          IMAGE_TAG,
+          COMPOSE_PROJECT_NAME,
+          COMPOSE_FILE_NAME,
+          DB_NAME,
+          DB_BACKUP_SCRIPT,
+          DB_MIGRATION_SCRIPT,
+          GHCR_USERNAME,
+          GHCR_PASSWORD,
+          BOT_TOKEN,
+          OPENAI_API_KEY,
+          DB_CONNECTION_STRING
