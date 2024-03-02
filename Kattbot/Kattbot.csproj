@@ -17,7 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.2" />
     <PackageReference Include="PuppeteerSharp" Version="9.1.0" />
 	<PackageReference Include="SixLabors.ImageSharp" Version="3.1.2" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.1" />
