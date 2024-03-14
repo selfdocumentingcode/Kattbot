@@ -46,8 +46,8 @@ jobs:
     - name: Release
       uses: appleboy/ssh-action@v1.0.3
       env:
-        GHCR_USERNAME: ${{secrets.GHCR_USERNAME}}
-        GHCR_PASSWORD: ${{secrets.GHCR_PASSWORD}}
+        GHCR_USERNAME: ${{ github.actor }}
+        GHCR_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         DB_CONNECTION_STRING: ${{secrets.DB_CONNECTION_STRING}}
         BOT_TOKEN: ${{secrets.BOT_TOKEN}}
         OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
@@ -60,8 +60,10 @@ jobs:
         debug: ${{vars.ACTIONS_RUNNER_DEBUG}}
         script_stop: true
         script: |
-          FULL_IMAGE_NAME="$REGISTRY/$REPOSITORY_OWNER/$IMAGE_NAME:$IMAGE_TAG"
-          FULL_IMAGE_NAME_PREVIOUS="$REGISTRY/$REPOSITORY_OWNER/$IMAGE_NAME:$IMAGE_TAG-previous"
+          REPOSITORY_OWNER_LOWERCASE=$(echo $REPOSITORY_OWNER | tr '[:upper:]' '[:lower:]');
+
+          FULL_IMAGE_NAME="$REGISTRY/$REPOSITORY_OWNER_LOWERCASE/$IMAGE_NAME:$IMAGE_TAG"
+          FULL_IMAGE_NAME_PREVIOUS="$REGISTRY/$REPOSITORY_OWNER_LOWERCASE/$IMAGE_NAME:$IMAGE_TAG-previous"
 
           MIGRATIONS_CONTAINER_NAME="$COMPOSE_PROJECT_NAME-migrations"
 
