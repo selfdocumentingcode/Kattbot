@@ -85,11 +85,11 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
         using var imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;
 
-        string fileName = $"{Guid.NewGuid()}.png";
+        string fileName = $"{Guid.NewGuid()}.{fileExtension}";
 
         var responseBuilder = new DiscordMessageBuilder();
 
-        responseBuilder.AddFile($"{fileName}.{fileExtension}", imageStream);
+        responseBuilder.AddFile(fileName, imageStream);
 
         await ctx.RespondAsync(responseBuilder);
     }
@@ -141,11 +141,11 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
         using var imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;
 
-        string imageFilename = $"{Guid.NewGuid()}.png";
+        string imageFilename = $"{Guid.NewGuid()}.{fileExtension}";
 
         var responseBuilder = new DiscordMessageBuilder();
 
-        responseBuilder.AddFile($"{imageFilename}.{fileExtension}", imageStream);
+        responseBuilder.AddFile(imageFilename, imageStream);
 
         await ctx.RespondAsync(responseBuilder);
     }

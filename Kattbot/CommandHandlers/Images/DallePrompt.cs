@@ -74,14 +74,11 @@ public class DallePromptHandler : IRequestHandler<DallePromptCommand>
                 .AddEmbed(eb)
                 .WithContent($"There you go {request.Ctx.Member?.Mention ?? "Unknown user"}");
 
-            await message.DeleteAsync();
-
             await request.Ctx.RespondAsync(mb);
         }
-        catch (Exception)
+        finally
         {
             await message.DeleteAsync();
-            throw;
         }
     }
 }
