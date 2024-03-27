@@ -38,13 +38,18 @@ public class DallePromptHandler : IRequestHandler<DallePromptCommand>
 
     public async Task Handle(DallePromptCommand request, CancellationToken cancellationToken)
     {
-        DiscordMessage message = await request.Ctx.RespondAsync("Working on it");
+        var ctx = request.Ctx;
+        var discordMessage = ctx.Message;
+
+        var message = await request.Ctx.RespondAsync("Working on it");
 
         try
         {
+            var prompt = discordMessage.SubstituteMentions(request.Prompt);
+
             var imageRequest = new CreateImageRequest
             {
-                Prompt = request.Prompt,
+                Prompt = prompt,
                 Model = CreateImageModel,
                 User = request.Ctx.User.Id.ToString(),
             };
@@ -59,17 +64,17 @@ public class DallePromptHandler : IRequestHandler<DallePromptCommand>
 
             var imageStream = await _imageService.GetImageStream(image);
 
-            var fileName = request.Prompt.ToSafeFilename(imageStream.FileExtension);
+            var fileName = prompt.ToSafeFilename(imageStream.FileExtension);
 
-            var truncatedPrompt = request.Prompt.Length > DiscordConstants.MaxEmbedTitleLength
-                ? $"{request.Prompt[..(DiscordConstants.MaxEmbedTitleLength - 3)]}..."
-                : request.Prompt;
+            var truncatedPrompt = prompt.Length > DiscordConstants.MaxEmbedTitleLength
+                ? $"{prompt[..(DiscordConstants.MaxEmbedTitleLength - 3)]}..."
+                : prompt;
 
-            DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
+            var eb = new DiscordEmbedBuilder()
                 .WithTitle(truncatedPrompt)
                 .WithImageUrl($"attachment://{fileName}");
 
-            DiscordMessageBuilder mb = new DiscordMessageBuilder()
+            var mb = new DiscordMessageBuilder()
                 .AddFile(fileName, imageStream.MemoryStream)
                 .AddEmbed(eb)
                 .WithContent($"There you go {request.Ctx.Member?.Mention ?? "Unknown user"}");

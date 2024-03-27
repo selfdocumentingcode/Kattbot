@@ -11,7 +11,6 @@ using MediatR;
 
 namespace Kattbot.CommandHandlers.Images;
 
-#pragma warning disable SA1402 // File may only contain a single type
 public class DallifyEmoteRequest : CommandRequest
 {
     public DallifyEmoteRequest(CommandContext ctx, DiscordEmoji emoji)

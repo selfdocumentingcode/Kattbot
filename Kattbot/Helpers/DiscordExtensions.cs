@@ -31,7 +31,30 @@ public static class DiscordExtensions
         return isEmote ? emoji.Url : EmoteHelper.GetExternalEmojiImageUrl(emoji.Name);
     }
 
-    public static string GetMessageWithTextMentions(this DiscordMessage message)
+    public static string SubstituteMentions(this DiscordMessage message, string text)
+    {
+        var newMessageContent = text;
+
+        foreach (var user in message.MentionedUsers)
+        {
+            var userMentionAsText = user.Mention.Replace("!", string.Empty);
+            newMessageContent = newMessageContent.Replace(userMentionAsText, user.GetDisplayName());
+        }
+
+        foreach (var role in message.MentionedRoles)
+        {
+            newMessageContent = newMessageContent.Replace(role.Mention, role.Name);
+        }
+
+        foreach (var channel in message.MentionedChannels)
+        {
+            newMessageContent = newMessageContent.Replace(channel.Mention, $"#{channel.Name}");
+        }
+
+        return newMessageContent;
+    }
+
+    public static string SubstituteMentions(this DiscordMessage message)
     {
         var newMessageContent = message.Content;
 
