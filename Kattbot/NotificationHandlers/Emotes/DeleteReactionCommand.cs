@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using Kattbot.Common.Models.Emotes;
-using Kattbot.Data;
+using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
 using Kattbot.Services;
 using MediatR;
@@ -12,8 +12,8 @@ using Microsoft.Extensions.Logging;
 namespace Kattbot.NotificationHandlers.Emotes;
 
 /// <summary>
-/// Delete emote from reaction if it exists
-/// Do not save emote if it does not belong to guild.
+///     Delete emote from reaction if it exists
+///     Do not save emote if it does not belong to guild.
 /// </summary>
 public record DeleteReactionCommand : EventNotification
 {
@@ -31,11 +31,14 @@ public record DeleteReactionCommand : EventNotification
 
 public class DeleteReactionCommandHandler : INotificationHandler<DeleteReactionCommand>
 {
-    private readonly ILogger<DeleteReactionCommandHandler> _logger;
     private readonly EmoteEntityBuilder _emoteBuilder;
     private readonly EmotesRepository _kattbotRepo;
+    private readonly ILogger<DeleteReactionCommandHandler> _logger;
 
-    public DeleteReactionCommandHandler(ILogger<DeleteReactionCommandHandler> logger, EmoteEntityBuilder emoteBuilder, EmotesRepository kattbotRepo)
+    public DeleteReactionCommandHandler(
+        ILogger<DeleteReactionCommandHandler> logger,
+        EmoteEntityBuilder emoteBuilder,
+        EmotesRepository kattbotRepo)
     {
         _logger = logger;
         _emoteBuilder = emoteBuilder;

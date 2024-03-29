@@ -25,7 +25,7 @@ public class DalleHttpClient
 
     public async Task<CreateImageResponse> CreateImage(CreateImageRequest request)
     {
-        var opts = new JsonSerializerOptions() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
+        var opts = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
 
         HttpResponseMessage? response;
         Stream? responseContentStream = null;
@@ -38,15 +38,17 @@ public class DalleHttpClient
 
             response.EnsureSuccessStatusCode();
 
-            var parsedResponse = await JsonSerializer.DeserializeAsync<CreateImageResponse>(responseContentStream)
-                                ?? throw new Exception("Failed to parse response");
+            CreateImageResponse parsedResponse =
+                await JsonSerializer.DeserializeAsync<CreateImageResponse>(responseContentStream)
+                ?? throw new Exception("Failed to parse response");
 
             return parsedResponse;
         }
         catch (HttpRequestException) when (responseContentStream != null)
         {
-            var parsedResponse = await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(responseContentStream)
-                                ?? throw new Exception("Failed to parse error response");
+            ChatCompletionResponseErrorWrapper parsedResponse =
+                await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(responseContentStream)
+                ?? throw new Exception("Failed to parse error response");
 
             throw new Exception(parsedResponse.Error.Message);
         }
@@ -61,16 +63,24 @@ public class DalleHttpClient
         var postBody = new MultipartFormDataContent();
 
         if (request.N.HasValue)
+        {
             postBody.Add(new StringContent(request.N.ToString()!), "n");
+        }
 
         if (request.Size != null)
+        {
             postBody.Add(new StringContent(request.Size), "size");
+        }
 
         if (request.ResponseFormat != null)
+        {
             postBody.Add(new StringContent(request.ResponseFormat), "response_format");
+        }
 
         if (request.User != null)
+        {
             postBody.Add(new StringContent(request.User), "user");
+        }
 
         postBody.Add(new ByteArrayContent(request.Image), "image", fileName);
 
@@ -85,15 +95,17 @@ public class DalleHttpClient
 
             response.EnsureSuccessStatusCode();
 
-            var parsedResponse = await JsonSerializer.DeserializeAsync<CreateImageResponse>(responseContentStream)
-                                ?? throw new Exception("Failed to parse response");
+            CreateImageResponse parsedResponse =
+                await JsonSerializer.DeserializeAsync<CreateImageResponse>(responseContentStream)
+                ?? throw new Exception("Failed to parse response");
 
             return parsedResponse;
         }
         catch (HttpRequestException) when (responseContentStream != null)
         {
-            var parsedResponse = await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(responseContentStream)
-                                ?? throw new Exception("Failed to parse error response");
+            ChatCompletionResponseErrorWrapper parsedResponse =
+                await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(responseContentStream)
+                ?? throw new Exception("Failed to parse error response");
 
             throw new Exception(parsedResponse.Error.Message);
         }

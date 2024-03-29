@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Kattbot.Config;
+﻿namespace Kattbot.Config;
 
 public record KattGptOptions
 {

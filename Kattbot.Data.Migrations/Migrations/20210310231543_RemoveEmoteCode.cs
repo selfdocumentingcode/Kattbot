@@ -18,7 +18,7 @@ namespace Kattbot.Data.Migrations
                 table: "Emotes",
                 type: "text",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: string.Empty);
         }
     }
 }

@@ -10,51 +10,65 @@ public abstract class SimpleMemoryCache
 
     public SimpleMemoryCache(int cacheSize)
     {
-        _cache = new MemoryCache(new MemoryCacheOptions()
-        {
-            SizeLimit = cacheSize,
-        });
+        _cache = new MemoryCache(
+            new MemoryCacheOptions
+            {
+                SizeLimit = cacheSize,
+            });
     }
 
     public async Task<T?> LoadFromCacheAsync<T>(string key, Func<Task<T>> delegateFunction, TimeSpan duration)
     {
         if (_cache.TryGetValue(key, out T? value))
-            return value;
-
-        var loadedData = await delegateFunction();
-
-        _cache.Set(key, loadedData, new MemoryCacheEntryOptions()
         {
-            AbsoluteExpirationRelativeToNow = duration,
-            Size = 1,
-        });
+            return value;
+        }
+
+        T loadedData = await delegateFunction();
+
+        _cache.Set(
+            key,
+            loadedData,
+            new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = duration,
+                Size = 1,
+            });
 
         return loadedData;
     }
 
     public void SetCache<T>(string key, T value, TimeSpan duration)
     {
-        _cache.Set(key, value, new MemoryCacheEntryOptions()
-        {
-            AbsoluteExpirationRelativeToNow = duration,
-            Size = 1,
-        });
+        _cache.Set(
+            key,
+            value,
+            new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = duration,
+                Size = 1,
+            });
     }
 
     public void SetCache<T>(string key, T value, TimeSpan absoluteDuration, TimeSpan slidingDuration)
     {
-        _cache.Set(key, value, new MemoryCacheEntryOptions()
-        {
-            AbsoluteExpirationRelativeToNow = absoluteDuration,
-            SlidingExpiration = slidingDuration,
-            Size = 1,
-        });
+        _cache.Set(
+            key,
+            value,
+            new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = absoluteDuration,
+                SlidingExpiration = slidingDuration,
+                Size = 1,
+            });
     }
 
     public T? GetCache<T>(string key)
     {
         if (_cache.TryGetValue(key, out T? value))
+        {
             return value;
+        }
 
         return default;
     }

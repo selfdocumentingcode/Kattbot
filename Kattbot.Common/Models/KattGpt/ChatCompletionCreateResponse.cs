@@ -15,7 +15,7 @@ public record ChatCompletionCreateResponse
     public int Created { get; set; }
 
     [JsonPropertyName("choices")]
-    public List<Choice> Choices { get; set; } = new List<Choice>();
+    public List<Choice> Choices { get; set; } = new();
 
     [JsonPropertyName("usage")]
     public Usage Usage { get; set; } = null!;

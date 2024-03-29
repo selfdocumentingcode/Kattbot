@@ -14,9 +14,9 @@ namespace Kattbot.Infrastructure;
 public class CommandRequestPipelineBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    private readonly ILogger<CommandRequestPipelineBehaviour<TRequest, TResponse>> _logger;
     private readonly DiscordErrorLogger _discordErrorLogger;
     private readonly GuildSettingsService _guildSettingsService;
+    private readonly ILogger<CommandRequestPipelineBehaviour<TRequest, TResponse>> _logger;
 
     public CommandRequestPipelineBehaviour(
         ILogger<CommandRequestPipelineBehaviour<TRequest, TResponse>> logger,
@@ -28,7 +28,10 @@ public class CommandRequestPipelineBehaviour<TRequest, TResponse> : IPipelineBeh
         _guildSettingsService = guildSettingsService;
     }
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task<TResponse> Handle(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -41,10 +44,8 @@ public class CommandRequestPipelineBehaviour<TRequest, TResponse> : IPipelineBeh
                 await HandeCommandRequestException(commandRequest, ex);
                 return default!;
             }
-            else
-            {
-                throw;
-            }
+
+            throw;
         }
     }
 

@@ -26,7 +26,7 @@ namespace Kattbot.Data.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false)
+                    Name = table.Column<string>(type: "text", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -39,7 +39,7 @@ namespace Kattbot.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     DateTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
-                    EventTemplateId = table.Column<Guid>(type: "uuid", nullable: false)
+                    EventTemplateId = table.Column<Guid>(type: "uuid", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -59,7 +59,7 @@ namespace Kattbot.Data.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     EventId = table.Column<Guid>(type: "uuid", nullable: false),
                     Info = table.Column<string>(type: "text", nullable: false),
-                    UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
+                    UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                 },
                 constraints: table =>
                 {

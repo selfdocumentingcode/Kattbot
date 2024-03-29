@@ -34,7 +34,7 @@ public class PetTests
 
         byte[] resultBytes = await makeEmojiClient.PetPet(inputFile);
 
-        using var image = Image.Load(resultBytes);
+        using Image image = Image.Load(resultBytes);
 
         await image.SaveAsGifAsync(ouputFile);
     }
@@ -50,9 +50,9 @@ public class PetTests
 
         var imageService = new ImageService(null!);
 
-        using var image = Image.Load<Rgba32>(inputFile);
+        using Image<Rgba32> image = Image.Load<Rgba32>(inputFile);
 
-        var croppedImage = imageService.CropToCircle(image);
+        Image<Rgba32> croppedImage = imageService.CropToCircle(image);
 
         await croppedImage.SaveAsPngAsync(ouputFile);
     }
@@ -66,9 +66,9 @@ public class PetTests
 
         var imageService = new ImageService(null!);
 
-        using var image = Image.Load<Rgba32>(inputFile);
+        using Image<Rgba32> image = Image.Load<Rgba32>(inputFile);
 
-        var croppedImage = imageService.TwirlImage(image);
+        Image croppedImage = imageService.TwirlImage(image);
 
         await croppedImage.SaveAsPngAsync(ouputFile);
     }

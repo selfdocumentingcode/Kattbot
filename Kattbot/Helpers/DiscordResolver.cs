@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DSharpPlus;
 using DSharpPlus.Entities;
 using Kattbot.Services;
 
@@ -16,18 +16,22 @@ public class DiscordResolver
         _discordErrorLogger = discordErrorLogger;
     }
 
-    public static TryResolveResult TryResolveRoleByName(DiscordGuild guild, string discordRoleName, out DiscordRole discordRole)
+    public static TryResolveResult TryResolveRoleByName(
+        DiscordGuild guild,
+        string discordRoleName,
+        out DiscordRole discordRole)
     {
-        var matchingDiscordRoles = guild.Roles
-                         .Where(kv => kv.Value.Name.Contains(discordRoleName, StringComparison.OrdinalIgnoreCase))
-                         .ToList();
+        List<KeyValuePair<ulong, DiscordRole>> matchingDiscordRoles = guild.Roles
+            .Where(kv => kv.Value.Name.Contains(discordRoleName, StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
         if (matchingDiscordRoles.Count == 0)
         {
             discordRole = null!;
             return new TryResolveResult(false, $"No role matches the name {discordRoleName}");
         }
-        else if (matchingDiscordRoles.Count > 1)
+
+        if (matchingDiscordRoles.Count > 1)
         {
             discordRole = null!;
             return new TryResolveResult(false, $"More than 1 role matches the name {discordRoleName}");
@@ -40,13 +44,14 @@ public class DiscordResolver
 
     public async Task<DiscordMember?> ResolveGuildMember(DiscordGuild guild, ulong userId)
     {
-        var memberExists = guild.Members.TryGetValue(userId, out DiscordMember? member);
+        bool memberExists = guild.Members.TryGetValue(userId, out DiscordMember? member);
 
         if (memberExists) return member;
 
         try
         {
-            return (await guild.GetMemberAsync(userId)) ?? throw new ArgumentException($"Missing member with id {userId}");
+            return await guild.GetMemberAsync(userId) ??
+                   throw new ArgumentException($"Missing member with id {userId}");
         }
         catch (Exception)
         {

@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Kattbot.Attributes;
-using Kattbot.CommandModules.ResultFormatters;
 using Kattbot.CommandModules.TypeReaders;
 using Kattbot.Common.Models;
 using Kattbot.Common.Models.Emotes;
 using Kattbot.Config;
-using Kattbot.Data;
+using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
 using Kattbot.Workers;
 using Microsoft.Extensions.Options;
@@ -27,8 +24,8 @@ namespace Kattbot.CommandModules;
 [ModuleLifespan(ModuleLifespan.Transient)]
 public class StatsCommandModule : BaseCommandModule
 {
-    private readonly BotOptions _options;
     private readonly CommandQueueChannel _commandQueue;
+    private readonly BotOptions _options;
 
     public StatsCommandModule(
         IOptions<BotOptions> options,
@@ -60,7 +57,12 @@ public class StatsCommandModule : BaseCommandModule
         return GetRankedEmotes(ctx, SortDirection.ASC, args.Page, args.Interval, guildEmotes);
     }
 
-    private Task GetRankedEmotes(CommandContext ctx, SortDirection direction, int page, string interval, IReadOnlyDictionary<ulong, DiscordEmoji> guildEmotes)
+    private Task GetRankedEmotes(
+        CommandContext ctx,
+        SortDirection direction,
+        int page,
+        string interval,
+        IReadOnlyDictionary<ulong, DiscordEmoji> guildEmotes)
     {
         bool parsed = TryGetDateFromInterval(IntervalValue.Parse(interval), out DateTime? fromDate);
 
@@ -95,7 +97,10 @@ public class StatsCommandModule : BaseCommandModule
 
     [GroupCommand]
     [Description("Return best emotes for user")]
-    public Task GetBestEmotesOtherUser(CommandContext ctx, DiscordUser user, [RemainingText] StatsCommandArgs? args = null)
+    public Task GetBestEmotesOtherUser(
+        CommandContext ctx,
+        DiscordUser user,
+        [RemainingText] StatsCommandArgs? args = null)
     {
         args ??= new StatsCommandArgs();
 
@@ -134,7 +139,9 @@ public class StatsCommandModule : BaseCommandModule
 
         TempEmote? emoji = EmoteHelper.Parse(emoteString);
 
-        return emoji != null ? GetEmoteStats(ctx, emoji, args.Interval) : ctx.RespondAsync("I don't know what to do with this");
+        return emoji != null
+            ? GetEmoteStats(ctx, emoji, args.Interval)
+            : ctx.RespondAsync("I don't know what to do with this");
     }
 
     private Task GetEmoteStats(CommandContext ctx, TempEmote emote, string interval)
@@ -196,10 +203,9 @@ public class StatsCommandModule : BaseCommandModule
     }
 
     /// <summary>
-    /// Check if emote belongs to guild
-    /// TODO: Refactor (duplicated in EmoteMessageService).
+    ///     Check if emote belongs to guild
+    ///     TODO: Refactor (duplicated in EmoteMessageService).
     /// </summary>
-    /// <returns></returns>
     private bool IsValidMessageEmote(ulong emoteId, DiscordGuild guild)
     {
         return guild.Emojis.ContainsKey(emoteId);

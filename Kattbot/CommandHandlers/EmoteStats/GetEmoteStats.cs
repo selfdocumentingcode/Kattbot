@@ -8,7 +8,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using Kattbot.CommandModules.ResultFormatters;
 using Kattbot.Common.Models.Emotes;
-using Kattbot.Data;
+using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
 using MediatR;
 
@@ -18,14 +18,13 @@ public class GetEmoteStats
 {
     public class GetEmoteStatsRequest : CommandRequest
     {
+        public GetEmoteStatsRequest(CommandContext ctx)
+            : base(ctx)
+        { }
+
         public TempEmote Emote { get; set; } = null!;
 
         public DateTime? FromDate { get; set; }
-
-        public GetEmoteStatsRequest(CommandContext ctx)
-            : base(ctx)
-        {
-        }
     }
 
     public class GetEmoteStatsHandler : IRequestHandler<GetEmoteStatsRequest>
@@ -34,8 +33,7 @@ public class GetEmoteStats
 
         private readonly EmoteStatsRepository _emoteStatsRepo;
 
-        public GetEmoteStatsHandler(
-            EmoteStatsRepository emoteStatsRepo)
+        public GetEmoteStatsHandler(EmoteStatsRepository emoteStatsRepo)
         {
             _emoteStatsRepo = emoteStatsRepo;
         }
@@ -48,7 +46,8 @@ public class GetEmoteStats
 
             ulong guildId = ctx.Guild.Id;
 
-            EmoteUsageResult emoteUsageResult = await _emoteStatsRepo.GetSingleEmoteStats(guildId, emote, MaxUserCount, fromDate);
+            EmoteUsageResult emoteUsageResult =
+                await _emoteStatsRepo.GetSingleEmoteStats(guildId, emote, MaxUserCount, fromDate);
 
             if (emoteUsageResult == null)
             {
@@ -62,7 +61,7 @@ public class GetEmoteStats
             string emoteCode = EmoteHelper.BuildEmoteCode(emoteStats.EmoteId, emoteStats.IsAnimated);
             int totalUsage = emoteStats.Usage;
 
-            string title = $"Stats for `{emoteCode}`";
+            var title = $"Stats for `{emoteCode}`";
 
             if (fromDate != null)
             {
@@ -76,14 +75,15 @@ public class GetEmoteStats
 
             if (emoteUsers.Count > 0)
             {
-                var extendedEmoteUsers = emoteUsers
-                                        .Select(r => new ExtendedEmoteUser()
-                                        {
-                                            UserId = r.UserId,
-                                            Usage = r.Usage,
-                                            PercentageOfTotal = (double)r.Usage / totalUsage,
-                                        })
-                                        .ToList();
+                List<ExtendedEmoteUser> extendedEmoteUsers = emoteUsers
+                    .Select(
+                        r => new ExtendedEmoteUser
+                        {
+                            UserId = r.UserId,
+                            Usage = r.Usage,
+                            PercentageOfTotal = (double)r.Usage / totalUsage,
+                        })
+                    .ToList();
 
                 // Resolve display names
                 foreach (ExtendedEmoteUser? emoteUser in extendedEmoteUsers)
@@ -117,7 +117,7 @@ public class GetEmoteStats
                 lines.ForEach(l => result.AppendLine(l));
             }
 
-            string formattedResultMessage = $"`{result}`";
+            var formattedResultMessage = $"`{result}`";
 
             await ctx.RespondAsync(formattedResultMessage);
         }

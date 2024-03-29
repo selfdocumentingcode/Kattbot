@@ -10,9 +10,9 @@ namespace Kattbot.Workers;
 
 public class DiscordLoggerWorker : BackgroundService
 {
-    private readonly ILogger<DiscordLoggerWorker> _logger;
     private readonly DiscordLogChannel _channel;
     private readonly DiscordClient _client;
+    private readonly ILogger<DiscordLoggerWorker> _logger;
 
     public DiscordLoggerWorker(ILogger<DiscordLoggerWorker> logger, DiscordLogChannel channel, DiscordClient client)
     {
@@ -46,7 +46,9 @@ public class DiscordLoggerWorker : BackgroundService
                     }
                 }
 
-                _logger.LogDebug("Dequeued (parallel) command. {RemainingMessageCount} left in queue", _channel.Reader.Count);
+                _logger.LogDebug(
+                    "Dequeued (parallel) command. {RemainingMessageCount} left in queue",
+                    _channel.Reader.Count);
             }
         }
         catch (TaskCanceledException)

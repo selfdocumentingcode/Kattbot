@@ -20,36 +20,38 @@ public class EmoteEntityBuilder
     {
         List<string> emojiStrings = _emoteParser.ExtractEmotesFromMessage(message.Content);
 
-        var emotes = emojiStrings.Select(s =>
-        {
-            TempEmote? parsedEmote = EmoteHelper.Parse(s);
+        List<EmoteEntity> emotes = emojiStrings.Select(
+                s =>
+                {
+                    TempEmote? parsedEmote = EmoteHelper.Parse(s);
 
-            if (parsedEmote == null)
-            {
-                throw new Exception($"{s} is not a valid emote string");
-            }
+                    if (parsedEmote == null)
+                    {
+                        throw new Exception($"{s} is not a valid emote string");
+                    }
 
-            var emoteEntitiy = new EmoteEntity()
-            {
-                EmoteId = parsedEmote.Id,
-                EmoteName = parsedEmote.Name,
-                EmoteAnimated = parsedEmote.Animated,
-                DateTime = DateTimeOffset.UtcNow,
-                UserId = message.Author.Id,
-                MessageId = message.Id,
-                GuildId = guildId,
-                Source = EmoteSource.Message,
-            };
+                    var emoteEntitiy = new EmoteEntity
+                    {
+                        EmoteId = parsedEmote.Id,
+                        EmoteName = parsedEmote.Name,
+                        EmoteAnimated = parsedEmote.Animated,
+                        DateTime = DateTimeOffset.UtcNow,
+                        UserId = message.Author.Id,
+                        MessageId = message.Id,
+                        GuildId = guildId,
+                        Source = EmoteSource.Message,
+                    };
 
-            return emoteEntitiy;
-        }).ToList();
+                    return emoteEntitiy;
+                })
+            .ToList();
 
         return emotes;
     }
 
     public EmoteEntity BuildFromUserReaction(DiscordMessage message, DiscordEmoji emote, ulong userId, ulong guildId)
     {
-        var emoteEntity = new EmoteEntity()
+        var emoteEntity = new EmoteEntity
         {
             EmoteId = emote.Id,
             EmoteName = emote.Name,

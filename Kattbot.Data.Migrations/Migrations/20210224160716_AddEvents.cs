@@ -14,7 +14,7 @@ namespace Kattbot.Data.Migrations
                     Id = table.Column<Guid>(nullable: false),
                     GuildId = table.Column<decimal>(nullable: false),
                     Name = table.Column<string>(nullable: false),
-                    Description = table.Column<string>(nullable: false)
+                    Description = table.Column<string>(nullable: false),
                 },
                 constraints: table =>
                 {
@@ -27,7 +27,7 @@ namespace Kattbot.Data.Migrations
                 {
                     Id = table.Column<Guid>(nullable: false),
                     EventTemplateId = table.Column<Guid>(nullable: false),
-                    DateTimeOffset = table.Column<DateTimeOffset>(nullable: false)
+                    DateTimeOffset = table.Column<DateTimeOffset>(nullable: false),
                 },
                 constraints: table =>
                 {
@@ -47,7 +47,7 @@ namespace Kattbot.Data.Migrations
                     Id = table.Column<Guid>(nullable: false),
                     EventId = table.Column<Guid>(nullable: false),
                     UserId = table.Column<decimal>(nullable: false),
-                    Info = table.Column<string>(nullable: false)
+                    Info = table.Column<string>(nullable: false),
                 },
                 constraints: table =>
                 {

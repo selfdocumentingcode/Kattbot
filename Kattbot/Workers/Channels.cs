@@ -33,16 +33,14 @@ public class CommandQueueChannel : AbstractQueueChannel<CommandRequest>
 {
     public CommandQueueChannel(Channel<CommandRequest> channel)
         : base(channel)
-    {
-    }
+    { }
 }
 
 public class EventQueueChannel : AbstractQueueChannel<INotification>
 {
     public EventQueueChannel(Channel<INotification> channel)
         : base(channel)
-    {
-    }
+    { }
 }
 
 public record DiscordLogItem(string Message, ulong DiscordGuildId, ulong DiscordChannelId);
@@ -51,6 +49,5 @@ public class DiscordLogChannel : AbstractQueueChannel<DiscordLogItem>
 {
     public DiscordLogChannel(Channel<DiscordLogItem> channel)
         : base(channel)
-    {
-    }
+    { }
 }

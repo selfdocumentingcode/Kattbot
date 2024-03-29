@@ -26,7 +26,7 @@ public class ChatGptHttpClient
 
     public async Task<ChatCompletionCreateResponse> ChatCompletionCreate(ChatCompletionCreateRequest request)
     {
-        var opts = new JsonSerializerOptions() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
+        var opts = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
 
         HttpResponseMessage? response;
         Stream? responseContentStream = null;
@@ -39,15 +39,17 @@ public class ChatGptHttpClient
 
             response.EnsureSuccessStatusCode();
 
-            var parsedResponse = await JsonSerializer.DeserializeAsync<ChatCompletionCreateResponse>(responseContentStream)
-                                ?? throw new Exception("Failed to parse response");
+            ChatCompletionCreateResponse parsedResponse =
+                await JsonSerializer.DeserializeAsync<ChatCompletionCreateResponse>(responseContentStream)
+                ?? throw new Exception("Failed to parse response");
 
             return parsedResponse;
         }
         catch (HttpRequestException) when (responseContentStream != null)
         {
-            var parsedResponse = await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(responseContentStream)
-                                ?? throw new Exception("Failed to parse error response");
+            ChatCompletionResponseErrorWrapper parsedResponse =
+                await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(responseContentStream)
+                ?? throw new Exception("Failed to parse error response");
 
             throw new Exception(parsedResponse.Error.Message);
         }

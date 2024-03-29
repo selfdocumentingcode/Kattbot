@@ -12,12 +12,16 @@ namespace Kattbot.Workers;
 
 public class EventQueueWorker : BackgroundService
 {
-    private readonly ILogger<EventQueueWorker> _logger;
     private readonly EventQueueChannel _channel;
-    private readonly NotificationPublisher _publisher;
     private readonly DiscordErrorLogger _discordErrorLogger;
+    private readonly ILogger<EventQueueWorker> _logger;
+    private readonly NotificationPublisher _publisher;
 
-    public EventQueueWorker(ILogger<EventQueueWorker> logger, EventQueueChannel channel, NotificationPublisher publisher, DiscordErrorLogger discordErrorLogger)
+    public EventQueueWorker(
+        ILogger<EventQueueWorker> logger,
+        EventQueueChannel channel,
+        NotificationPublisher publisher,
+        DiscordErrorLogger discordErrorLogger)
     {
         _logger = logger;
         _channel = channel;

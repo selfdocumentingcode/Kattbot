@@ -6,8 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using Kattbot.CommandModules.ResultFormatters;
+using Kattbot.Common.Models;
 using Kattbot.Common.Models.Emotes;
-using Kattbot.Data;
+using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
 using MediatR;
 
@@ -17,6 +18,10 @@ public class GetUserEmoteStats
 {
     public class GetUserEmoteStatsRequest : CommandRequest
     {
+        public GetUserEmoteStatsRequest(CommandContext ctx)
+            : base(ctx)
+        { }
+
         public ulong UserId { get; set; }
 
         public string Mention { get; set; } = null!;
@@ -24,11 +29,6 @@ public class GetUserEmoteStats
         public int Page { get; set; }
 
         public DateTime? FromDate { get; set; }
-
-        public GetUserEmoteStatsRequest(CommandContext ctx)
-            : base(ctx)
-        {
-        }
     }
 
     public class GetUserEmoteStatsHandler : IRequestHandler<GetUserEmoteStatsRequest>
@@ -37,8 +37,7 @@ public class GetUserEmoteStats
 
         private readonly EmoteStatsRepository _emoteStatsRepo;
 
-        public GetUserEmoteStatsHandler(
-            EmoteStatsRepository emoteStatsRepo)
+        public GetUserEmoteStatsHandler(EmoteStatsRepository emoteStatsRepo)
         {
             _emoteStatsRepo = emoteStatsRepo;
         }
@@ -55,20 +54,22 @@ public class GetUserEmoteStats
 
             int pageOffset = page - 1;
 
-            Models.PaginatedResult<ExtendedStatsQueryResult> emoteUsageResult = await _emoteStatsRepo.GetBestEmotesForUser(guildId, userId, pageOffset, ResultsPerPage, fromDate);
+            PaginatedResult<ExtendedStatsQueryResult> emoteUsageResult =
+                await _emoteStatsRepo.GetBestEmotesForUser(guildId, userId, pageOffset, ResultsPerPage, fromDate);
 
             List<ExtendedStatsQueryResult> emoteUsageItems = emoteUsageResult.Items;
             int safePageOffset = emoteUsageResult.PageOffset;
             int pageCount = emoteUsageResult.PageCount;
             int totalCount = emoteUsageResult.TotalCount;
 
-            var emoteUsageList = emoteUsageItems
-                .Select(r => new ExtendedEmoteStats()
-                {
-                    EmoteCode = EmoteHelper.BuildEmoteCode(r.EmoteId, r.IsAnimated),
-                    Usage = r.Usage,
-                    PercentageOfTotal = (double)r.Usage / r.TotalUsage,
-                })
+            List<ExtendedEmoteStats> emoteUsageList = emoteUsageItems
+                .Select(
+                    r => new ExtendedEmoteStats
+                    {
+                        EmoteCode = EmoteHelper.BuildEmoteCode(r.EmoteId, r.IsAnimated),
+                        Usage = r.Usage,
+                        PercentageOfTotal = (double)r.Usage / r.TotalUsage,
+                    })
                 .ToList();
 
             if (emoteUsageList.Count == 0)
@@ -90,7 +91,7 @@ public class GetUserEmoteStats
                 rangeText = $"{rangeMin} - {rangeMax}";
             }
 
-            string title = $"Top {rangeText} emotes for {mention}";
+            var title = $"Top {rangeText} emotes for {mention}";
 
             if (fromDate != null)
             {
@@ -113,7 +114,7 @@ public class GetUserEmoteStats
             {
                 result.AppendLine();
 
-                string pagingText = $"Page {safePageOffset + 1}/{pageCount}";
+                var pagingText = $"Page {safePageOffset + 1}/{pageCount}";
 
                 if (safePageOffset + 1 < pageCount)
                 {
@@ -123,7 +124,7 @@ public class GetUserEmoteStats
                 result.AppendLine(pagingText);
             }
 
-            string formattedResultMessage = $"`{result}`";
+            var formattedResultMessage = $"`{result}`";
 
             await ctx.RespondAsync(formattedResultMessage);
         }

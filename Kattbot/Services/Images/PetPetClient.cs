@@ -3,16 +3,15 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
-using PuppeteerSharp.Input;
 
 namespace Kattbot.Services.Images;
 
 public class PetPetClient
 {
     private const string _url = "https://benisland.neocities.org/petpet/";
+    private readonly ILogger<PetPetClient> _logger;
 
     private readonly PuppeteerFactory _puppeteerFactory;
-    private readonly ILogger<PetPetClient> _logger;
 
     public PetPetClient(PuppeteerFactory puppeteerFactory, ILogger<PetPetClient> logger)
     {
@@ -51,13 +50,13 @@ public class PetPetClient
 
         await exportButton.ClickAsync();
 
-        string imgQuery = "img#result";
+        var imgQuery = "img#result";
 
         await page.WaitForExpressionAsync($"!!document.querySelector('{imgQuery}').src");
 
-        string src = await page.EvaluateExpressionAsync<string>($"document.querySelector('{imgQuery}').src");
+        var src = await page.EvaluateExpressionAsync<string>($"document.querySelector('{imgQuery}').src");
 
-        string imageBase64 = await page.EvaluateFunctionAsync<string>(
+        var imageBase64 = await page.EvaluateFunctionAsync<string>(
             @"
                 async src => {
                     const response = await fetch(src);

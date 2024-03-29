@@ -13,7 +13,7 @@ namespace Kattbot.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    BotRoleType = table.Column<int>(type: "integer", nullable: false)
+                    BotRoleType = table.Column<int>(type: "integer", nullable: false),
                 },
                 constraints: table =>
                 {

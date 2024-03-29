@@ -16,7 +16,7 @@ public class BoundedQueue<T>
         _queue = new Queue<(T, int)>();
     }
 
-    public int CurrentSize { get; private set; } = 0;
+    public int CurrentSize { get; private set; }
 
     public void Enqueue(T item, int itemSize)
     {
@@ -29,7 +29,7 @@ public class BoundedQueue<T>
 
     public void Enqueue(IEnumerable<(T Item, int ItemSize)> items)
     {
-        foreach (var (item, itemSize) in items)
+        foreach ((T item, int itemSize) in items)
         {
             _queue.Enqueue((item, itemSize));
 
@@ -50,7 +50,7 @@ public class BoundedQueue<T>
 
         while (CurrentSize > _maxSize)
         {
-            var (_, itemSize) = _queue.Dequeue();
+            (_, int itemSize) = _queue.Dequeue();
 
             CurrentSize -= itemSize;
         }

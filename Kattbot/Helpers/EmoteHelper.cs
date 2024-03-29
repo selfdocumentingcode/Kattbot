@@ -13,11 +13,6 @@ public static class EmoteHelper
     public static readonly string EmoteAnimatedCodeFormat = "<a:{0}:{1}>";
     public static readonly string EmoteNamePlaceholder = "x";
 
-    public static bool MessageContainsEmotes(string message)
-    {
-        return EmoteRegex.IsMatch(message);
-    }
-
     public static TempEmote? Parse(string emoteString)
     {
         Match match = EmoteRegexGrouped.Match(emoteString);
@@ -28,11 +23,11 @@ public static class EmoteHelper
         }
 
         GroupCollection groups = match.Groups;
-        var isAnimated = !string.IsNullOrWhiteSpace(groups[1].Value);
-        var name = groups[2].Value;
-        var id = ulong.Parse(groups[3].Value);
+        bool isAnimated = !string.IsNullOrWhiteSpace(groups[1].Value);
+        string name = groups[2].Value;
+        ulong id = ulong.Parse(groups[3].Value);
 
-        var parsed = new TempEmote()
+        var parsed = new TempEmote
         {
             Id = id,
             Name = name,
@@ -51,23 +46,26 @@ public static class EmoteHelper
 
     public static string BuildEmoteCode(ulong emoteId, string emoteName, bool isAnimated)
     {
-        return isAnimated ? string.Format(EmoteAnimatedCodeFormat, emoteName, emoteId) : string.Format(EmoteCodeFormat, emoteName, emoteId);
+        return isAnimated
+            ? string.Format(EmoteAnimatedCodeFormat, emoteName, emoteId)
+            : string.Format(EmoteCodeFormat, emoteName, emoteId);
     }
 
     /// <summary>
-    /// Not emoji, belongs to guild.
+    ///     Not emoji, belongs to guild.
     /// </summary>
-    public static bool IsValidEmote(DiscordEmoji emoji, DiscordGuild guild) => guild.Emojis.ContainsKey(emoji.Id);
+    public static bool IsValidEmote(DiscordEmoji emoji, DiscordGuild guild)
+    {
+        return guild.Emojis.ContainsKey(emoji.Id);
+    }
 
     /// <summary>
-    /// Not emoji, belongs to guild.
+    ///     Not emoji, belongs to guild.
     /// </summary>
-    public static bool IsValidEmote(EmoteEntity emote, DiscordGuild guild) => guild.Emojis.ContainsKey(emote.EmoteId);
-
-    /// <summary>
-    /// Not emoji, belongs to guild.
-    /// </summary>
-    public static bool IsValidEmote(ulong emojiId, DiscordGuild guild) => guild.Emojis.ContainsKey(emojiId);
+    public static bool IsValidEmote(EmoteEntity emote, DiscordGuild guild)
+    {
+        return guild.Emojis.ContainsKey(emote.EmoteId);
+    }
 
     public static string GetExternalEmojiImageUrl(string code)
     {
@@ -81,16 +79,16 @@ public static class EmoteHelper
         byte[] bytes = utf32Encoding.GetBytes(code);
 
         var sb = new StringBuilder();
-        for (int i = 0; i < bytes.Length; i++)
+        for (var i = 0; i < bytes.Length; i++)
         {
             sb.AppendFormat("{0:X2}", bytes[i]);
         }
 
-        string bytesAsString = sb.ToString();
+        var bytesAsString = sb.ToString();
 
         var fileNameBuilder = new StringBuilder();
 
-        for (int i = 0; i < bytesAsString.Length; i += 8)
+        for (var i = 0; i < bytesAsString.Length; i += 8)
         {
             string unicodePart = bytesAsString.Substring(i, 8)
                 .TrimStart('0')
@@ -99,7 +97,7 @@ public static class EmoteHelper
             fileNameBuilder.Append(i == 0 ? unicodePart : $"-{unicodePart}");
         }
 
-        string fileName = fileNameBuilder.ToString();
+        var fileName = fileNameBuilder.ToString();
 
         return $"https://emoji.aranja.com/static/emoji-data/img-twitter-72/{fileName}.png";
     }

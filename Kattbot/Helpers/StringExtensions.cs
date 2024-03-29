@@ -16,28 +16,34 @@ public static class StringExtensions
     public static List<string> SplitString(this string input, int chunkLength, string? splitToken = null)
     {
         if (splitToken != null && splitToken.Length > chunkLength)
+        {
             throw new ArgumentException("Split token cannot be longer than chunk length");
+        }
 
         var result = new List<string>();
         var sb = new StringBuilder();
         var sr = new StringReader(input);
-        var st = !string.IsNullOrWhiteSpace(splitToken) ? splitToken : string.Empty;
+        string st = !string.IsNullOrWhiteSpace(splitToken) ? splitToken : string.Empty;
 
         // Read the next word + the following whitespace character
-        var readNextWord = () =>
+        Func<string> readNextWord = () =>
         {
             var sb = new StringBuilder();
             while (true)
             {
                 int c = sr.Read();
 
-                if (c == -1) // End of string
+                if (c == -1)
+                {
                     return sb.Length > 0 ? sb.ToString() : string.Empty;
+                }
 
                 sb.Append((char)c);
 
                 if (char.IsWhiteSpace((char)c))
+                {
                     return sb.ToString();
+                }
             }
         };
 
@@ -45,7 +51,7 @@ public static class StringExtensions
 
         while ((word = readNextWord()) != string.Empty)
         {
-            if ((sb.Length + word.Length) > chunkLength)
+            if (sb.Length + word.Length > chunkLength)
             {
                 result.Add(sb.ToString().TrimEnd());
                 sb.Clear();
@@ -65,18 +71,19 @@ public static class StringExtensions
 
     public static string ToSafeFilename(this string input, string extension)
     {
-        string safeFilename = new(Encoding.ASCII.GetString(Encoding.ASCII.GetBytes(input))
-                                    .Select(c => char.IsLetterOrDigit(c) ? c : '_')
-                                    .ToArray());
+        string safeFilename = new(
+            Encoding.ASCII.GetString(Encoding.ASCII.GetBytes(input))
+                .Select(c => char.IsLetterOrDigit(c) ? c : '_')
+                .ToArray());
 
-        string filename = $"{safeFilename}.{extension}";
+        var filename = $"{safeFilename}.{extension}";
 
         return filename;
     }
 
     public static StringBuilder AppendLines(this StringBuilder sb, IEnumerable<string> lines)
     {
-        foreach (var line in lines)
+        foreach (string line in lines)
         {
             sb.AppendLine(line);
         }

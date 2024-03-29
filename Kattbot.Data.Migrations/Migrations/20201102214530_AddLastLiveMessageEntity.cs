@@ -13,7 +13,7 @@ namespace Kattbot.Data.Migrations
                 {
                     Id = table.Column<Guid>(nullable: false),
                     MessageId = table.Column<decimal>(nullable: false),
-                    GuildId = table.Column<decimal>(nullable: false)
+                    GuildId = table.Column<decimal>(nullable: false),
                 },
                 constraints: table =>
                 {

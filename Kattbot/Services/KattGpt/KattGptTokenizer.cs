@@ -21,47 +21,47 @@ public class KattGptTokenizer
             return 0;
         }
 
-        var tokenizer = TikToken.EncodingForModel(_modelName);
+        TikToken tokenizer = TikToken.EncodingForModel(_modelName);
 
         return tokenizer.Encode(messageText).Count;
     }
 
     public int GetTokenCount(string component1, string component2)
     {
-        var tokenizer = TikToken.EncodingForModel(_modelName);
+        TikToken tokenizer = TikToken.EncodingForModel(_modelName);
 
-        var count1 = tokenizer.Encode(component1).Count;
-        var count2 = tokenizer.Encode(component2).Count;
+        int count1 = tokenizer.Encode(component1).Count;
+        int count2 = tokenizer.Encode(component2).Count;
 
         return count1 + count2;
     }
 
     public int GetTokenCount(string component1, string component2, string component3)
     {
-        var tokenizer = TikToken.EncodingForModel(_modelName);
+        TikToken tokenizer = TikToken.EncodingForModel(_modelName);
 
-        var count1 = tokenizer.Encode(component1).Count;
-        var count2 = tokenizer.Encode(component2).Count;
-        var count3 = tokenizer.Encode(component3).Count;
+        int count1 = tokenizer.Encode(component1).Count;
+        int count2 = tokenizer.Encode(component2).Count;
+        int count3 = tokenizer.Encode(component3).Count;
 
         return count1 + count2 + count3;
     }
 
     public int GetTokenCount(ChatCompletionFunction functionCall)
     {
-        var tokenizer = TikToken.EncodingForModel(_modelName);
+        TikToken tokenizer = TikToken.EncodingForModel(_modelName);
 
-        var nameTokenCount = tokenizer.Encode(functionCall.Name).Count;
-        var argumentsTokenCount = tokenizer.Encode(functionCall.Parameters.ToString()).Count;
+        int nameTokenCount = tokenizer.Encode(functionCall.Name).Count;
+        int argumentsTokenCount = tokenizer.Encode(functionCall.Parameters.ToString()).Count;
 
         return nameTokenCount + argumentsTokenCount;
     }
 
     public int GetTokenCount(IEnumerable<ChatCompletionMessage> systemMessage)
     {
-        var tokenizer = TikToken.EncodingForModel(_modelName);
+        TikToken tokenizer = TikToken.EncodingForModel(_modelName);
 
-        var totalTokenCountForSystemMessages = systemMessage.Select(x => x.Content).Sum(m => tokenizer.Encode(m).Count);
+        int totalTokenCountForSystemMessages = systemMessage.Select(x => x.Content).Sum(m => tokenizer.Encode(m).Count);
 
         return totalTokenCountForSystemMessages;
     }

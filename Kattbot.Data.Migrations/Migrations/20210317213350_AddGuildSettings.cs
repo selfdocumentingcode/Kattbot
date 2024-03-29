@@ -14,7 +14,7 @@ namespace Kattbot.Data.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     Key = table.Column<string>(type: "text", nullable: false),
-                    Value = table.Column<string>(type: "text", nullable: false)
+                    Value = table.Column<string>(type: "text", nullable: false),
                 },
                 constraints: table =>
                 {

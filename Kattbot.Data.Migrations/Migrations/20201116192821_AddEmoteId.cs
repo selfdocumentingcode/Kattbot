@@ -16,7 +16,7 @@ namespace Kattbot.Data.Migrations
                 name: "EmoteName",
                 table: "Emotes",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: string.Empty);
 
             migrationBuilder.AddColumn<bool>(
                 name: "EmoteAnimated",

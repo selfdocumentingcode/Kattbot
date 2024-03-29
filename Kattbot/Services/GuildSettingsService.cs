@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Kattbot.Data;
+using Kattbot.Data.Repositories;
 using Kattbot.Services.Cache;
 
 namespace Kattbot.Services;
@@ -8,11 +8,9 @@ namespace Kattbot.Services;
 public class GuildSettingsService
 {
     private static readonly string BotChannel = "BotChannel";
-    private static readonly string KattGptChannel = "KattGptChannel";
-    private static readonly string KattGptishChannel = "KattGptishChannel";
+    private readonly SharedCache _cache;
 
     private readonly GuildSettingsRepository _guildSettingsRepo;
-    private readonly SharedCache _cache;
 
     public GuildSettingsService(
         GuildSettingsRepository guildSettingsRepo,
@@ -26,21 +24,21 @@ public class GuildSettingsService
     {
         await _guildSettingsRepo.SaveGuildSetting(guildId, BotChannel, channelId.ToString());
 
-        var cacheKey = SharedCache.BotChannel(guildId);
+        string cacheKey = SharedCache.BotChannel(guildId);
 
         _cache.FlushCache(cacheKey);
     }
 
     public async Task<ulong?> GetBotChannelId(ulong guildId)
     {
-        var cacheKey = SharedCache.BotChannel(guildId);
+        string cacheKey = SharedCache.BotChannel(guildId);
 
-        var channelId = await _cache.LoadFromCacheAsync(
+        string? channelId = await _cache.LoadFromCacheAsync(
             cacheKey,
             async () => await _guildSettingsRepo.GetGuildSetting(guildId, BotChannel),
             TimeSpan.FromMinutes(60));
 
-        var parsed = ulong.TryParse(channelId, out var result);
+        bool parsed = ulong.TryParse(channelId, out ulong result);
 
         return parsed ? result : null;
     }

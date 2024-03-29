@@ -12,7 +12,8 @@ public static class DalleFunctionBuilder
         var function = new ChatCompletionFunction
         {
             Name = FunctionName,
-            Description = "Generate an image from a prompt. The prompts should be written in English for the best results.",
+            Description =
+                "Generate an image from a prompt. The prompts should be written in English for the best results.",
             Parameters = new JsonObject
             {
                 ["type"] = "object",

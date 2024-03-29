@@ -1,8 +1,6 @@
-﻿using System;
+﻿namespace Kattbot.Config;
 
-namespace Kattbot.Config;
-
-public record Template
+public abstract record Template
 {
     public string Name { get; set; } = null!;
 

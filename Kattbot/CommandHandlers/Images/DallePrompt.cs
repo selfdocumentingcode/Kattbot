@@ -8,6 +8,7 @@ using Kattbot.Helpers;
 using Kattbot.Services.Dalle;
 using Kattbot.Services.Images;
 using MediatR;
+using SixLabors.ImageSharp;
 
 namespace Kattbot.CommandHandlers.Images;
 
@@ -38,14 +39,14 @@ public class DallePromptHandler : IRequestHandler<DallePromptCommand>
 
     public async Task Handle(DallePromptCommand request, CancellationToken cancellationToken)
     {
-        var ctx = request.Ctx;
-        var discordMessage = ctx.Message;
+        CommandContext ctx = request.Ctx;
+        DiscordMessage discordMessage = ctx.Message;
 
-        var message = await request.Ctx.RespondAsync("Working on it");
+        DiscordMessage message = await request.Ctx.RespondAsync("Working on it");
 
         try
         {
-            var prompt = discordMessage.SubstituteMentions(request.Prompt);
+            string prompt = discordMessage.SubstituteMentions(request.Prompt);
 
             var imageRequest = new CreateImageRequest
             {
@@ -54,27 +55,27 @@ public class DallePromptHandler : IRequestHandler<DallePromptCommand>
                 User = request.Ctx.User.Id.ToString(),
             };
 
-            var response = await _dalleHttpClient.CreateImage(imageRequest);
+            CreateImageResponse response = await _dalleHttpClient.CreateImage(imageRequest);
 
             if (response.Data == null || !response.Data.Any()) throw new Exception("Empty result");
 
-            var imageUrl = response.Data.First();
+            ImageResponseUrlData imageUrl = response.Data.First();
 
-            var image = await _imageService.DownloadImage(imageUrl.Url);
+            Image image = await _imageService.DownloadImage(imageUrl.Url);
 
-            var imageStream = await _imageService.GetImageStream(image);
+            ImageStreamResult imageStream = await _imageService.GetImageStream(image);
 
-            var fileName = prompt.ToSafeFilename(imageStream.FileExtension);
+            string fileName = prompt.ToSafeFilename(imageStream.FileExtension);
 
-            var truncatedPrompt = prompt.Length > DiscordConstants.MaxEmbedTitleLength
+            string truncatedPrompt = prompt.Length > DiscordConstants.MaxEmbedTitleLength
                 ? $"{prompt[..(DiscordConstants.MaxEmbedTitleLength - 3)]}..."
                 : prompt;
 
-            var eb = new DiscordEmbedBuilder()
+            DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
                 .WithTitle(truncatedPrompt)
                 .WithImageUrl($"attachment://{fileName}");
 
-            var mb = new DiscordMessageBuilder()
+            DiscordMessageBuilder mb = new DiscordMessageBuilder()
                 .AddFile(fileName, imageStream.MemoryStream)
                 .AddEmbed(eb)
                 .WithContent($"There you go {request.Ctx.Member?.Mention ?? "Unknown user"}");

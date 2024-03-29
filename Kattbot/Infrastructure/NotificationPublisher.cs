@@ -16,16 +16,22 @@ public class NotificationPublisher
         _mediator = new NotificationMediator(serviceProvider, SyncContinueOnException);
     }
 
-    public Task Publish(INotification notification, CancellationToken cancellationToken) => _mediator.Publish(notification, cancellationToken);
+    public Task Publish(INotification notification, CancellationToken cancellationToken)
+    {
+        return _mediator.Publish(notification, cancellationToken);
+    }
 
     /// <summary>
-    /// Sauce: https://github.com/jbogard/MediatR/blob/master/samples/MediatR.Examples.PublishStrategies/Publisher.cs.
+    ///     Sauce: https://github.com/jbogard/MediatR/blob/master/samples/MediatR.Examples.PublishStrategies/Publisher.cs.
     /// </summary>
-    private async Task SyncContinueOnException(IEnumerable<NotificationHandlerExecutor> handlers, INotification notification, CancellationToken cancellationToken)
+    private async Task SyncContinueOnException(
+        IEnumerable<NotificationHandlerExecutor> handlers,
+        INotification notification,
+        CancellationToken cancellationToken)
     {
         var exceptions = new List<Exception>();
 
-        foreach (var handler in handlers)
+        foreach (NotificationHandlerExecutor handler in handlers)
         {
             try
             {

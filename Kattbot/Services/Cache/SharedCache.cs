@@ -6,12 +6,20 @@ public class SharedCache : SimpleMemoryCache
 
     public SharedCache()
         : base(CacheSize)
+    { }
+
+    public static string BotChannel(ulong guildId)
     {
+        return $"BotChannel_{guildId}";
     }
 
-    public static string BotChannel(ulong guildId) => $"BotChannel_{guildId}";
+    public static string KattGptChannel(ulong guildId)
+    {
+        return $"KattGptChannel_{guildId}";
+    }
 
-    public static string KattGptChannel(ulong guildId) => $"KattGptChannel_{guildId}";
-
-    public static string KattGptishChannel(ulong guildId) => $"KattGptishChannel_{guildId}";
+    public static string KattGptishChannel(ulong guildId)
+    {
+        return $"KattGptishChannel_{guildId}";
+    }
 }
