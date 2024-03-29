@@ -140,35 +140,35 @@ public class ImageService
         int centerY = src.Height / 2;
         int radius = Math.Min(centerX, centerY);
         int radius2 = radius * radius;
-        var angleRad = (float)(angleDeg * Math.PI / 180);
+        var angleRad = (float)((angleDeg * Math.PI) / 180);
 
-        Func<int, int, (int x, int y)> transformFn = (x, y) =>
+        Func<int, int, (int X, int Y)> transformFn = (x, y) =>
         {
             int newX = x;
             int newY = x;
 
             float dx = x - centerX;
             float dy = y - centerY;
-            float distance = dx * dx + dy * dy;
+            float distance = (dx * dx) + (dy * dy);
 
             if (distance <= radius2)
             {
                 distance = (float)Math.Sqrt(distance);
-                float a = (float)Math.Atan2(dy, dx) + angleRad * (radius - distance) / radius;
+                float a = (float)Math.Atan2(dy, dx) + ((angleRad * (radius - distance)) / radius);
 
-                newX = (int)Math.Floor(centerX + distance * (float)Math.Cos(a));
-                newY = (int)Math.Floor(centerY + distance * (float)Math.Sin(a));
+                newX = (int)Math.Floor(centerX + (distance * (float)Math.Cos(a)));
+                newY = (int)Math.Floor(centerY + (distance * (float)Math.Sin(a)));
             }
 
-            return (x: newX, y: newY);
+            return (X: newX, Y: newY);
         };
 
         for (var x = 0; x < src.Width; x++)
         {
             for (var y = 0; y < src.Height; y++)
             {
-                (int x, int y) trans = transformFn(x, y);
-                dest[x, y] = src[trans.x, trans.y];
+                (int X, int Y) trans = transformFn(x, y);
+                dest[x, y] = src[trans.X, trans.Y];
             }
         }
 

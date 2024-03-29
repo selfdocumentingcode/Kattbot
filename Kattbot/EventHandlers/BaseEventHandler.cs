@@ -7,8 +7,6 @@ public abstract class BaseEventHandler
     /// <summary>
     ///     Don't care about about private messages.
     /// </summary>
-    /// <param name="channel"></param>
-    /// <returns></returns>
     protected bool IsPrivateMessageChannel(DiscordChannel channel)
     {
         if (channel.IsPrivate)
@@ -23,8 +21,6 @@ public abstract class BaseEventHandler
     ///     Don't care about bot message
     ///     Don't care about non user messages.
     /// </summary>
-    /// <param name="message"></param>
-    /// <returns></returns>
     protected bool IsReleventMessage(DiscordMessage message)
     {
         // This seems to happen because of the newly introduced Threads feature
@@ -45,8 +41,6 @@ public abstract class BaseEventHandler
     ///// <summary>
     ///// Don't care about bot reactions
     ///// </summary>
-    ///// <param name="reaction"></param>
-    ///// <returns></returns>
     protected bool IsRelevantReaction(DiscordUser author)
     {
         if (author.IsBot || (author.IsSystem ?? false))

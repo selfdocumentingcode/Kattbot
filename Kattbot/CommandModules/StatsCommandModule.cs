@@ -206,7 +206,6 @@ public class StatsCommandModule : BaseCommandModule
     ///     Check if emote belongs to guild
     ///     TODO: Refactor (duplicated in EmoteMessageService).
     /// </summary>
-    /// <returns></returns>
     private bool IsValidMessageEmote(ulong emoteId, DiscordGuild guild)
     {
         return guild.Emojis.ContainsKey(emoteId);

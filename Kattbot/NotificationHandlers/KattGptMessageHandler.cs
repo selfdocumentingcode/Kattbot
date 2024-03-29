@@ -136,7 +136,9 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     {
         // Build functions
         ChatCompletionFunction[] chatCompletionFunctions =
-            { DalleFunctionBuilder.BuildDalleImageFunctionDefinition() };
+        {
+            DalleFunctionBuilder.BuildDalleImageFunctionDefinition(),
+        };
 
         // Collect request messages
         var requestMessages = new List<ChatCompletionMessage>();

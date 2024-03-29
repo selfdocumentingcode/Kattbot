@@ -86,8 +86,8 @@ public class GetUserEmoteStats
             }
             else
             {
-                int rangeMin = ResultsPerPage * safePageOffset + 1;
-                int rangeMax = Math.Min(ResultsPerPage * safePageOffset + ResultsPerPage, totalCount);
+                int rangeMin = (ResultsPerPage * safePageOffset) + 1;
+                int rangeMax = Math.Min((ResultsPerPage * safePageOffset) + ResultsPerPage, totalCount);
                 rangeText = $"{rangeMin} - {rangeMax}";
             }
 

@@ -33,7 +33,7 @@ public static class StringExtensions
             {
                 int c = sr.Read();
 
-                if (c == -1) // End of string
+                if (c == -1)
                 {
                     return sb.Length > 0 ? sb.ToString() : string.Empty;
                 }

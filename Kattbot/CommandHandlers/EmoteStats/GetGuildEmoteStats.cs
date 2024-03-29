@@ -94,8 +94,8 @@ public class GetGuildEmoteStats
             }
             else
             {
-                int rangeMin = _resultsPerPage * safePageOffset + 1;
-                int rangeMax = Math.Min(_resultsPerPage * safePageOffset + _resultsPerPage, totalCount);
+                int rangeMin = (_resultsPerPage * safePageOffset) + 1;
+                int rangeMax = Math.Min((_resultsPerPage * safePageOffset) + _resultsPerPage, totalCount);
                 rangeText = $"{rangeMin} - {rangeMax}";
             }
 
