@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using Kattbot.Common.Models.Emotes;
-using Kattbot.Data;
+using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
 using Kattbot.Services;
 using MediatR;
@@ -12,9 +12,9 @@ using Microsoft.Extensions.Logging;
 namespace Kattbot.NotificationHandlers.Emotes;
 
 /// <summary>
-/// Extract emotes from message text
-/// If message contains emotes, save each emote
-/// Do save emote if it does not belong to guild.
+///     Extract emotes from message text
+///     If message contains emotes, save each emote
+///     Do save emote if it does not belong to guild.
 /// </summary>
 public record CreateMessageCommand : EventNotification
 {
@@ -29,11 +29,14 @@ public record CreateMessageCommand : EventNotification
 
 public class CreateMessageCommandHandler : INotificationHandler<CreateMessageCommand>
 {
-    private readonly ILogger<CreateMessageCommandHandler> _logger;
     private readonly EmoteEntityBuilder _emoteBuilder;
     private readonly EmotesRepository _kattbotRepo;
+    private readonly ILogger<CreateMessageCommandHandler> _logger;
 
-    public CreateMessageCommandHandler(ILogger<CreateMessageCommandHandler> logger, EmoteEntityBuilder emoteBuilder, EmotesRepository kattbotRepo)
+    public CreateMessageCommandHandler(
+        ILogger<CreateMessageCommandHandler> logger,
+        EmoteEntityBuilder emoteBuilder,
+        EmotesRepository kattbotRepo)
     {
         _logger = logger;
         _emoteBuilder = emoteBuilder;

@@ -1,19 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
-namespace Kattbot.Models
+namespace Kattbot.Common.Models;
+
+public class PaginatedResult<T>
 {
-    public class PaginatedResult<T>
+    public PaginatedResult()
     {
-        public List<T> Items { get; set; }
-        public int PageOffset { get; set; }
-        public int PageCount { get; set; }
-        public int TotalCount { get; set; }
-
-        public PaginatedResult()
-        {
-            Items = new List<T>();
-        }
+        Items = new List<T>();
     }
+
+    public List<T> Items { get; set; }
+
+    public int PageOffset { get; set; }
+
+    public int PageCount { get; set; }
+
+    public int TotalCount { get; set; }
 }

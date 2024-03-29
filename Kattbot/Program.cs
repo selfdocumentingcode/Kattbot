@@ -34,81 +34,86 @@ public class Program
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
         return Host.CreateDefaultBuilder(args)
-            .ConfigureServices((hostContext, services) =>
-            {
-                services.Configure<BotOptions>(hostContext.Configuration.GetSection(BotOptions.OptionsKey));
-                services.Configure<KattGptOptions>(hostContext.Configuration.GetSection(KattGptOptions.OptionsKey));
-
-                services.AddHttpClient();
-                services.AddHttpClient<ChatGptHttpClient>();
-                services.AddHttpClient<DalleHttpClient>();
-                services.AddHttpClient<SpeechHttpClient>();
-
-                services.AddMediatR(cfg =>
+            .ConfigureServices(
+                (hostContext, services) =>
                 {
-                    cfg.RegisterServicesFromAssemblyContaining<Program>();
-                    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
-                });
-                services.AddSingleton<NotificationPublisher>();
+                    services.Configure<BotOptions>(hostContext.Configuration.GetSection(BotOptions.OptionsKey));
+                    services.Configure<KattGptOptions>(hostContext.Configuration.GetSection(KattGptOptions.OptionsKey));
 
-                services.AddSingleton<SharedCache>();
-                services.AddSingleton<KattGptChannelCache>();
-                services.AddSingleton<PuppeteerFactory>();
+                    services.AddHttpClient();
+                    services.AddHttpClient<ChatGptHttpClient>();
+                    services.AddHttpClient<DalleHttpClient>();
+                    services.AddHttpClient<SpeechHttpClient>();
 
-                AddWorkers(services);
+                    services.AddMediatR(
+                        cfg =>
+                        {
+                            cfg.RegisterServicesFromAssemblyContaining<Program>();
+                            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
+                        });
+                    services.AddSingleton<NotificationPublisher>();
 
-                AddChannels(services);
+                    services.AddSingleton<SharedCache>();
+                    services.AddSingleton<KattGptChannelCache>();
+                    services.AddSingleton<PuppeteerFactory>();
 
-                AddBotEventHandlers(services);
+                    AddWorkers(services);
 
-                AddInternalServices(services);
+                    AddChannels(services);
 
-                AddRepositories(services);
+                    AddBotEventHandlers(services);
 
-                AddDbContext(hostContext, services);
+                    AddInternalServices(services);
 
-                AddDiscordClient(hostContext, services);
-            })
-        .UseSystemd();
+                    AddRepositories(services);
+
+                    AddDbContext(hostContext, services);
+
+                    AddDiscordClient(hostContext, services);
+                })
+            .UseSystemd();
     }
 
     private static void AddDiscordClient(HostBuilderContext hostContext, IServiceCollection services)
     {
-        services.AddSingleton((_) =>
-        {
-            var defaultLogLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default") ?? "Warning";
-            var botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken") ?? throw new Exception("Bot token not found");
-
-            LogLevel logLevel = Enum.Parse<LogLevel>(defaultLogLevel);
-
-            var socketConfig = new DiscordConfiguration
+        services.AddSingleton(
+            _ =>
             {
-                MinimumLogLevel = logLevel,
-                TokenType = TokenType.Bot,
-                Token = botToken,
-                Intents = DiscordIntents.All,
-            };
+                string defaultLogLevel =
+                    hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default") ?? "Warning";
+                string botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken") ??
+                                  throw new Exception("Bot token not found");
 
-            var client = new DiscordClient(socketConfig);
+                var logLevel = Enum.Parse<LogLevel>(defaultLogLevel);
 
-            return client;
-        });
+                var socketConfig = new DiscordConfiguration
+                {
+                    MinimumLogLevel = logLevel,
+                    TokenType = TokenType.Bot,
+                    Token = botToken,
+                    Intents = DiscordIntents.All,
+                };
+
+                var client = new DiscordClient(socketConfig);
+
+                return client;
+            });
     }
 
     private static void AddDbContext(HostBuilderContext hostContext, IServiceCollection services)
     {
         services.AddDbContext<KattbotContext>(
-                            builder =>
-                            {
-                                var dbConnString = hostContext.Configuration.GetValue<string>("Kattbot:ConnectionString");
-                                var logLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
+            builder =>
+            {
+                var dbConnString = hostContext.Configuration.GetValue<string>("Kattbot:ConnectionString");
+                var logLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
 
-                                builder.EnableSensitiveDataLogging(logLevel == "Debug");
+                builder.EnableSensitiveDataLogging(logLevel == "Debug");
 
-                                builder.UseNpgsql(dbConnString);
-                            },
-                            ServiceLifetime.Transient,
-                            ServiceLifetime.Singleton);
+                builder.UseNpgsql(dbConnString);
+            },
+            ServiceLifetime.Transient,
+            ServiceLifetime.Singleton);
     }
 
     private static void AddBotEventHandlers(IServiceCollection services)
@@ -150,8 +155,8 @@ public class Program
     {
         const int channelSize = 1024;
 
-        services.AddSingleton((_) => new CommandQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
-        services.AddSingleton((_) => new EventQueueChannel(Channel.CreateBounded<INotification>(channelSize)));
-        services.AddSingleton((_) => new DiscordLogChannel(Channel.CreateBounded<DiscordLogItem>(channelSize)));
+        services.AddSingleton(_ => new CommandQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
+        services.AddSingleton(_ => new EventQueueChannel(Channel.CreateBounded<INotification>(channelSize)));
+        services.AddSingleton(_ => new DiscordLogChannel(Channel.CreateBounded<DiscordLogItem>(channelSize)));
     }
 }

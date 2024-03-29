@@ -7,8 +7,9 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using Kattbot.CommandModules.ResultFormatters;
+using Kattbot.Common.Models;
 using Kattbot.Common.Models.Emotes;
-using Kattbot.Data;
+using Kattbot.Data.Repositories;
 using MediatR;
 
 namespace Kattbot.CommandHandlers.EmoteStats;
@@ -17,6 +18,10 @@ public class GetGuildEmoteStats
 {
     public class GetGuildEmoteStatsRequest : CommandRequest
     {
+        public GetGuildEmoteStatsRequest(CommandContext ctx)
+            : base(ctx)
+        { }
+
         public SortDirection SortDirection { get; set; }
 
         public int Page { get; set; }
@@ -24,11 +29,6 @@ public class GetGuildEmoteStats
         public DateTime? FromDate { get; set; }
 
         public IReadOnlyDictionary<ulong, DiscordEmoji> GuildEmojis { get; set; } = null!;
-
-        public GetGuildEmoteStatsRequest(CommandContext ctx)
-            : base(ctx)
-        {
-        }
     }
 
     public class GetGuildEmoteStatsHandler : IRequestHandler<GetGuildEmoteStatsRequest>
@@ -37,8 +37,7 @@ public class GetGuildEmoteStats
 
         private readonly EmoteStatsRepository _emoteStatsRepo;
 
-        public GetGuildEmoteStatsHandler(
-            EmoteStatsRepository emoteStatsRepo)
+        public GetGuildEmoteStatsHandler(EmoteStatsRepository emoteStatsRepo)
         {
             _emoteStatsRepo = emoteStatsRepo;
         }
@@ -55,14 +54,23 @@ public class GetGuildEmoteStats
 
             int pageOffset = page - 1;
 
-            var mappedGuildEmotes = guildEmotes.Select(kv => new TempEmote()
-            {
-                Id = kv.Key,
-                Name = kv.Value.Name,
-                Animated = kv.Value.IsAnimated,
-            }).ToList();
+            List<TempEmote> mappedGuildEmotes = guildEmotes.Select(
+                    kv => new TempEmote
+                    {
+                        Id = kv.Key,
+                        Name = kv.Value.Name,
+                        Animated = kv.Value.IsAnimated,
+                    })
+                .ToList();
 
-            Models.PaginatedResult<Common.Models.Emotes.EmoteStats> emoteUsageResult = await _emoteStatsRepo.GetGuildEmoteStats(guildId, direction, mappedGuildEmotes, pageOffset: pageOffset, perPage: _resultsPerPage, fromDate: fromDate);
+            PaginatedResult<Common.Models.Emotes.EmoteStats> emoteUsageResult =
+                await _emoteStatsRepo.GetGuildEmoteStats(
+                    guildId,
+                    direction,
+                    mappedGuildEmotes,
+                    pageOffset,
+                    _resultsPerPage,
+                    fromDate);
 
             List<Common.Models.Emotes.EmoteStats> emoteUsageItems = emoteUsageResult.Items;
             int safePageOffset = emoteUsageResult.PageOffset;
@@ -86,12 +94,12 @@ public class GetGuildEmoteStats
             }
             else
             {
-                int rangeMin = (_resultsPerPage * safePageOffset) + 1;
-                int rangeMax = Math.Min((_resultsPerPage * safePageOffset) + _resultsPerPage, totalCount);
+                int rangeMin = _resultsPerPage * safePageOffset + 1;
+                int rangeMax = Math.Min(_resultsPerPage * safePageOffset + _resultsPerPage, totalCount);
                 rangeText = $"{rangeMin} - {rangeMax}";
             }
 
-            string title = $"Top {rangeText} {bestOrWorst} emotes";
+            var title = $"Top {rangeText} {bestOrWorst} emotes";
 
             if (fromDate != null)
             {
@@ -114,7 +122,7 @@ public class GetGuildEmoteStats
             {
                 result.AppendLine();
 
-                string pagingText = $"Page {safePageOffset + 1}/{pageCount}";
+                var pagingText = $"Page {safePageOffset + 1}/{pageCount}";
 
                 if (safePageOffset + 1 < pageCount)
                 {
@@ -124,7 +132,7 @@ public class GetGuildEmoteStats
                 result.AppendLine(pagingText);
             }
 
-            string formattedResultMessage = $"`{result}`";
+            var formattedResultMessage = $"`{result}`";
 
             await ctx.RespondAsync(formattedResultMessage);
         }

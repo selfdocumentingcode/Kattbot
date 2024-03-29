@@ -18,7 +18,10 @@ public class NotificationMediator : Mediator
         _publish = publish;
     }
 
-    protected override Task PublishCore(IEnumerable<NotificationHandlerExecutor> handlerExecutors, INotification notification, CancellationToken cancellationToken)
+    protected override Task PublishCore(
+        IEnumerable<NotificationHandlerExecutor> handlerExecutors,
+        INotification notification,
+        CancellationToken cancellationToken)
     {
         return _publish(handlerExecutors, notification, cancellationToken);
     }

@@ -12,9 +12,11 @@ public static class EmbedBuilderHelper
 
     public static DiscordEmbed BuildSimpleEmbed(string title, string message, int color)
     {
-        var truncatedMessage = message.Substring(0, Math.Min(message.Length, DiscordConstants.MaxEmbedContentLength));
+        string truncatedMessage = message.Substring(
+            0,
+            Math.Min(message.Length, DiscordConstants.MaxEmbedContentLength));
 
-        var eb = new DiscordEmbedBuilder()
+        DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
             .WithTitle(title)
             .WithDescription(truncatedMessage)
             .WithColor(color);

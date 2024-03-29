@@ -15,7 +15,7 @@ namespace Kattbot.Data.Migrations
                     UserId = table.Column<decimal>(nullable: false),
                     EmoteId = table.Column<string>(nullable: false),
                     DateTime = table.Column<DateTimeOffset>(nullable: false),
-                    Source = table.Column<int>(nullable: false)
+                    Source = table.Column<int>(nullable: false),
                 },
                 constraints: table =>
                 {

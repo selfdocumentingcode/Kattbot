@@ -1,93 +1,91 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Runtime.InteropServices;
-using System.Text;
+using Microsoft.Extensions.Logging;
 
-namespace Kattbot.Helpers
+namespace Kattbot.Helpers;
+
+public class DateTimeProvider
 {
-    public class DateTimeProvider
+    private readonly ILogger<DateTimeProvider> _logger;
+    private readonly TimeZoneInfo _norwayTimeZone;
+
+    public DateTimeProvider(ILogger<DateTimeProvider> logger)
     {
-        private readonly TimeZoneInfo _norwayTimeZone;
-        private readonly ILogger<DateTimeProvider> _logger;
-
-        public DateTimeProvider(ILogger<DateTimeProvider> logger)
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                _norwayTimeZone = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
-            }
-            else
-            {
-                _norwayTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Oslo");
-            }
-            _logger = logger;
+            _norwayTimeZone = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+        }
+        else
+        {
+            _norwayTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Oslo");
         }
 
-        public DateTime GetCurrentUtcDateTime()
-        {
-            return DateTime.UtcNow;
-        }
+        _logger = logger;
+    }
 
-        public DateTimeOffset GetCurrentNorwayDateTimeOffset()
-        {
-            _logger.LogDebug("GetCurrentNorwayDateTimeOffset");
+    public DateTime GetCurrentUtcDateTime()
+    {
+        return DateTime.UtcNow;
+    }
 
-            var currentDateTimeUtc = new DateTime(DateTime.UtcNow.Ticks);
+    public DateTimeOffset GetCurrentNorwayDateTimeOffset()
+    {
+        _logger.LogDebug("GetCurrentNorwayDateTimeOffset");
 
-            _logger.LogDebug($"currentDateTimeUtc: {currentDateTimeUtc}");
+        var currentDateTimeUtc = new DateTime(DateTime.UtcNow.Ticks);
 
-            var offset = _norwayTimeZone.GetUtcOffset(currentDateTimeUtc);
+        _logger.LogDebug($"currentDateTimeUtc: {currentDateTimeUtc}");
 
-            _logger.LogDebug($"offset: {offset}");
+        TimeSpan offset = _norwayTimeZone.GetUtcOffset(currentDateTimeUtc);
 
-            var norwayCurrentLocalTime = currentDateTimeUtc.Add(TimeSpan.FromMilliseconds(offset.TotalMilliseconds));
+        _logger.LogDebug($"offset: {offset}");
 
-            _logger.LogDebug($"norwayCurrentLocalTime: {norwayCurrentLocalTime}");
+        DateTime norwayCurrentLocalTime = currentDateTimeUtc.Add(TimeSpan.FromMilliseconds(offset.TotalMilliseconds));
 
-            var norwayCurrentDateTimeOffset = new DateTimeOffset(norwayCurrentLocalTime, offset);
+        _logger.LogDebug($"norwayCurrentLocalTime: {norwayCurrentLocalTime}");
 
-            _logger.LogDebug($"norwayCurrentDateTimeOffset: {norwayCurrentDateTimeOffset}");
+        var norwayCurrentDateTimeOffset = new DateTimeOffset(norwayCurrentLocalTime, offset);
 
-            return norwayCurrentDateTimeOffset;
-        }
+        _logger.LogDebug($"norwayCurrentDateTimeOffset: {norwayCurrentDateTimeOffset}");
 
-        public DateTimeOffset ConvertDateTimeUtcToNorway(DateTime dateTimeUtc)
-        {
-            var offset = _norwayTimeZone.GetUtcOffset(dateTimeUtc);
+        return norwayCurrentDateTimeOffset;
+    }
 
-            var dateTimeOffsetAsLocal = DateTime.SpecifyKind(dateTimeUtc, DateTimeKind.Unspecified);
+    public DateTimeOffset ConvertDateTimeUtcToNorway(DateTime dateTimeUtc)
+    {
+        TimeSpan offset = _norwayTimeZone.GetUtcOffset(dateTimeUtc);
 
-            var norwayLocalDateTime = dateTimeOffsetAsLocal.Add(TimeSpan.FromMilliseconds(offset.TotalMilliseconds));
+        DateTime dateTimeOffsetAsLocal = DateTime.SpecifyKind(dateTimeUtc, DateTimeKind.Unspecified);
 
-            var norwayCurrentDateTimeOffset = new DateTimeOffset(norwayLocalDateTime, offset);
+        DateTime norwayLocalDateTime = dateTimeOffsetAsLocal.Add(TimeSpan.FromMilliseconds(offset.TotalMilliseconds));
 
-            return norwayCurrentDateTimeOffset;
-        }
+        var norwayCurrentDateTimeOffset = new DateTimeOffset(norwayLocalDateTime, offset);
 
-        public DateTimeOffset ParseAsNorwayDateTimeOffset(string dateTimeString)
-        {
-            _logger.LogDebug("ParseAsNorwayDateTimeOffset");
-            _logger.LogDebug($"dateTimeString: {dateTimeString}");
+        return norwayCurrentDateTimeOffset;
+    }
 
-            var dateTimeAsLocal = DateTime.Parse(dateTimeString);
+    public DateTimeOffset ParseAsNorwayDateTimeOffset(string dateTimeString)
+    {
+        _logger.LogDebug("ParseAsNorwayDateTimeOffset");
+        _logger.LogDebug($"dateTimeString: {dateTimeString}");
 
-            _logger.LogDebug($"dateTimeAsLocal: {dateTimeAsLocal}");
+        DateTime dateTimeAsLocal = DateTime.Parse(dateTimeString);
 
-            var offset = _norwayTimeZone.GetUtcOffset(dateTimeAsLocal);
+        _logger.LogDebug($"dateTimeAsLocal: {dateTimeAsLocal}");
 
-            _logger.LogDebug($"offset: {offset}");
+        TimeSpan offset = _norwayTimeZone.GetUtcOffset(dateTimeAsLocal);
 
-            var dateTimeOffset = new DateTimeOffset(dateTimeAsLocal, offset);
+        _logger.LogDebug($"offset: {offset}");
 
-            _logger.LogDebug($"dateTimeOffset: {dateTimeOffset}");
+        var dateTimeOffset = new DateTimeOffset(dateTimeAsLocal, offset);
 
-            return dateTimeOffset;
-        }
+        _logger.LogDebug($"dateTimeOffset: {dateTimeOffset}");
 
-        public string FormatDateTimeOffsetToIso(DateTimeOffset dateTimeOffset)
-        {
-            return $"{dateTimeOffset:yyyy-MM-dd HH:mm}";
-        }
+        return dateTimeOffset;
+    }
+
+    public string FormatDateTimeOffsetToIso(DateTimeOffset dateTimeOffset)
+    {
+        return $"{dateTimeOffset:yyyy-MM-dd HH:mm}";
     }
 }

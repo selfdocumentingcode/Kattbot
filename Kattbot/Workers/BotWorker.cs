@@ -19,13 +19,13 @@ namespace Kattbot.Workers;
 
 public class BotWorker : IHostedService
 {
-    private readonly BotOptions _options;
-    private readonly ILogger<BotWorker> _logger;
     private readonly DiscordClient _client;
-    private readonly IServiceProvider _serviceProvider;
     private readonly CommandEventHandler _commandEventHandler;
     private readonly EmoteEventHandler _emoteEventHandler;
     private readonly EventQueueChannel _eventQueue;
+    private readonly ILogger<BotWorker> _logger;
+    private readonly BotOptions _options;
+    private readonly IServiceProvider _serviceProvider;
 
     public BotWorker(
         IOptions<BotOptions> options,
@@ -49,15 +49,16 @@ public class BotWorker : IHostedService
     {
         _logger.LogInformation("Starting bot");
 
-        string[] commandPrefixes = new[] { _options.CommandPrefix, _options.AlternateCommandPrefix };
+        string[] commandPrefixes = { _options.CommandPrefix, _options.AlternateCommandPrefix };
 
-        CommandsNextExtension commands = _client.UseCommandsNext(new CommandsNextConfiguration()
-        {
-            StringPrefixes = commandPrefixes,
-            Services = _serviceProvider,
-            EnableDefaultHelp = false,
-            EnableMentionPrefix = false,
-        });
+        CommandsNextExtension commands = _client.UseCommandsNext(
+            new CommandsNextConfiguration
+            {
+                StringPrefixes = commandPrefixes,
+                Services = _serviceProvider,
+                EnableDefaultHelp = false,
+                EnableMentionPrefix = false,
+            });
 
         commands.RegisterConverter(new GenericArgumentConverter<StatsCommandArgs, StatsCommandArgsParser>());
         commands.RegisterCommands(Assembly.GetExecutingAssembly());
@@ -81,9 +82,12 @@ public class BotWorker : IHostedService
         await _client.DisconnectAsync();
     }
 
-    private async Task OnMessageCreated(MessageCreateEventArgs args, string[] commandPrefixes, CancellationToken cancellationToken)
+    private async Task OnMessageCreated(
+        MessageCreateEventArgs args,
+        string[] commandPrefixes,
+        CancellationToken cancellationToken)
     {
-        var author = args.Author;
+        DiscordUser author = args.Author;
 
         if (author.IsBot || author.IsSystem.GetValueOrDefault())
         {
@@ -97,7 +101,8 @@ public class BotWorker : IHostedService
         }
 
         // Ignore message that starts with the bot's command prefix
-        if (commandPrefixes.Any(prefix => args.Message.Content.TrimStart().StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
+        if (commandPrefixes.Any(
+                prefix => args.Message.Content.TrimStart().StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
         {
             return;
         }

@@ -1,15 +1,15 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Kattbot.Data;
+using Kattbot.Data.Repositories;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace Kattbot.NotificationHandlers.Emotes;
 
 /// <summary>
-/// Delete all messsage emotes for this message
-/// Delete all reactions emotes on this message that belong to message owner
-/// (Do not remove reactions emotes on this message that belong to other users).
+///     Delete all messsage emotes for this message
+///     Delete all reactions emotes on this message that belong to message owner
+///     (Do not remove reactions emotes on this message that belong to other users).
 /// </summary>
 public record DeleteMessageCommand : EventNotification
 {
@@ -24,8 +24,8 @@ public record DeleteMessageCommand : EventNotification
 
 public class DeleteMessageCommandHandler : INotificationHandler<DeleteMessageCommand>
 {
-    private readonly ILogger<DeleteMessageCommandHandler> _logger;
     private readonly EmotesRepository _kattbotRepo;
+    private readonly ILogger<DeleteMessageCommandHandler> _logger;
 
     public DeleteMessageCommandHandler(ILogger<DeleteMessageCommandHandler> logger, EmotesRepository kattbotRepo)
     {

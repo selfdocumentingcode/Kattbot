@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace Kattbot.Common.Models.Emotes;
 
-namespace Kattbot.Common.Models.Emotes
+public enum EmoteSource
 {
-    public enum EmoteSource
-    {
-        Message = 0,
-        Reaction = 1,
-    }
+    Message = 0,
+    Reaction = 1,
 }

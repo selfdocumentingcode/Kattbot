@@ -71,7 +71,7 @@ public static class FormattedResultHelper
         foreach (ExtendedEmoteUser emoteUser in emoteUsers)
         {
             string formattedRank = rank.ToString().PadLeft(rankPadding);
-            string formattedDisplayName = emoteUser.DisplayName.ToString().PadRight(displayNamePadding);
+            string formattedDisplayName = emoteUser.DisplayName.PadRight(displayNamePadding);
             string formattedUsage = emoteUser.Usage.ToString().PadLeft(usagePadding);
             string formattedPercentage = emoteUser.PercentageOfTotal.ToString("P").PadLeft(percentagePadding);
 
@@ -90,7 +90,7 @@ public static class FormattedResultHelper
         allLines
             .SkipLast(1)
             .ToList()
-            .ForEach((l) => sb.AppendLine(l));
+            .ForEach(l => sb.AppendLine(l));
 
         sb.Append(allLines.Last());
 

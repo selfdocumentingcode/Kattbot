@@ -16,13 +16,17 @@ public class KattGptChannelCache
 
     public KattGptChannelCache()
     {
-        _cache = new MemoryCache(new MemoryCacheOptions()
-        {
-            SizeLimit = CacheSize,
-        });
+        _cache = new MemoryCache(
+            new MemoryCacheOptions
+            {
+                SizeLimit = CacheSize,
+            });
     }
 
-    public static string KattGptChannelCacheKey(ulong channelId) => $"{nameof(KattGptChannelCache)}_{channelId}";
+    public static string KattGptChannelCacheKey(ulong channelId)
+    {
+        return $"{nameof(KattGptChannelCache)}_{channelId}";
+    }
 
     public BoundedQueue<ChatCompletionMessage>? GetCache(string key)
     {
@@ -31,11 +35,14 @@ public class KattGptChannelCache
 
     public void SetCache(string key, BoundedQueue<ChatCompletionMessage> value)
     {
-        _cache.Set(key, value, new MemoryCacheEntryOptions()
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(AbsoluteCacheDurationInDays),
-            SlidingExpiration = TimeSpan.FromHours(SlidingCacheDurationInHours),
-            Size = 1,
-        });
+        _cache.Set(
+            key,
+            value,
+            new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(AbsoluteCacheDurationInDays),
+                SlidingExpiration = TimeSpan.FromHours(SlidingCacheDurationInHours),
+                Size = 1,
+            });
     }
 }

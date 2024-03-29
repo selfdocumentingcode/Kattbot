@@ -6,13 +6,14 @@ using DSharpPlus.Entities;
 using Kattbot.Helpers;
 using Kattbot.Services.Images;
 using MediatR;
+using SixLabors.ImageSharp;
 
 namespace Kattbot.CommandHandlers.Images;
 
 public class GetBigEmoteRequest : CommandRequest
 {
     public GetBigEmoteRequest(CommandContext ctx, DiscordEmoji emoji, uint? scaleFactor = null)
-    : base(ctx)
+        : base(ctx)
     {
         Emoji = emoji;
         ScaleFactor = scaleFactor;
@@ -41,14 +42,14 @@ public class GetBigEmoteHandler : IRequestHandler<GetBigEmoteRequest>
 
         string url = emoji.GetEmojiImageUrl();
 
-        var image = await _imageService.DownloadImage(url);
+        Image image = await _imageService.DownloadImage(url);
 
         if (hasScaleFactor)
         {
             image = _imageService.ScaleImage(image, request.ScaleFactor!.Value);
         }
 
-        var imageStreamResult = await _imageService.GetImageStream(image);
+        ImageStreamResult imageStreamResult = await _imageService.GetImageStream(image);
 
         MemoryStream imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;

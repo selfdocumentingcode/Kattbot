@@ -10,20 +10,20 @@ public class PuppeteerFactory
 {
     public async Task<IBrowser> BuildBrowser()
     {
-        string downloadPath = Path.Combine(Path.GetTempPath(), $"puppeteer-kattbot");
+        string downloadPath = Path.Combine(Path.GetTempPath(), "puppeteer-kattbot");
 
         var browserFetcherOptions = new BrowserFetcherOptions { Path = downloadPath };
         var browserFetcher = new BrowserFetcher(browserFetcherOptions);
         await browserFetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
 
         string executableDirectory = Directory.EnumerateDirectories(
-                                     Directory.EnumerateDirectories(downloadPath)
-                                    .First())
-                                .First();
+                Directory.EnumerateDirectories(downloadPath)
+                    .First())
+            .First();
 
         string executableFilename = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                                ? "chrome.exe"
-                                : "chrome";
+            ? "chrome.exe"
+            : "chrome";
 
         string executablePath = Path.Combine(executableDirectory, executableFilename);
 

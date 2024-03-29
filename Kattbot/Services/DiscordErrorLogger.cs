@@ -26,10 +26,10 @@ public class DiscordErrorLogger
         string guildName = ctx.Guild?.Name ?? "Unknown guild";
         string command = EscapeTicks(ctx.Message.Content);
 
-        string contextMessage = $"**Failed command** `{command}` by `{user}` in `{channelName}`(`{guildName}`)";
-        string escapedErrorMesssage = $"`{EscapeTicks(errorMessage)}`";
+        var contextMessage = $"**Failed command** `{command}` by `{user}` in `{channelName}`(`{guildName}`)";
+        var escapedErrorMessage = $"`{EscapeTicks(errorMessage)}`";
 
-        string fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMesssage}";
+        var fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMessage}";
 
         LogError(fullErrorMessage);
     }
@@ -42,26 +42,26 @@ public class DiscordErrorLogger
         string eventName = ctx?.EventName ?? "Unknown event";
         string message = ctx?.Message is not null ? EscapeTicks(ctx.Message.Content) : string.Empty;
 
-        string contextMessage = $"**Failed event** `{eventName}` by `{user}` in `{channelName}`(`{guildName}`)";
+        var contextMessage = $"**Failed event** `{eventName}` by `{user}` in `{channelName}`(`{guildName}`)";
 
         if (!string.IsNullOrWhiteSpace(message))
         {
             contextMessage += $"{Environment.NewLine}Message: `{message}`";
         }
 
-        string escapedErrorMesssage = $"`{EscapeTicks(errorMessage)}`";
+        var escapedErrorMessage = $"`{EscapeTicks(errorMessage)}`";
 
-        string fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMesssage}";
+        var fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMessage}";
 
         LogError(fullErrorMessage);
     }
 
     public void LogError(string error)
     {
-        ulong errorLogGuilId = _options.ErrorLogGuildId;
+        ulong errorLogGuildId = _options.ErrorLogGuildId;
         ulong errorLogChannelId = _options.ErrorLogChannelId;
 
-        var discordLogItem = new DiscordLogItem(error, errorLogGuilId, errorLogChannelId);
+        var discordLogItem = new DiscordLogItem(error, errorLogGuildId, errorLogChannelId);
 
         _ = _channel.Writer.TryWrite(discordLogItem);
     }

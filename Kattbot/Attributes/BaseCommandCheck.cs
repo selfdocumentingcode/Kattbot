@@ -3,20 +3,19 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 
-namespace Kattbot.Attributes
+namespace Kattbot.Attributes;
+
+/// <summary>
+///     Reject commands coming from DM.
+/// </summary>
+public class BaseCommandCheck : CheckBaseAttribute
 {
-    /// <summary>
-    /// Reject commands coming from DM.
-    /// </summary>
-    public class BaseCommandCheck : CheckBaseAttribute
+    public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
     {
-        public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
-        {
-            var channel = ctx.Channel;
+        DiscordChannel channel = ctx.Channel;
 
-            bool allowCommand = !channel.IsPrivate;
+        bool allowCommand = !channel.IsPrivate;
 
-            return Task.FromResult(allowCommand);
-        }
+        return Task.FromResult(allowCommand);
     }
 }

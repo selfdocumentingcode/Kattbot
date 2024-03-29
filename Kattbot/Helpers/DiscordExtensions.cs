@@ -33,20 +33,20 @@ public static class DiscordExtensions
 
     public static string SubstituteMentions(this DiscordMessage message, string text)
     {
-        var newMessageContent = text;
+        string newMessageContent = text;
 
-        foreach (var user in message.MentionedUsers)
+        foreach (DiscordUser user in message.MentionedUsers)
         {
-            var userMentionAsText = user.Mention.Replace("!", string.Empty);
+            string userMentionAsText = user.Mention.Replace("!", string.Empty);
             newMessageContent = newMessageContent.Replace(userMentionAsText, user.GetDisplayName());
         }
 
-        foreach (var role in message.MentionedRoles)
+        foreach (DiscordRole role in message.MentionedRoles)
         {
             newMessageContent = newMessageContent.Replace(role.Mention, role.Name);
         }
 
-        foreach (var channel in message.MentionedChannels)
+        foreach (DiscordChannel channel in message.MentionedChannels)
         {
             newMessageContent = newMessageContent.Replace(channel.Mention, $"#{channel.Name}");
         }
@@ -56,20 +56,20 @@ public static class DiscordExtensions
 
     public static string SubstituteMentions(this DiscordMessage message)
     {
-        var newMessageContent = message.Content;
+        string newMessageContent = message.Content;
 
-        foreach (var user in message.MentionedUsers)
+        foreach (DiscordUser user in message.MentionedUsers)
         {
-            var userMentionAsText = user.Mention.Replace("!", string.Empty);
+            string userMentionAsText = user.Mention.Replace("!", string.Empty);
             newMessageContent = newMessageContent.Replace(userMentionAsText, user.GetDisplayName());
         }
 
-        foreach (var role in message.MentionedRoles)
+        foreach (DiscordRole role in message.MentionedRoles)
         {
             newMessageContent = newMessageContent.Replace(role.Mention, role.Name);
         }
 
-        foreach (var channel in message.MentionedChannels)
+        foreach (DiscordChannel channel in message.MentionedChannels)
         {
             newMessageContent = newMessageContent.Replace(channel.Mention, $"#{channel.Name}");
         }
@@ -79,23 +79,31 @@ public static class DiscordExtensions
 
     public static async Task<string?> GetImageUrlFromMessage(this DiscordMessage message)
     {
-        var imgUrl = message.GetAttachmentOrStickerImage();
+        string? imgUrl = message.GetAttachmentOrStickerImage();
 
         if (imgUrl != null)
+        {
             return imgUrl;
+        }
 
         if (message.ReferencedMessage is not null)
+        {
             imgUrl = message.ReferencedMessage.GetAttachmentOrStickerImage();
+        }
 
         if (imgUrl != null)
+        {
             return imgUrl;
+        }
 
         var waitTasks = new List<Task<string?>> { message.WaitForEmbedImage() };
 
         if (message.ReferencedMessage is not null)
+        {
             waitTasks.Add(message.ReferencedMessage.WaitForEmbedImage());
+        }
 
-        imgUrl = await (await Task.WhenAny(waitTasks));
+        imgUrl = await await Task.WhenAny(waitTasks);
 
         return imgUrl;
     }
@@ -109,7 +117,7 @@ public static class DiscordExtensions
     {
         if (message.Attachments.Count > 0)
         {
-            var imgAttachment = message.Attachments.Where(a => a.MediaType.StartsWith("image")).FirstOrDefault();
+            DiscordAttachment? imgAttachment = message.Attachments.FirstOrDefault(a => a.MediaType.StartsWith("image"));
 
             if (imgAttachment != null)
             {
@@ -137,7 +145,7 @@ public static class DiscordExtensions
             {
                 if (message.Embeds.Count > 0)
                 {
-                    var imgEmbed = message.Embeds.Where(e => e.Type == "image").FirstOrDefault();
+                    DiscordEmbed? imgEmbed = message.Embeds.FirstOrDefault(e => e.Type == "image");
 
                     if (imgEmbed != null)
                     {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
@@ -15,7 +16,7 @@ namespace Kattbot.CommandHandlers.Images;
 public class PetEmoteRequest : CommandRequest
 {
     public PetEmoteRequest(CommandContext ctx, DiscordEmoji emoji, string? speed)
-    : base(ctx)
+        : base(ctx)
     {
         Emoji = emoji;
         Speed = speed;
@@ -29,7 +30,7 @@ public class PetEmoteRequest : CommandRequest
 public class PetUserRequest : CommandRequest
 {
     public PetUserRequest(CommandContext ctx, DiscordUser user, string? speed)
-    : base(ctx)
+        : base(ctx)
     {
         User = user;
         Speed = speed;
@@ -43,7 +44,7 @@ public class PetUserRequest : CommandRequest
 public class PetImageRequest : CommandRequest
 {
     public PetImageRequest(CommandContext ctx, string? speed)
-    : base(ctx)
+        : base(ctx)
     {
         Speed = speed;
     }
@@ -52,12 +53,12 @@ public class PetImageRequest : CommandRequest
 }
 
 public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
-                                IRequestHandler<PetUserRequest>,
-                                IRequestHandler<PetImageRequest>
+    IRequestHandler<PetUserRequest>,
+    IRequestHandler<PetImageRequest>
 {
+    private readonly DiscordResolver _discordResolver;
     private readonly ImageService _imageService;
     private readonly PetPetClient _petPetClient;
-    private readonly DiscordResolver _discordResolver;
 
     public PetImageHandlers(ImageService imageService, PetPetClient petPetClient, DiscordResolver discordResolver)
     {
@@ -68,19 +69,19 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
 
     public async Task Handle(PetEmoteRequest request, CancellationToken cancellationToken)
     {
-        var ctx = request.Ctx;
-        var emoji = request.Emoji;
+        CommandContext ctx = request.Ctx;
+        DiscordEmoji emoji = request.Emoji;
 
-        var imageUrl = emoji.GetEmojiImageUrl();
+        string imageUrl = emoji.GetEmojiImageUrl();
 
-        var imageStreamResult = await PetImage(imageUrl, request.Speed);
+        ImageStreamResult imageStreamResult = await PetImage(imageUrl, request.Speed);
 
-        using var imageStream = imageStreamResult.MemoryStream;
-        var fileExtension = imageStreamResult.FileExtension;
+        using MemoryStream imageStream = imageStreamResult.MemoryStream;
+        string fileExtension = imageStreamResult.FileExtension;
 
-        var imageName = emoji.Id != 0 ? emoji.Id.ToString() : emoji.Name;
+        string imageName = emoji.Id != 0 ? emoji.Id.ToString() : emoji.Name;
 
-        string fileName = $"{imageName}.{imageStreamResult.FileExtension}";
+        var fileName = $"{imageName}.{imageStreamResult.FileExtension}";
 
         var responseBuilder = new DiscordMessageBuilder();
 
@@ -89,38 +90,12 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
         await ctx.RespondAsync(responseBuilder);
     }
 
-    public async Task Handle(PetUserRequest request, CancellationToken cancellationToken)
-    {
-        var ctx = request.Ctx;
-        var user = request.User;
-        var guild = ctx.Guild;
-
-        var userAsMember = await _discordResolver.ResolveGuildMember(guild, user.Id) ?? throw new Exception("Invalid user");
-
-        var imageUrl = userAsMember.GuildAvatarUrl
-                            ?? userAsMember.AvatarUrl
-                            ?? throw new Exception("Couldn't load user avatar");
-
-        var imageStreamResult = await PetImage(imageUrl, request.Speed, _imageService.CropToCircle<Rgba32>);
-
-        using var imageStream = imageStreamResult.MemoryStream;
-        var fileExtension = imageStreamResult.FileExtension;
-
-        var imageFilename = userAsMember.DisplayName.ToSafeFilename(fileExtension);
-
-        var responseBuilder = new DiscordMessageBuilder();
-
-        responseBuilder.AddFile(imageFilename, imageStreamResult.MemoryStream);
-
-        await ctx.RespondAsync(responseBuilder);
-    }
-
     public async Task Handle(PetImageRequest request, CancellationToken cancellationToken)
     {
-        var ctx = request.Ctx;
-        var message = ctx.Message;
+        CommandContext ctx = request.Ctx;
+        DiscordMessage message = ctx.Message;
 
-        var imageUrl = await message.GetImageUrlFromMessage();
+        string? imageUrl = await message.GetImageUrlFromMessage();
 
         if (imageUrl == null)
         {
@@ -128,10 +103,10 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
             return;
         }
 
-        var imageStreamResult = await PetImage(imageUrl, request.Speed);
+        ImageStreamResult imageStreamResult = await PetImage(imageUrl, request.Speed);
 
-        using var imageStream = imageStreamResult.MemoryStream;
-        var fileExtension = imageStreamResult.FileExtension;
+        using MemoryStream imageStream = imageStreamResult.MemoryStream;
+        string fileExtension = imageStreamResult.FileExtension;
 
         var imageFilename = $"{Guid.NewGuid()}.{fileExtension}";
 
@@ -142,9 +117,39 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
         await ctx.RespondAsync(responseBuilder);
     }
 
-    private async Task<ImageStreamResult> PetImage(string imageUrl, string? speed, ImageTransformDelegate<Rgba32>? preTransform = null)
+    public async Task Handle(PetUserRequest request, CancellationToken cancellationToken)
     {
-        var inputImage = await _imageService.DownloadImage<Rgba32>(imageUrl);
+        CommandContext ctx = request.Ctx;
+        DiscordUser user = request.User;
+        DiscordGuild guild = ctx.Guild;
+
+        DiscordMember userAsMember = await _discordResolver.ResolveGuildMember(guild, user.Id) ??
+                                     throw new Exception("Invalid user");
+
+        string imageUrl = userAsMember.GuildAvatarUrl
+                          ?? userAsMember.AvatarUrl
+                          ?? throw new Exception("Couldn't load user avatar");
+
+        ImageStreamResult imageStreamResult = await PetImage(imageUrl, request.Speed, _imageService.CropToCircle);
+
+        using MemoryStream imageStream = imageStreamResult.MemoryStream;
+        string fileExtension = imageStreamResult.FileExtension;
+
+        string imageFilename = userAsMember.DisplayName.ToSafeFilename(fileExtension);
+
+        var responseBuilder = new DiscordMessageBuilder();
+
+        responseBuilder.AddFile(imageFilename, imageStreamResult.MemoryStream);
+
+        await ctx.RespondAsync(responseBuilder);
+    }
+
+    private async Task<ImageStreamResult> PetImage(
+        string imageUrl,
+        string? speed,
+        ImageTransformDelegate<Rgba32>? preTransform = null)
+    {
+        Image<Rgba32> inputImage = await _imageService.DownloadImage<Rgba32>(imageUrl);
 
         if (preTransform != null)
         {
@@ -157,9 +162,9 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
 
         byte[] animatedEmojiBytes = await _petPetClient.PetPet(imagePath, speed);
 
-        var outputImage = ImageService.LoadImage(animatedEmojiBytes);
+        Image outputImage = ImageService.LoadImage(animatedEmojiBytes);
 
-        var ouputImageStream = await _imageService.GetImageStream(outputImage);
+        ImageStreamResult ouputImageStream = await _imageService.GetImageStream(outputImage);
 
         return ouputImageStream;
     }

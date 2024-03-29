@@ -1,31 +1,30 @@
-﻿using CommandLineParser.Arguments;
-using System;
+﻿using System;
+using CommandLineParser.Arguments;
 
-namespace Kattbot.CommandModules.TypeReaders
+namespace Kattbot.CommandModules.TypeReaders;
+
+public class StatsCommandArgs
 {
-    public class StatsCommandArgs
+    [ValueArgument(typeof(int), 'p', "page", DefaultValue = 1)]
+    public int Page { get; set; } = 1;
+
+    [ValueArgument(typeof(string), 'i', "interval", DefaultValue = "2m")]
+    public string Interval { get; set; } = "2m";
+}
+
+public class StatsCommandArgsParser : ICommandArgsParser<StatsCommandArgs>
+{
+    public StatsCommandArgs Parse(string input)
     {
-        [ValueArgument(typeof(int), 'p', "page", DefaultValue = 1)]
-        public int Page { get; set; } = 1;
+        var commandArgs = new StatsCommandArgs();
 
-        [ValueArgument(typeof(string), 'i', "interval", DefaultValue = "2m")]
-        public string Interval { get; set; } = "2m";
-    }
+        var parser = new CommandLineParser.CommandLineParser();
 
-    public class StatsCommandArgsParser : ICommandArgsParser<StatsCommandArgs>
-    {
-        public StatsCommandArgs Parse(string input)
-        {
-            var commandArgs = new StatsCommandArgs();
+        string[] inputParts = input != null ? input.Split(" ") : Array.Empty<string>();
 
-            var parser = new CommandLineParser.CommandLineParser();
+        parser.ExtractArgumentAttributes(commandArgs);
+        parser.ParseCommandLine(inputParts);
 
-            var inputParts = input != null ? input.Split(" ") : Array.Empty<string>();
-
-            parser.ExtractArgumentAttributes(commandArgs);
-            parser.ParseCommandLine(inputParts);
-
-            return commandArgs;
-        }
+        return commandArgs;
     }
 }

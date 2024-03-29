@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
@@ -36,9 +37,9 @@ public class SpeakRequestHandler : IRequestHandler<SpeakTextRequest>
 
     public async Task Handle(SpeakTextRequest request, CancellationToken cancellationToken)
     {
-        var ctx = request.Ctx;
-        var text = request.Text;
-        var reply = ctx.Message.ReferencedMessage;
+        CommandContext ctx = request.Ctx;
+        string text = request.Text;
+        DiscordMessage? reply = ctx.Message.ReferencedMessage;
 
         if (reply is not null)
         {
@@ -54,15 +55,15 @@ public class SpeakRequestHandler : IRequestHandler<SpeakTextRequest>
 
         try
         {
-            var voice = GetRandomVoice();
+            string voice = GetRandomVoice();
 
-            var truncatedText = text.Length > MaxTextLength ? text[..MaxTextLength] : text;
+            string truncatedText = text.Length > MaxTextLength ? text[..MaxTextLength] : text;
 
-            var speechRequest = BuildRequest(truncatedText, voice);
+            CreateSpeechRequest speechRequest = BuildRequest(truncatedText, voice);
 
-            var audioStream = await _speechHttpClient.CreateSpeech(speechRequest, cancellationToken);
+            MemoryStream audioStream = await _speechHttpClient.CreateSpeech(speechRequest, cancellationToken);
 
-            string fileName = $"{Guid.NewGuid()}.{AudioFormat}";
+            var fileName = $"{Guid.NewGuid()}.{AudioFormat}";
 
             var responseBuilder = new DiscordMessageBuilder();
 
@@ -78,7 +79,7 @@ public class SpeakRequestHandler : IRequestHandler<SpeakTextRequest>
 
     private static string GetRandomVoice()
     {
-        var random = new Random().Next(AudioVoices.Length);
+        int random = new Random().Next(AudioVoices.Length);
 
         return AudioVoices[random];
     }

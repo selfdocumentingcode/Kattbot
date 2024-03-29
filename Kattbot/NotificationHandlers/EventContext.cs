@@ -1,5 +1,4 @@
 ﻿using DSharpPlus.Entities;
-using Kattbot.Common.Models.Emotes;
 
 namespace Kattbot.NotificationHandlers;
 

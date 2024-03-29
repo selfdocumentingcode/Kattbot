@@ -1,33 +1,31 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using System;
+using System.Threading.Tasks;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Converters;
 using DSharpPlus.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Kattbot.CommandModules.TypeReaders
+namespace Kattbot.CommandModules.TypeReaders;
+
+public class GenericArgumentConverter<T, U> : IArgumentConverter<T>
+    where U : ICommandArgsParser<T>, new()
 {
-    public class GenericArgumentConverter<T, U> : IArgumentConverter<T> where U : ICommandArgsParser<T>, new()
+    public Task<Optional<T>> ConvertAsync(string input, CommandContext ctx)
     {
-        public Task<Optional<T>> ConvertAsync(string input, CommandContext ctx)
+        try
         {
-            try
-            {
-                var tObj = new U();
-                var result = tObj.Parse(input);
+            var tObj = new U();
+            T result = tObj.Parse(input);
 
-                return Task.FromResult(Optional.FromValue(result));
-            }
-            catch (Exception)
-            {
-                return Task.FromResult(Optional.FromNoValue<T>());
-            }
+            return Task.FromResult(Optional.FromValue(result));
+        }
+        catch (Exception)
+        {
+            return Task.FromResult(Optional.FromNoValue<T>());
         }
     }
+}
 
-    public interface ICommandArgsParser<T>
-    {
-        T Parse(string input);
-    }
+public interface ICommandArgsParser<T>
+{
+    T Parse(string input);
 }

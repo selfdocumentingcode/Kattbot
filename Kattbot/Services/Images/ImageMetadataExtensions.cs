@@ -6,5 +6,8 @@ namespace Kattbot.Services.Images;
 
 public static class ImageMetadataExtensions
 {
-    public static IImageFormat GetFormatOrDefault(this ImageMetadata metadata) => metadata.DecodedImageFormat ?? PngFormat.Instance;
+    public static IImageFormat GetFormatOrDefault(this ImageMetadata metadata)
+    {
+        return metadata.DecodedImageFormat ?? PngFormat.Instance;
+    }
 }

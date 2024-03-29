@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
@@ -23,7 +23,7 @@ public enum TransformImageEffect
 public class TransformImageEmoteRequest : CommandRequest
 {
     public TransformImageEmoteRequest(CommandContext ctx, DiscordEmoji emoji, TransformImageEffect effect)
-    : base(ctx)
+        : base(ctx)
     {
         Emoji = emoji;
         Effect = effect;
@@ -37,7 +37,7 @@ public class TransformImageEmoteRequest : CommandRequest
 public class TransformImageUserRequest : CommandRequest
 {
     public TransformImageUserRequest(CommandContext ctx, DiscordUser user, TransformImageEffect effect)
-    : base(ctx)
+        : base(ctx)
     {
         User = user;
         Effect = effect;
@@ -51,7 +51,7 @@ public class TransformImageUserRequest : CommandRequest
 public class TransformImageMessageRequest : CommandRequest
 {
     public TransformImageMessageRequest(CommandContext ctx, TransformImageEffect effect)
-    : base(ctx)
+        : base(ctx)
     {
         Effect = effect;
     }
@@ -60,11 +60,11 @@ public class TransformImageMessageRequest : CommandRequest
 }
 
 public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>,
-                                    IRequestHandler<TransformImageUserRequest>,
-                                    IRequestHandler<TransformImageMessageRequest>
+    IRequestHandler<TransformImageUserRequest>,
+    IRequestHandler<TransformImageMessageRequest>
 {
-    private readonly ImageService _imageService;
     private readonly DiscordResolver _discordResolver;
+    private readonly ImageService _imageService;
 
     public TransformImageHandler(ImageService imageService, DiscordResolver discordResolver)
     {
@@ -74,18 +74,18 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
 
     public async Task Handle(TransformImageEmoteRequest request, CancellationToken cancellationToken)
     {
-        var ctx = request.Ctx;
-        var emoji = request.Emoji;
-        var effect = request.Effect;
+        CommandContext ctx = request.Ctx;
+        DiscordEmoji emoji = request.Emoji;
+        TransformImageEffect effect = request.Effect;
 
         string imageUrl = emoji.GetEmojiImageUrl();
 
-        var imageStreamResult = await TransformImage(imageUrl, effect);
+        ImageStreamResult imageStreamResult = await TransformImage(imageUrl, effect);
 
-        using var imageStream = imageStreamResult.MemoryStream;
+        using MemoryStream imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;
 
-        string fileName = $"{Guid.NewGuid()}.{fileExtension}";
+        var fileName = $"{Guid.NewGuid()}.{fileExtension}";
 
         var responseBuilder = new DiscordMessageBuilder();
 
@@ -94,23 +94,51 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
         await ctx.RespondAsync(responseBuilder);
     }
 
+    public async Task Handle(TransformImageMessageRequest request, CancellationToken cancellationToken)
+    {
+        CommandContext ctx = request.Ctx;
+        DiscordMessage message = ctx.Message;
+        TransformImageEffect effect = request.Effect;
+
+        string? imageUrl = await message.GetImageUrlFromMessage();
+
+        if (imageUrl == null)
+        {
+            await ctx.RespondAsync("I didn't find any images.");
+            return;
+        }
+
+        ImageStreamResult imageStreamResult = await TransformImage(imageUrl, effect);
+
+        using MemoryStream imageStream = imageStreamResult.MemoryStream;
+        string fileExtension = imageStreamResult.FileExtension;
+
+        var imageFilename = $"{Guid.NewGuid()}.{fileExtension}";
+
+        var responseBuilder = new DiscordMessageBuilder();
+
+        responseBuilder.AddFile(imageFilename, imageStream);
+
+        await ctx.RespondAsync(responseBuilder);
+    }
+
     public async Task Handle(TransformImageUserRequest request, CancellationToken cancellationToken)
     {
-        var ctx = request.Ctx;
-        var user = request.User;
-        var guild = ctx.Guild;
-        var effect = request.Effect;
+        CommandContext ctx = request.Ctx;
+        DiscordUser user = request.User;
+        DiscordGuild guild = ctx.Guild;
+        TransformImageEffect effect = request.Effect;
 
-        var userAsMember = await _discordResolver.ResolveGuildMember(guild, user.Id)
-                            ?? throw new Exception("Invalid user");
+        DiscordMember userAsMember = await _discordResolver.ResolveGuildMember(guild, user.Id)
+                                     ?? throw new Exception("Invalid user");
 
         string imageUrl = userAsMember.GuildAvatarUrl
-                        ?? userAsMember.AvatarUrl
-                        ?? throw new Exception("Couldn't load user avatar");
+                          ?? userAsMember.AvatarUrl
+                          ?? throw new Exception("Couldn't load user avatar");
 
-        var imageStreamResult = await TransformImage(imageUrl, effect, _imageService.CropToCircle<Rgba32>);
+        ImageStreamResult imageStreamResult = await TransformImage(imageUrl, effect, _imageService.CropToCircle);
 
-        using var imageStream = imageStreamResult.MemoryStream;
+        using MemoryStream imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;
 
         string imageFilename = userAsMember.DisplayName.ToSafeFilename(fileExtension);
@@ -122,41 +150,16 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
         await ctx.RespondAsync(responseBuilder);
     }
 
-    public async Task Handle(TransformImageMessageRequest request, CancellationToken cancellationToken)
+    private async Task<ImageStreamResult> TransformImage(
+        string imageUrl,
+        TransformImageEffect effect,
+        ImageTransformDelegate<Rgba32>? preTransform = null)
     {
-        var ctx = request.Ctx;
-        var message = ctx.Message;
-        var effect = request.Effect;
-
-        var imageUrl = await message.GetImageUrlFromMessage();
-
-        if (imageUrl == null)
-        {
-            await ctx.RespondAsync("I didn't find any images.");
-            return;
-        }
-
-        var imageStreamResult = await TransformImage(imageUrl, effect);
-
-        using var imageStream = imageStreamResult.MemoryStream;
-        string fileExtension = imageStreamResult.FileExtension;
-
-        string imageFilename = $"{Guid.NewGuid()}.{fileExtension}";
-
-        var responseBuilder = new DiscordMessageBuilder();
-
-        responseBuilder.AddFile(imageFilename, imageStream);
-
-        await ctx.RespondAsync(responseBuilder);
-    }
-
-    private async Task<ImageStreamResult> TransformImage(string imageUrl, TransformImageEffect effect, ImageTransformDelegate<Rgba32>? preTransform = null)
-    {
-        var inputImage = await _imageService.DownloadImage<Rgba32>(imageUrl);
+        Image<Rgba32> inputImage = await _imageService.DownloadImage<Rgba32>(imageUrl);
 
         if (preTransform != null)
         {
-            inputImage = (Image<Rgba32>)preTransform(inputImage);
+            inputImage = preTransform(inputImage);
         }
 
         Image imageResult;
@@ -178,7 +181,7 @@ public class TransformImageHandler : IRequestHandler<TransformImageEmoteRequest>
             throw new InvalidOperationException($"Unknown effect: {effect}");
         }
 
-        var imageStreamResult = await _imageService.GetImageStream(imageResult);
+        ImageStreamResult imageStreamResult = await _imageService.GetImageStream(imageResult);
 
         return imageStreamResult;
     }

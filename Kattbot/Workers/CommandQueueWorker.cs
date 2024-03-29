@@ -10,8 +10,8 @@ namespace Kattbot.Workers;
 
 public class CommandQueueWorker : BackgroundService
 {
-    private readonly ILogger<CommandQueueWorker> _logger;
     private readonly CommandQueueChannel _channel;
+    private readonly ILogger<CommandQueueWorker> _logger;
     private readonly IMediator _mediator;
 
     public CommandQueueWorker(ILogger<CommandQueueWorker> logger, CommandQueueChannel channel, IMediator mediator)

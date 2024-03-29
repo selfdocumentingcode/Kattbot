@@ -12,12 +12,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Kattbot.EventHandlers;
+
 public class EmoteEventHandler : BaseEventHandler
 {
     private readonly DiscordClient _client;
-    private readonly ILogger<CommandEventHandler> _logger;
-    private readonly EventQueueChannel _eventQueue;
     private readonly DiscordErrorLogger _discordErrorLogger;
+    private readonly EventQueueChannel _eventQueue;
+    private readonly ILogger<CommandEventHandler> _logger;
     private readonly BotOptions _options;
 
     public EmoteEventHandler(
@@ -50,7 +51,7 @@ public class EmoteEventHandler : BaseEventHandler
 
         try
         {
-            eventContext = new EventContext()
+            eventContext = new EventContext
             {
                 EventName = nameof(OnMessageCreated),
                 User = eventArgs.Author,
@@ -97,7 +98,7 @@ public class EmoteEventHandler : BaseEventHandler
 
         try
         {
-            eventContext = new EventContext()
+            eventContext = new EventContext
             {
                 EventName = nameof(OnMessageUpdated),
                 User = eventArgs.Author,
@@ -151,7 +152,7 @@ public class EmoteEventHandler : BaseEventHandler
 
         try
         {
-            eventContext = new EventContext()
+            eventContext = new EventContext
             {
                 EventName = nameof(OnMessageDeleted),
                 User = null,
@@ -190,7 +191,7 @@ public class EmoteEventHandler : BaseEventHandler
 
         try
         {
-            eventContext = new EventContext()
+            eventContext = new EventContext
             {
                 EventName = nameof(OnMessageReactionAdded),
                 User = eventArgs.User,
@@ -234,7 +235,7 @@ public class EmoteEventHandler : BaseEventHandler
 
         try
         {
-            eventContext = new EventContext()
+            eventContext = new EventContext
             {
                 EventName = nameof(OnMessageReactionRemoved),
                 User = eventArgs.User,
@@ -273,6 +274,6 @@ public class EmoteEventHandler : BaseEventHandler
         string altCommandPrefix = _options.AlternateCommandPrefix;
 
         return command.StartsWith(commandPrefix, StringComparison.OrdinalIgnoreCase)
-            || command.StartsWith(altCommandPrefix, StringComparison.OrdinalIgnoreCase);
+               || command.StartsWith(altCommandPrefix, StringComparison.OrdinalIgnoreCase);
     }
 }

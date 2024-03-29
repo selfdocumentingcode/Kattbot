@@ -4,10 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Kattbot.Services.Cache;
+
 public abstract class CacheQueue<T>
 {
-    private readonly int _maxSize;
     private readonly TimeSpan _maxAge;
+    private readonly int _maxSize;
 
     private readonly ConcurrentQueue<(T Item, DateTime Expiration)> _queue;
 
@@ -42,7 +43,7 @@ public abstract class CacheQueue<T>
     {
         if (_queue.IsEmpty) return;
 
-        while (_queue.TryPeek(out var peakItem) && peakItem.Expiration < DateTime.UtcNow)
+        while (_queue.TryPeek(out (T Item, DateTime Expiration) peakItem) && peakItem.Expiration < DateTime.UtcNow)
         {
             _ = _queue.TryDequeue(out _);
         }

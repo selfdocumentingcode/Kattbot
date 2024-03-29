@@ -6,14 +6,16 @@ namespace Kattbot.Data.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(name: "EmoteId",
+            migrationBuilder.RenameColumn(
+                name: "EmoteId",
                 newName: "EmoteCode",
                 table: "Emotes");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(name: "EmoteCode",
+            migrationBuilder.RenameColumn(
+                name: "EmoteCode",
                 newName: "EmoteId",
                 table: "Emotes");
         }

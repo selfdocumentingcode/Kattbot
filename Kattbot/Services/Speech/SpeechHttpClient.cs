@@ -23,9 +23,11 @@ public class SpeechHttpClient
         _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {options.Value.OpenAiApiKey}");
     }
 
-    public async Task<MemoryStream> CreateSpeech(CreateSpeechRequest request, CancellationToken cancellationToken = default)
+    public async Task<MemoryStream> CreateSpeech(
+        CreateSpeechRequest request,
+        CancellationToken cancellationToken = default)
     {
-        var opts = new JsonSerializerOptions() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
+        var opts = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
 
         HttpResponseMessage? response;
 
@@ -33,7 +35,7 @@ public class SpeechHttpClient
         {
             response = await _client.PostAsJsonAsync("speech", request, opts, cancellationToken);
 
-            var responseContentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            Stream responseContentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
@@ -45,13 +47,14 @@ public class SpeechHttpClient
 
             return memoryStream;
         }
-        //catch (HttpRequestException) when (responseContentStream != null)
-        //{
+
+        // catch (HttpRequestException) when (responseContentStream != null)
+        // {
         //    var parsedResponse = await JsonSerializer.DeserializeAsync<CreateSpeechResponseErrorWrapper>(responseContentStream)
         //                        ?? throw new Exception("Failed to parse error response");
 
-        //    throw new Exception(parsedResponse.Error.Message);
-        //}
+        // throw new Exception(parsedResponse.Error.Message);
+        // }
         catch (HttpRequestException ex)
         {
             throw new Exception($"HTTP {ex.StatusCode}: {ex.Message}");
