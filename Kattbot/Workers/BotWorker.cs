@@ -132,7 +132,7 @@ public class BotWorker : IHostedService
         {
             string commandPrefix = _options.CommandPrefix;
 
-            var activity = new DiscordActivity($"\"{commandPrefix}help\" for help", ActivityType.Playing);
+            var activity = new DiscordActivity($"\"{commandPrefix}help\" for help", DiscordActivityType.Playing);
 
             await _client.UpdateStatusAsync(activity);
         }
