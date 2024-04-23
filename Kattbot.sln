@@ -16,7 +16,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Directory.Build.props = Directory.Build.props
 		Dotnet_cheatsheet.md = Dotnet_cheatsheet.md
 		Readme.md = Readme.md
-		Kattbot.sln.DotSettings = Kattbot.sln.DotSettings
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot.Data", "Kattbot.Data\Kattbot.Data.csproj", "{F454BCE5-C964-4720-AD84-96A07FA7B8B1}"

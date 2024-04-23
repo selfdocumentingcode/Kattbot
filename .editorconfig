@@ -1,5 +1,5 @@
-# Remove the line below if you want to inherit .editorconfig settings from higher directories
 root = true
+# Remove the line below if you want to inherit .editorconfig settings from higher directories
 
 # C# files
 [*.cs]
@@ -17,7 +17,7 @@ end_of_line = crlf
 insert_final_newline = true
 
 # Visual Studio
-csharp_style_namespace_declarations=file_scoped   # Use file scoped namespace by default for new class files
+csharp_style_namespace_declarations = file_scoped # Use file scoped namespace by default for new class files
 
 ### Naming styles ###
 
@@ -81,75 +81,114 @@ dotnet_naming_style.pascal_case.capitalization = pascal_case
 
 # Readability
 
-dotnet_diagnostic.SA1101.severity   = none        # Prefix local calls with this
+dotnet_diagnostic.sa1101.severity = none # Prefix local calls with this
 
 # Ordering
 
-dotnet_diagnostic.SA1200.severity   = none        # Using directive should appear within a namespace declaration
-dotnet_diagnostic.SA1201.severity   = suggestion  # Elements should appear in the correct order
-dotnet_diagnostic.SA1202.severity   = suggestion  # Elements should be ordered by access
+dotnet_diagnostic.sa1200.severity = none # Using directive should appear within a namespace declaration
+dotnet_diagnostic.sa1201.severity = suggestion # Elements should appear in the correct order
+dotnet_diagnostic.sa1202.severity = suggestion # Elements should be ordered by access
 
 # Naming
 
-dotnet_diagnostic.SA1309.severity   = none        # Field names should not begin with underscore
+dotnet_diagnostic.sa1309.severity = none # Field names should not begin with underscore
 
 # Maintainability
 
-dotnet_diagnostic.SA1402.severity   = suggestion  # File may only contain a single type
+dotnet_diagnostic.sa1402.severity = suggestion # File may only contain a single type
 
 # Layout rules
 
-dotnet_diagnostic.SA1502.severity   = none        # Element should not be on a single line
-dotnet_diagnostic.SA1503.severity   = none        # Braces should not be omitted
-dotnet_diagnostic.SA1515.severity   = suggestion  # Single-line comment should be preceded by blank line
+dotnet_diagnostic.sa1502.severity = none # Element should not be on a single line
+dotnet_diagnostic.sa1503.severity = none # Braces should not be omitted
+dotnet_diagnostic.sa1515.severity = suggestion # Single-line comment should be preceded by blank line
 
 # Documentation
 
-dotnet_diagnostic.SA1600.severity   = none        # Elements should be documented
-dotnet_diagnostic.SA1601.severity   = none        # Partial elements should be documented
-dotnet_diagnostic.SA1602.severity   = none        # Enumeration items should be documented
-dotnet_diagnostic.SA1611.severity   = none        # Element parameter should be documented
-dotnet_diagnostic.SA1615.severity   = none        # Element return value should be documented
-dotnet_diagnostic.SA1633.severity   = none        # File should have header
-dotnet_diagnostic.SA1649.severity   = none        # File name should match first type name
+dotnet_diagnostic.sa1600.severity = none # Elements should be documented
+dotnet_diagnostic.sa1601.severity = none # Partial elements should be documented
+dotnet_diagnostic.sa1602.severity = none # Enumeration items should be documented
+dotnet_diagnostic.sa1611.severity = none # Element parameter should be documented
+dotnet_diagnostic.sa1615.severity = none # Element return value should be documented
+dotnet_diagnostic.sa1633.severity = none # File should have header
+dotnet_diagnostic.sa1649.severity = none # File name should match first type name
 
 ### .NET Code-style rules ###
 
 # Expression-level preferences
 
-dotnet_diagnostic.IDE0032.severity      = suggestion  # Use auto-implemented property
+dotnet_diagnostic.ide0032.severity = suggestion # Use auto-implemented property
 
 # Modifier preferences
 
-dotnet_diagnostic.IDE0044.severity      = warning     # Add readonly modifier
+dotnet_diagnostic.ide0044.severity = warning # Add readonly modifier
 
 # Naming
 
-dotnet_diagnostic.IDE1006.severity      = warning     # Naming rule violation
+dotnet_diagnostic.ide1006.severity = warning # Naming rule violation
 
 # Unnecessary code rules
 
-dotnet_diagnostic.IDE0058.severity      = none        # Remove unnecessary expression value
-dotnet_diagnostic.IDE0290.severity      = none        # Use primary constructor
+dotnet_diagnostic.ide0058.severity = none # Remove unnecessary expression value
+dotnet_diagnostic.ide0290.severity = none # Use primary constructor
 
 ### .NET Code-quality rules ###
 
 # Reliability
 
-dotnet_diagnostic.CA2016.severity       = warning     # Forward the CancellationToken parameter to methods that take one
+dotnet_diagnostic.ca2016.severity = warning # Forward the CancellationToken parameter to methods that take one
 
 # Usage
 
-dotnet_diagnostic.CA2208.severity       = warning     # Instantiate argument exceptions correctly
+dotnet_diagnostic.ca2208.severity = warning # Instantiate argument exceptions correctly
 
 ### C# compiler messages ###
 
 # Level 4 warning messages
 
-dotnet_diagnostic.CS1591.severity       = none        # Missing XML comment for publicly visible type or member
+dotnet_diagnostic.cs1591.severity = none # Missing XML comment for publicly visible type or member
 
 ### SYSLIB diagnostics ###
 
 # Source-generated code
 
-dotnet_diagnostic.SYSLIB1045.severity   = none        # Convert to 'GeneratedRegexAttribute'
+dotnet_diagnostic.syslib1045.severity = none # Convert to 'GeneratedRegexAttribute'
+
+### Rider auto-generated rules ###
+
+# Microsoft .NET properties
+csharp_preferred_modifier_order = public, protected, private, internal, file, new, static, abstract, virtual, sealed, override, async, extern, unsafe, volatile, readonly, required:suggestion
+csharp_preserve_single_line_blocks = true
+csharp_style_var_elsewhere = false:none
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:none
+dotnet_style_parentheses_in_arithmetic_binary_operators = always_for_clarity:none
+dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:none
+dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary:none
+
+# ReSharper properties
+resharper_blank_lines_after_control_transfer_statements = 1
+resharper_blank_lines_around_single_line_auto_property = 1
+resharper_braces_for_for = required
+resharper_braces_for_foreach = required
+resharper_braces_for_ifelse = not_required
+resharper_braces_for_while = required
+resharper_braces_redundant = false
+resharper_csharp_empty_block_style = together
+resharper_csharp_insert_final_newline = true
+resharper_csharp_wrap_after_declaration_lpar = true
+resharper_csharp_wrap_arguments_style = chop_if_long
+resharper_csharp_wrap_before_binary_opsign = true
+resharper_csharp_wrap_extends_list_style = chop_always
+resharper_csharp_wrap_parameters_style = chop_if_long
+resharper_for_built_in_types = use_var_when_evident
+resharper_instance_members_qualify_declared_in = 
+resharper_keep_existing_embedded_block_arrangement = false
+resharper_keep_existing_enum_arrangement = false
+resharper_nested_ternary_style = expanded
+resharper_parentheses_same_type_operations = true
+resharper_place_accessorholder_attribute_on_same_line = false
+resharper_place_expr_property_on_single_line = true
+resharper_place_simple_embedded_statement_on_same_line = true
+resharper_place_simple_initializer_on_single_line = false
+resharper_trailing_comma_in_multiline_lists = true

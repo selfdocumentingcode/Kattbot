@@ -178,7 +178,7 @@ public class ImageService
     public Image<TPixel> CropToCircle<TPixel>(Image<TPixel> image)
         where TPixel : unmanaged, IPixel<TPixel>
     {
-        var ellipsePath = new EllipsePolygon(image.Width / 2, image.Height / 2, image.Width, image.Height);
+        var ellipsePath = new EllipsePolygon(image.Width / 2.0f, image.Height / 2.0f, image.Width, image.Height);
 
         Image<TPixel> imageAsPngWithTransparency;
 
