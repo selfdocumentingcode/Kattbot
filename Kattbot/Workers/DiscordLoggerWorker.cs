@@ -65,18 +65,10 @@ public class DiscordLoggerWorker : BackgroundService
     {
         _client.Guilds.TryGetValue(guildId, out DiscordGuild? discordGuild);
 
-        if (discordGuild == null)
-        {
-            discordGuild = await _client.GetGuildAsync(guildId);
-        }
+        discordGuild ??= await _client.GetGuildAsync(guildId);
 
         discordGuild.Channels.TryGetValue(channelId, out DiscordChannel? discordChannel);
 
-        if (discordChannel == null)
-        {
-            discordChannel = discordGuild.GetChannel(channelId);
-        }
-
-        return discordChannel;
+        return discordChannel ??= await discordGuild.GetChannelAsync(channelId);
     }
 }
