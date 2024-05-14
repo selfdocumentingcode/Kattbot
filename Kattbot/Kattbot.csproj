@@ -10,9 +10,9 @@
 	<PackageReference Include="TiktokenSharp" Version="1.1.4" />
 	<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
 	<PackageReference Include="CommandLineArgumentsParser" Version="3.0.23" />
-    <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02246" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-02246" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02246" />
+    <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02251" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-02251" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02251" />
     <PackageReference Include="MediatR" Version="12.2.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="8.0.0" />
