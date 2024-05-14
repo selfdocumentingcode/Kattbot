@@ -21,14 +21,14 @@ namespace Kattbot.NotificationHandlers;
 
 public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotification>
 {
-    private const string ChatGptModel = "gpt-4-1106-preview";
-    private const string TokenizerModel = "gpt-4";
+    private const string ChatGptModel = "gpt-4o";
+    private const string TokenizerModel = "gpt-4o";
     private const string CreateImageModel = "dall-e-3";
     private const float DefaultTemperature = 1.2f;
     private const float FunctionCallTemperature = 0.8f;
     private const int MaxTotalTokens = 24_576;
     private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
-    private const string MessageSplitToken = "[cont.]";
+    private const string MessageSplitToken = "[cont.] ";
     private const string RecipientMarkerToYou = "[to you]";
     private const string RecipientMarkerToOthers = "[to others]";
     private readonly KattGptChannelCache _cache;

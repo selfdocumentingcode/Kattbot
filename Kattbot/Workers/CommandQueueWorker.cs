@@ -27,12 +27,15 @@ public class CommandQueueWorker : BackgroundService
         {
             await foreach (CommandRequest command in _channel.Reader.ReadAllAsync(stoppingToken))
             {
-                if (command != null)
-                {
-                    _logger.LogDebug("Dequeued command. {RemainingMessageCount} left in queue", _channel.Reader.Count);
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+                if (command is null) continue;
 
-                    _ = Task.Run(() => _mediator.Send(command, stoppingToken), stoppingToken);
-                }
+                _logger.LogDebug(
+                    "Dequeued command {CommandType}. {RemainingMessageCount} left in queue",
+                    command.GetType().Name,
+                    _channel.Reader.Count);
+
+                _ = Task.Run(() => _mediator.Send(command, stoppingToken), stoppingToken);
             }
         }
         catch (TaskCanceledException)

@@ -27,14 +27,16 @@ public class DiscordLoggerWorker : BackgroundService
         {
             await foreach (DiscordLogItem logItem in _channel.Reader.ReadAllAsync(stoppingToken))
             {
-                if (logItem == null)
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+                if (logItem is null)
                 {
                     continue;
                 }
 
                 DiscordChannel logChannel = await ResolveLogChannel(logItem.DiscordGuildId, logItem.DiscordChannelId);
 
-                if (logChannel != null)
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+                if (logChannel is not null)
                 {
                     try
                     {
@@ -47,7 +49,8 @@ public class DiscordLoggerWorker : BackgroundService
                 }
 
                 _logger.LogDebug(
-                    "Dequeued (parallel) command. {RemainingMessageCount} left in queue",
+                    "Dequeued (parallel) command {CommandType}. {RemainingMessageCount} left in queue",
+                    logItem.GetType().Name,
                     _channel.Reader.Count);
             }
         }
@@ -69,6 +72,6 @@ public class DiscordLoggerWorker : BackgroundService
 
         discordGuild.Channels.TryGetValue(channelId, out DiscordChannel? discordChannel);
 
-        return discordChannel ??= await discordGuild.GetChannelAsync(channelId);
+        return discordChannel ?? (await discordGuild.GetChannelAsync(channelId));
     }
 }
