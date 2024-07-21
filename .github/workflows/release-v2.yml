@@ -8,16 +8,13 @@ on:
         required: false
         default: 'no'
       imageTag:
-        description: 'Docker image tag'
+        description: 'Docker image tag (default: latest for main or branch name for other branches)'
         required: false
-        default: 'latest'
 
 env:
   HOST_GATEWAY_IP: "172.17.0.1"
   REGISTRY: ghcr.io
-  REPOSITORY_OWNER: ${{ github.repository_owner }}
   IMAGE_NAME: kattbot
-  IMAGE_TAG: ${{ inputs.imageTag }}
   COMPOSE_PROJECT_NAME: kattbot
   COMPOSE_FILE_NAME: prod-compose.yml
   DB_NAME: kattbot
@@ -28,101 +25,121 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        sparse-checkout: | 
-          docker/${{ env.COMPOSE_FILE_NAME }}
-        sparse-checkout-cone-mode: false
-  
-    - name: Upload compose.yml
-      uses: appleboy/scp-action@v0.1.7
-      with:  
-        host: ${{secrets.VPS_HOST}}
-        port: ${{secrets.VPS_PORT}}
-        username: ${{secrets.KATTBOT_USER}}
-        key: ${{secrets.KATTBOT_KEY}}
-        passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
-        source: "docker/${{ env.COMPOSE_FILE_NAME }}"
-        target: "$HOME/"
-        strip_components: 1
-        overwrite: true
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            docker/${{ env.COMPOSE_FILE_NAME }}
+          sparse-checkout-cone-mode: false
 
-    - name: Release
-      uses: appleboy/ssh-action@v1.0.3
-      env:
-        GHCR_USERNAME: ${{ github.actor }}
-        GHCR_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-        DB_CONNECTION_STRING: ${{secrets.DB_CONNECTION_STRING}}
-        BOT_TOKEN: ${{secrets.BOT_TOKEN}}
-        OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
-      with:  
-        host: ${{secrets.VPS_HOST}}
-        port: ${{secrets.VPS_PORT}}
-        username: ${{secrets.KATTBOT_USER}}
-        key: ${{secrets.KATTBOT_KEY}}
-        passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
-        debug: ${{vars.ACTIONS_RUNNER_DEBUG}}
-        script_stop: true
-        script: |
-          REPOSITORY_OWNER_LOWERCASE=$(echo $REPOSITORY_OWNER | tr '[:upper:]' '[:lower:]');
+      - name: Set up environment variables
+        run: |
+          # Set the image tag based on the branch name. If the branch is main, use "latest".
+          # If the image tag is provided as an input, use that instead. 
+          if [ -z "$IMAGE_TAG_OVERRIDE" ]; then
+            if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+              IMAGE_TAG=latest
+            else
+              IMAGE_TAG=$(echo "${GITHUB_REF#refs/heads/}" | tr '/' '-')
+            fi
+          else
+            IMAGE_TAG=$IMAGE_TAG_OVERRIDE
+          fi
+          echo "IMAGE_TAG=$IMAGE_TAG" >> "$GITHUB_ENV"
 
-          FULL_IMAGE_NAME="$REGISTRY/$REPOSITORY_OWNER_LOWERCASE/$IMAGE_NAME:$IMAGE_TAG"
-          FULL_IMAGE_NAME_PREVIOUS="$REGISTRY/$REPOSITORY_OWNER_LOWERCASE/$IMAGE_NAME:$IMAGE_TAG-previous"
+          # Set the repository name to lowercase
+          REPOSITORY_NAME=$(echo $REPOSITORY_OWNER | tr '[:upper:]' '[:lower:]');
+          echo "REPOSITORY_NAME=$REPOSITORY_NAME" >> "$GITHUB_ENV"
+        env:
+          IMAGE_TAG_OVERRIDE: ${{ inputs.imageTag }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
 
-          MIGRATIONS_CONTAINER_NAME="$COMPOSE_PROJECT_NAME-migrations"
+      - name: Upload compose.yml
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{secrets.VPS_HOST}}
+          port: ${{secrets.VPS_PORT}}
+          username: ${{secrets.KATTBOT_USER}}
+          key: ${{secrets.KATTBOT_KEY}}
+          passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
+          source: "docker/${{ env.COMPOSE_FILE_NAME }}"
+          target: "$HOME/"
+          strip_components: 1
+          overwrite: true
 
-          # Tag the previous image with the previous tag, if it exists
-          docker image tag $FULL_IMAGE_NAME $FULL_IMAGE_NAME_PREVIOUS || true
-
-          # Pull the image from the registry
-          echo $GHCR_PASSWORD | docker login $REGISTRY -u $GHCR_USERNAME --password-stdin
-          docker pull $FULL_IMAGE_NAME
-          
-          # Create a temporary container to extract the migration files
-          docker create --name $MIGRATIONS_CONTAINER_NAME --add-host=host.docker.internal:$HOST_GATEWAY_IP $FULL_IMAGE_NAME
-
-          # Extract the migration files into a temporary directory
-          TMP_MIGRATIONS_DIR=$(mktemp -d -t "$MIGRATIONS_CONTAINER_NAME-XXXXXX")
-          docker cp $MIGRATIONS_CONTAINER_NAME:/app/migrations/. $TMP_MIGRATIONS_DIR
-
-          # Remove the temporary container
-          docker rm $MIGRATIONS_CONTAINER_NAME
-
-          # Stop the running compose project, if it exists
-          docker compose -p $COMPOSE_PROJECT_NAME stop -t 30 || true
-
-          # Copy the database backup script, if newer, to home directory and run it
-          cp -u "$TMP_MIGRATIONS_DIR/$DB_BACKUP_SCRIPT" ~
-          chmod +x "$HOME/$DB_BACKUP_SCRIPT"
-          "$HOME/$DB_BACKUP_SCRIPT"
-
-          # Run the database migration script
-          psql -d $DB_NAME -q -f "$TMP_MIGRATIONS_DIR/$DB_MIGRATION_SCRIPT"
-
-          # Take down the old compose project, if it exists
-          docker compose -p $COMPOSE_PROJECT_NAME down || true
-
-          # Start the new compose project
-          docker compose -p $COMPOSE_PROJECT_NAME -f "$HOME/$COMPOSE_FILE_NAME" up -d
-
-          # Prune untagged images
-          docker image prune -f
-
-          # Remove the temporary directory
-          rm -rf $TMP_MIGRATIONS_DIR
-        envs: >-
-          HOST_GATEWAY_IP,
-          REGISTRY,
-          REPOSITORY_OWNER,
-          IMAGE_NAME,
-          IMAGE_TAG,
-          COMPOSE_PROJECT_NAME,
-          COMPOSE_FILE_NAME,
-          DB_NAME,
-          DB_BACKUP_SCRIPT,
-          DB_MIGRATION_SCRIPT,
-          GHCR_USERNAME,
-          GHCR_PASSWORD,
-          BOT_TOKEN,
-          OPENAI_API_KEY,
-          DB_CONNECTION_STRING
+      - name: Release
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          DB_CONNECTION_STRING: ${{secrets.DB_CONNECTION_STRING}}
+          BOT_TOKEN: ${{secrets.BOT_TOKEN}}
+          OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
+        with:
+          host: ${{secrets.VPS_HOST}}
+          port: ${{secrets.VPS_PORT}}
+          username: ${{secrets.KATTBOT_USER}}
+          key: ${{secrets.KATTBOT_KEY}}
+          passphrase: ${{secrets.KATTBOT_PASSPHRASE}}
+          debug: ${{vars.ACTIONS_RUNNER_DEBUG}}
+          script_stop: true
+          script: |
+            FULL_IMAGE_NAME="$REGISTRY/$REPOSITORY_NAME/$IMAGE_NAME:$IMAGE_TAG"
+            FULL_IMAGE_NAME_PREVIOUS="$REGISTRY/$REPOSITORY_NAME/$IMAGE_NAME:$IMAGE_TAG-previous"
+            
+            MIGRATIONS_CONTAINER_NAME="$COMPOSE_PROJECT_NAME-migrations"
+            
+            # Tag the previous image with the previous tag, if it exists
+            docker image tag $FULL_IMAGE_NAME $FULL_IMAGE_NAME_PREVIOUS || true
+            
+            # Pull the image from the registry
+            echo $GHCR_PASSWORD | docker login $REGISTRY -u $GHCR_USERNAME --password-stdin
+            docker pull $FULL_IMAGE_NAME
+            
+            # Create a temporary container to extract the migration files
+            docker create --name $MIGRATIONS_CONTAINER_NAME --add-host=host.docker.internal:$HOST_GATEWAY_IP $FULL_IMAGE_NAME
+            
+            # Extract the migration files into a temporary directory
+            TMP_MIGRATIONS_DIR=$(mktemp -d -t "$MIGRATIONS_CONTAINER_NAME-XXXXXX")
+            docker cp $MIGRATIONS_CONTAINER_NAME:/app/migrations/. $TMP_MIGRATIONS_DIR
+            
+            # Remove the temporary container
+            docker rm $MIGRATIONS_CONTAINER_NAME
+            
+            # Stop the running compose project, if it exists
+            docker compose -p $COMPOSE_PROJECT_NAME stop -t 30 || true
+            
+            # Copy the database backup script, if newer, to home directory and run it
+            cp -u "$TMP_MIGRATIONS_DIR/$DB_BACKUP_SCRIPT" ~
+            chmod +x "$HOME/$DB_BACKUP_SCRIPT"
+            "$HOME/$DB_BACKUP_SCRIPT"
+            
+            # Run the database migration script
+            psql -d $DB_NAME -q -f "$TMP_MIGRATIONS_DIR/$DB_MIGRATION_SCRIPT"
+            
+            # Take down the old compose project, if it exists
+            docker compose -p $COMPOSE_PROJECT_NAME down || true
+            
+            # Start the new compose project
+            docker compose -p $COMPOSE_PROJECT_NAME -f "$HOME/$COMPOSE_FILE_NAME" up -d
+            
+            # Prune untagged images
+            docker image prune -f
+            
+            # Remove the temporary directory
+            rm -rf $TMP_MIGRATIONS_DIR
+          envs: >-
+            HOST_GATEWAY_IP,
+            REGISTRY,
+            REPOSITORY_NAME,
+            IMAGE_NAME,
+            IMAGE_TAG,
+            COMPOSE_PROJECT_NAME,
+            COMPOSE_FILE_NAME,
+            DB_NAME,
+            DB_BACKUP_SCRIPT,
+            DB_MIGRATION_SCRIPT,
+            GHCR_USERNAME,
+            GHCR_PASSWORD,
+            BOT_TOKEN,
+            OPENAI_API_KEY,
+            DB_CONNECTION_STRING
