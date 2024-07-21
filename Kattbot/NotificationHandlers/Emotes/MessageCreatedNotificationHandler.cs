@@ -1,13 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using Kattbot.Common.Models.Emotes;
+using Kattbot.Config;
 using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
 using Kattbot.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Kattbot.NotificationHandlers.Emotes;
 
@@ -16,43 +20,47 @@ namespace Kattbot.NotificationHandlers.Emotes;
 ///     If message contains emotes, save each emote
 ///     Do save emote if it does not belong to guild.
 /// </summary>
-public record CreateMessageCommand : EventNotification
-{
-    public CreateMessageCommand(EventContext ctx, DiscordMessage message)
-        : base(ctx)
-    {
-        Message = message;
-    }
-
-    public DiscordMessage Message { get; set; }
-}
-
-public class CreateMessageCommandHandler : INotificationHandler<CreateMessageCommand>
+public class MessageCreatedNotificationHandler : BaseEmoteNotificationHandler,
+    INotificationHandler<MessageCreatedNotification>
 {
     private readonly EmoteEntityBuilder _emoteBuilder;
     private readonly EmotesRepository _kattbotRepo;
-    private readonly ILogger<CreateMessageCommandHandler> _logger;
+    private readonly IOptions<BotOptions> _botOptions;
+    private readonly ILogger<MessageCreatedNotificationHandler> _logger;
 
-    public CreateMessageCommandHandler(
-        ILogger<CreateMessageCommandHandler> logger,
+    public MessageCreatedNotificationHandler(
+        ILogger<MessageCreatedNotificationHandler> logger,
         EmoteEntityBuilder emoteBuilder,
-        EmotesRepository kattbotRepo)
+        EmotesRepository kattbotRepo,
+        IOptions<BotOptions> botOptions)
     {
         _logger = logger;
         _emoteBuilder = emoteBuilder;
         _kattbotRepo = kattbotRepo;
+        _botOptions = botOptions;
     }
 
-    public async Task Handle(CreateMessageCommand request, CancellationToken cancellationToken)
+    public async Task Handle(MessageCreatedNotification notification, CancellationToken cancellationToken)
     {
-        EventContext ctx = request.Ctx;
+        MessageCreatedEventArgs args = notification.EventArgs;
 
-        DiscordMessage message = request.Message;
-        DiscordGuild guild = ctx.Guild;
+        DiscordMessage message = args.Message;
+        DiscordGuild guild = args.Guild;
         string messageContent = message.Content;
-        string username = message.Author.Username;
+        string username = message.Author?.Username ?? "Unknown";
 
         _logger.LogDebug($"Emote message: {username} -> {messageContent}");
+
+        if (MessageIsCommand(messageContent, _botOptions.Value))
+        {
+            return;
+        }
+
+        if (!IsRelevantMessage(message))
+        {
+            _logger.LogDebug("Message is not relevant");
+            return;
+        }
 
         ulong guildId = guild.Id;
 
@@ -79,5 +87,14 @@ public class CreateMessageCommandHandler : INotificationHandler<CreateMessageCom
         {
             _logger.LogDebug("Message contains no emotes");
         }
+    }
+
+    private static bool MessageIsCommand(string command, BotOptions options)
+    {
+        string commandPrefix = options.CommandPrefix;
+        string altCommandPrefix = options.AlternateCommandPrefix;
+
+        return command.StartsWith(commandPrefix, StringComparison.OrdinalIgnoreCase)
+               || command.StartsWith(altCommandPrefix, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -35,16 +35,7 @@ public class EventQueueWorker : BackgroundService
         {
             await foreach (INotification notification in _channel.Reader.ReadAllAsync(stoppingToken))
             {
-                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-                if (notification is null)
-                {
-                    continue;
-                }
-
-                _logger.LogDebug(
-                    "Dequeued event {EventType}. {RemainingMessageCount} left in queue",
-                    notification.GetType().Name,
-                    _channel.Reader.Count);
+                _logger.LogDebug("Dequeued event. {RemainingMessageCount} left in queue", _channel.Reader.Count);
 
                 try
                 {
@@ -56,7 +47,9 @@ public class EventQueueWorker : BackgroundService
                     {
                         if (notification is EventNotification eventNotification)
                         {
-                            _discordErrorLogger.LogError(eventNotification.Ctx, innerEx.Message);
+                            // TODO extract relevant information from notification object
+                            // and pass to LogEventError
+                            _discordErrorLogger.LogError(innerEx, nameof(EventQueueWorker));
                         }
 
                         _logger.LogError(innerEx, nameof(EventQueueWorker));

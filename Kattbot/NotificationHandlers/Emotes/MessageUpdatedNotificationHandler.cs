@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using Kattbot.Common.Models.Emotes;
 using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
@@ -17,25 +18,15 @@ namespace Kattbot.NotificationHandlers.Emotes;
 ///     If message contains emotes, save each emote
 ///     Do save emote if it does not belong to guild.
 /// </summary>
-public record UpdateMessageCommand : EventNotification
-{
-    public UpdateMessageCommand(EventContext ctx, DiscordMessage message)
-        : base(ctx)
-    {
-        Message = message;
-    }
-
-    public DiscordMessage Message { get; set; }
-}
-
-public class UpdateMessageCommandHandler : INotificationHandler<UpdateMessageCommand>
+public class MessageUpdatedNotificationHandler : BaseEmoteNotificationHandler,
+    INotificationHandler<MessageUpdatedNotification>
 {
     private readonly EmoteEntityBuilder _emoteBuilder;
     private readonly EmotesRepository _kattbotRepo;
-    private readonly ILogger<UpdateMessageCommandHandler> _logger;
+    private readonly ILogger<MessageUpdatedNotificationHandler> _logger;
 
-    public UpdateMessageCommandHandler(
-        ILogger<UpdateMessageCommandHandler> logger,
+    public MessageUpdatedNotificationHandler(
+        ILogger<MessageUpdatedNotificationHandler> logger,
         EmoteEntityBuilder emoteBuilder,
         EmotesRepository kattbotRepo)
     {
@@ -44,18 +35,24 @@ public class UpdateMessageCommandHandler : INotificationHandler<UpdateMessageCom
         _kattbotRepo = kattbotRepo;
     }
 
-    public async Task Handle(UpdateMessageCommand request, CancellationToken cancellationToken)
+    public async Task Handle(MessageUpdatedNotification notification, CancellationToken cancellationToken)
     {
-        EventContext ctx = request.Ctx;
+        MessageUpdatedEventArgs args = notification.EventArgs;
 
-        DiscordMessage message = request.Message;
-        DiscordGuild guild = ctx.Guild;
+        DiscordMessage message = args.Message;
+        DiscordGuild guild = args.Guild;
 
         ulong messageId = message.Id;
         string messageContent = message.Content;
-        string username = message.Author.Username;
+        string username = message.Author?.Username ?? "Unknown";
 
         _logger.LogDebug($"Update emote message: {username} -> {messageContent}");
+
+        if (!IsRelevantMessage(message))
+        {
+            _logger.LogDebug("Message is not relevant");
+            return;
+        }
 
         ulong guildId = guild.Id;
 

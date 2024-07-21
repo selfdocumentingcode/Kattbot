@@ -60,7 +60,7 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
 
     public async Task Handle(MessageCreatedNotification notification, CancellationToken cancellationToken)
     {
-        MessageCreateEventArgs args = notification.EventArgs;
+        MessageCreatedEventArgs args = notification.EventArgs;
         DiscordMessage message = args.Message;
         DiscordUser author = args.Author;
         DiscordChannel? channel = args.Message.Channel;

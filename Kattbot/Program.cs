@@ -1,9 +1,6 @@
-using System;
 using System.Threading.Channels;
-using DSharpPlus;
 using Kattbot.CommandHandlers;
 using Kattbot.Config;
-using Kattbot.Data;
 using Kattbot.Data.Repositories;
 using Kattbot.EventHandlers;
 using Kattbot.Helpers;
@@ -16,11 +13,9 @@ using Kattbot.Services.KattGpt;
 using Kattbot.Services.Speech;
 using Kattbot.Workers;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Kattbot;
 
@@ -37,6 +32,8 @@ public class Program
             .ConfigureServices(
                 (hostContext, services) =>
                 {
+                    IConfiguration configuration = hostContext.Configuration;
+
                     services.Configure<BotOptions>(hostContext.Configuration.GetSection(BotOptions.OptionsKey));
                     services.Configure<KattGptOptions>(hostContext.Configuration.GetSection(KattGptOptions.OptionsKey));
 
@@ -67,59 +64,16 @@ public class Program
 
                     AddRepositories(services);
 
-                    AddDbContext(hostContext, services);
+                    services.AddDbContext(configuration);
 
-                    AddDiscordClient(hostContext, services);
+                    services.AddDiscordClient(configuration);
                 })
             .UseSystemd();
-    }
-
-    private static void AddDiscordClient(HostBuilderContext hostContext, IServiceCollection services)
-    {
-        services.AddSingleton(
-            _ =>
-            {
-                string defaultLogLevel =
-                    hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default") ?? "Warning";
-                string botToken = hostContext.Configuration.GetValue<string>("Kattbot:BotToken") ??
-                                  throw new Exception("Bot token not found");
-
-                var logLevel = Enum.Parse<LogLevel>(defaultLogLevel);
-
-                var socketConfig = new DiscordConfiguration
-                {
-                    MinimumLogLevel = logLevel,
-                    TokenType = TokenType.Bot,
-                    Token = botToken,
-                    Intents = DiscordIntents.All,
-                };
-
-                var client = new DiscordClient(socketConfig);
-
-                return client;
-            });
-    }
-
-    private static void AddDbContext(HostBuilderContext hostContext, IServiceCollection services)
-    {
-        services.AddDbContext<KattbotContext>(
-            builder =>
-            {
-                var dbConnString = hostContext.Configuration.GetValue<string>("Kattbot:ConnectionString");
-                var logLevel = hostContext.Configuration.GetValue<string>("Logging:LogLevel:Default");
-
-                builder.EnableSensitiveDataLogging(logLevel == "Debug");
-
-                builder.UseNpgsql(dbConnString);
-            },
-            ServiceLifetime.Transient,
-            ServiceLifetime.Singleton);
     }
 
     private static void AddBotEventHandlers(IServiceCollection services)
     {
         services.AddSingleton<CommandEventHandler>();
-        services.AddSingleton<EmoteEventHandler>();
     }
 
     private static void AddInternalServices(IServiceCollection services)
@@ -155,8 +109,8 @@ public class Program
     {
         const int channelSize = 1024;
 
-        services.AddSingleton(_ => new CommandQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
-        services.AddSingleton(_ => new EventQueueChannel(Channel.CreateBounded<INotification>(channelSize)));
-        services.AddSingleton(_ => new DiscordLogChannel(Channel.CreateBounded<DiscordLogItem>(channelSize)));
+        services.AddSingleton(new CommandQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
+        services.AddSingleton(new EventQueueChannel(Channel.CreateBounded<INotification>(channelSize)));
+        services.AddSingleton(new DiscordLogChannel(Channel.CreateBounded<BaseDiscordLogItem>(channelSize)));
     }
 }

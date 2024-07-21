@@ -1,5 +1,6 @@
 ﻿using System;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
 using Kattbot.Config;
 using Kattbot.Helpers;
 using Kattbot.NotificationHandlers;
@@ -31,7 +32,7 @@ public class DiscordErrorLogger
 
         var fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMessage}";
 
-        LogError(fullErrorMessage);
+        LogError("Failed command", fullErrorMessage);
     }
 
     public void LogError(EventContext? ctx, string errorMessage)
@@ -53,21 +54,43 @@ public class DiscordErrorLogger
 
         var fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMessage}";
 
-        LogError(fullErrorMessage);
+        LogError("Failed event", fullErrorMessage);
     }
 
-    public void LogError(string error)
+    public void LogError(Exception ex, string message)
     {
-        ulong errorLogGuildId = _options.ErrorLogGuildId;
-        ulong errorLogChannelId = _options.ErrorLogChannelId;
+        LogError(message, ex.ToString());
+    }
 
-        var discordLogItem = new DiscordLogItem(error, errorLogGuildId, errorLogChannelId);
+    public void LogError(string errorMessage)
+    {
+        LogError("Error", errorMessage);
+    }
 
-        _ = _channel.Writer.TryWrite(discordLogItem);
+    public void LogError(string error, string errorMessage)
+    {
+        SendErrorLogChannelEmbed(error, errorMessage, DiscordConstants.ErrorEmbedColor);
+    }
+
+    public void LogWarning(string warning, string warningMessage)
+    {
+        SendErrorLogChannelEmbed(warning, warningMessage, DiscordConstants.WarningEmbedColor);
     }
 
     private static string EscapeTicks(string value)
     {
         return string.IsNullOrWhiteSpace(value) ? value : value.Replace('`', '\'');
+    }
+
+    private void SendErrorLogChannelEmbed(string title, string message, int color)
+    {
+        ulong errorLogGuildId = _options.ErrorLogGuildId;
+        ulong errorLogChannelId = _options.ErrorLogChannelId;
+
+        DiscordEmbed messageEmbed = EmbedBuilderHelper.BuildSimpleEmbed(title, message, color);
+
+        var discordLogItem = new DiscordLogItem<DiscordEmbed>(messageEmbed, errorLogGuildId, errorLogChannelId);
+
+        _ = _channel.Writer.TryWrite(discordLogItem);
     }
 }
