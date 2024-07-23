@@ -16,7 +16,7 @@ namespace Kattbot.NotificationHandlers.Emotes;
 ///     Save emote from reaction
 ///     Do not save emote if it does not belong to guild.
 /// </summary>
-public class MessageReactionAddedNotificationHandler : BaseEmoteNotificationHandler,
+public class MessageReactionAddedNotificationHandler : BaseNotificationHandler,
     INotificationHandler<MessageReactionAddedNotification>
 {
     private readonly EmoteEntityBuilder _emoteBuilder;

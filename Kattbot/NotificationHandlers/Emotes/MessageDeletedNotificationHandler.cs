@@ -13,7 +13,7 @@ namespace Kattbot.NotificationHandlers.Emotes;
 ///     Delete all reactions emotes on this message that belong to message owner
 ///     (Do not remove reactions emotes on this message that belong to other users).
 /// </summary>
-public class MessageDeletedNotificationHandler : BaseEmoteNotificationHandler,
+public class MessageDeletedNotificationHandler : BaseNotificationHandler,
     INotificationHandler<MessageDeletedNotification>
 {
     private readonly EmotesRepository _kattbotRepo;

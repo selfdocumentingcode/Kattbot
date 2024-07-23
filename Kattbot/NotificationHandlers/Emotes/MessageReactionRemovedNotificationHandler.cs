@@ -16,7 +16,7 @@ namespace Kattbot.NotificationHandlers.Emotes;
 ///     Delete emote from reaction if it exists
 ///     Do not save emote if it does not belong to guild.
 /// </summary>
-public class MessageReactionRemovedNotificationHandler : BaseEmoteNotificationHandler,
+public class MessageReactionRemovedNotificationHandler : BaseNotificationHandler,
     INotificationHandler<MessageReactionRemovedNotification>
 {
     private readonly EmoteEntityBuilder _emoteBuilder;

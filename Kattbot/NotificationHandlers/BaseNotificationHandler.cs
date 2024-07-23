@@ -1,10 +1,8 @@
-using System;
 using DSharpPlus.Entities;
-using Kattbot.Config;
 
-namespace Kattbot.NotificationHandlers.Emotes;
+namespace Kattbot.NotificationHandlers;
 
-public abstract class BaseEmoteNotificationHandler
+public abstract class BaseNotificationHandler
 {
     /// <summary>
     ///     Don't care about bot message

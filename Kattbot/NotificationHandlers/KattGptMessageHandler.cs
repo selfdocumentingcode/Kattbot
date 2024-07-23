@@ -19,7 +19,8 @@ using SixLabors.ImageSharp;
 
 namespace Kattbot.NotificationHandlers;
 
-public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotification>
+public class KattGptMessageHandler : BaseNotificationHandler,
+    INotificationHandler<MessageCreatedNotification>
 {
     private const string ChatGptModel = "gpt-4o";
     private const string TokenizerModel = "gpt-4o";
@@ -328,6 +329,8 @@ public class KattGptMessageHandler : INotificationHandler<MessageCreatedNotifica
     /// <returns>True if the message should be handled by Kattgpt.</returns>
     private bool ShouldHandleMessage(DiscordMessage message)
     {
+        if (!IsRelevantMessage(message)) return false;
+
         DiscordChannel? channel = message.Channel;
 
         ChannelOptions? channelOptions = _kattGptService.GetChannelOptions(channel);
