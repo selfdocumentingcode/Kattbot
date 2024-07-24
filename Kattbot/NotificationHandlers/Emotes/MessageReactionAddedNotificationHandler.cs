@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using Kattbot.Common.Models.Emotes;
 using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
@@ -15,28 +16,15 @@ namespace Kattbot.NotificationHandlers.Emotes;
 ///     Save emote from reaction
 ///     Do not save emote if it does not belong to guild.
 /// </summary>
-public record CreateReactionCommand : EventNotification
-{
-    public CreateReactionCommand(EventContext ctx, DiscordEmoji emoji, DiscordMessage message)
-        : base(ctx)
-    {
-        Emoji = emoji;
-        Message = message;
-    }
-
-    public DiscordMessage Message { get; set; }
-
-    public DiscordEmoji Emoji { get; set; }
-}
-
-public class CreateReactionCommandHandler : INotificationHandler<CreateReactionCommand>
+public class MessageReactionAddedNotificationHandler : BaseNotificationHandler,
+    INotificationHandler<MessageReactionAddedNotification>
 {
     private readonly EmoteEntityBuilder _emoteBuilder;
     private readonly EmotesRepository _kattbotRepo;
-    private readonly ILogger<CreateReactionCommandHandler> _logger;
+    private readonly ILogger<MessageReactionAddedNotificationHandler> _logger;
 
-    public CreateReactionCommandHandler(
-        ILogger<CreateReactionCommandHandler> logger,
+    public MessageReactionAddedNotificationHandler(
+        ILogger<MessageReactionAddedNotificationHandler> logger,
         EmoteEntityBuilder emoteBuilder,
         EmotesRepository kattbotRepo)
     {
@@ -45,19 +33,25 @@ public class CreateReactionCommandHandler : INotificationHandler<CreateReactionC
         _kattbotRepo = kattbotRepo;
     }
 
-    public Task Handle(CreateReactionCommand request, CancellationToken cancellationToken)
+    public Task Handle(MessageReactionAddedNotification notification, CancellationToken cancellationToken)
     {
-        EventContext ctx = request.Ctx;
+        MessageReactionAddedEventArgs args = notification.EventArgs;
 
-        DiscordUser user = ctx.User ?? throw new Exception("User is null");
+        DiscordUser user = args.User;
+        DiscordMessage message = args.Message;
+        DiscordEmoji emoji = args.Emoji;
+        DiscordGuild guild = args.Guild;
 
-        DiscordMessage message = request.Message;
-        DiscordEmoji emoji = request.Emoji;
-        DiscordGuild guild = ctx.Guild;
         string username = user.Username;
         ulong userId = user.Id;
 
         _logger.LogDebug($"Reaction: {username} -> {emoji.Name}");
+
+        if (!IsRelevantAuthor(user))
+        {
+            _logger.LogDebug("Author is not relevant");
+            return Task.CompletedTask;
+        }
 
         if (!EmoteHelper.IsValidEmote(emoji, guild))
         {

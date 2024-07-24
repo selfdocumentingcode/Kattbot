@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using Kattbot.Common.Models.Emotes;
 using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
@@ -15,28 +16,15 @@ namespace Kattbot.NotificationHandlers.Emotes;
 ///     Delete emote from reaction if it exists
 ///     Do not save emote if it does not belong to guild.
 /// </summary>
-public record DeleteReactionCommand : EventNotification
-{
-    public DeleteReactionCommand(EventContext ctx, DiscordEmoji emoji, DiscordMessage message)
-        : base(ctx)
-    {
-        Emoji = emoji;
-        Message = message;
-    }
-
-    public DiscordMessage Message { get; set; }
-
-    public DiscordEmoji Emoji { get; set; }
-}
-
-public class DeleteReactionCommandHandler : INotificationHandler<DeleteReactionCommand>
+public class MessageReactionRemovedNotificationHandler : BaseNotificationHandler,
+    INotificationHandler<MessageReactionRemovedNotification>
 {
     private readonly EmoteEntityBuilder _emoteBuilder;
     private readonly EmotesRepository _kattbotRepo;
-    private readonly ILogger<DeleteReactionCommandHandler> _logger;
+    private readonly ILogger<MessageReactionRemovedNotificationHandler> _logger;
 
-    public DeleteReactionCommandHandler(
-        ILogger<DeleteReactionCommandHandler> logger,
+    public MessageReactionRemovedNotificationHandler(
+        ILogger<MessageReactionRemovedNotificationHandler> logger,
         EmoteEntityBuilder emoteBuilder,
         EmotesRepository kattbotRepo)
     {
@@ -45,19 +33,25 @@ public class DeleteReactionCommandHandler : INotificationHandler<DeleteReactionC
         _kattbotRepo = kattbotRepo;
     }
 
-    public Task Handle(DeleteReactionCommand request, CancellationToken cancellationToken)
+    public Task Handle(MessageReactionRemovedNotification notification, CancellationToken cancellationToken)
     {
-        EventContext ctx = request.Ctx;
+        MessageReactionRemovedEventArgs args = notification.EventArgs;
 
-        DiscordUser user = ctx.User ?? throw new Exception("User is null");
+        DiscordUser user = args.User;
+        DiscordEmoji emoji = args.Emoji;
+        DiscordMessage message = args.Message;
+        DiscordGuild guild = args.Guild;
 
-        DiscordEmoji emoji = request.Emoji;
-        DiscordMessage message = request.Message;
-        DiscordGuild guild = ctx.Guild;
         string username = user.Username;
         ulong userId = user.Id;
 
         _logger.LogDebug($"Remove reaction: {username} -> {emoji.Name}");
+
+        if (!IsRelevantAuthor(user))
+        {
+            _logger.LogDebug("Author is not relevant");
+            return Task.CompletedTask;
+        }
 
         if (!EmoteHelper.IsValidEmote(emoji, guild))
         {

@@ -3,17 +3,17 @@ using MediatR;
 
 namespace Kattbot.NotificationHandlers;
 
-public abstract record EventNotification(EventContext Ctx) : INotification;
+public abstract record EventNotification : INotification;
 
-// TODO clean this up by removing EventContext from base contructor entirely
-// or at least move the mapping somewhere else
-public record MessageCreatedNotification(MessageCreateEventArgs EventArgs)
-    : EventNotification(
-        new EventContext
-        {
-            Channel = EventArgs.Channel,
-            Guild = EventArgs.Guild,
-            User = EventArgs.Author,
-            Message = EventArgs.Message,
-            EventName = "MessageCreated",
-        });
+#pragma warning disable SA1402 // File may only contain a single type
+public record MessageReactionAddedNotification(MessageReactionAddedEventArgs EventArgs) : EventNotification;
+
+public record MessageReactionRemovedNotification(MessageReactionRemovedEventArgs EventArgs) : EventNotification;
+
+public record MessageCreatedNotification(MessageCreatedEventArgs EventArgs) : EventNotification;
+
+public record MessageUpdatedNotification(MessageUpdatedEventArgs EventArgs) : EventNotification;
+
+public record MessageDeletedNotification(MessageDeletedEventArgs EventArgs) : EventNotification;
+
+public record MessageBulkDeletedNotification(MessagesBulkDeletedEventArgs EventArgs) : EventNotification;

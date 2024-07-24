@@ -1,34 +1,33 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <UserSecretsId>dotnet-Kattbot-79CAD254-2C56-430B-8B4B-16AA8DA8808D</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <UserSecretsId>dotnet-Kattbot-79CAD254-2C56-430B-8B4B-16AA8DA8808D</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
 
-  <ItemGroup>
-	<PackageReference Include="TiktokenSharp" Version="1.1.4" />
-	<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
-	<PackageReference Include="CommandLineArgumentsParser" Version="3.0.23" />
-    <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02251" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-02251" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02251" />
-    <PackageReference Include="MediatR" Version="12.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
-    <PackageReference Include="PuppeteerSharp" Version="9.1.0" />
-	<PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="TiktokenSharp" Version="1.1.4" />
+        <PackageReference Include="CommandLineArgumentsParser" Version="3.0.23" />
+        <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02317" />
+        <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-02317" />
+        <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02317" />
+        <PackageReference Include="MediatR" Version="12.3.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+        <PackageReference Include="PuppeteerSharp" Version="18.0.4" />
+        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
+        <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" />
+        <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Kattbot.Common\Kattbot.Common.csproj" />
-    <ProjectReference Include="..\Kattbot.Data\Kattbot.Data.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Kattbot.Common\Kattbot.Common.csproj" />
+        <ProjectReference Include="..\Kattbot.Data\Kattbot.Data.csproj" />
+    </ItemGroup>
 </Project>
