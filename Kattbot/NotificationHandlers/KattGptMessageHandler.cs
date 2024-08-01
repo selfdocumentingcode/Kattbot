@@ -25,7 +25,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     private const string ChatGptModel = "gpt-4o";
     private const string TokenizerModel = "gpt-4o";
     private const string CreateImageModel = "dall-e-3";
-    private const float DefaultTemperature = 1.2f;
+    private const float DefaultTemperature = 1.1f;
     private const float FunctionCallTemperature = 0.8f;
     private const int MaxTotalTokens = 24_576;
     private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
