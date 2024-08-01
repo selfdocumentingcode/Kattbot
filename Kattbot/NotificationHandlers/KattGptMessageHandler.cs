@@ -32,8 +32,8 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     private const string MessageSplitToken = "[cont.] ";
     private const string RecipientMarkerToYou = "[to you]";
     private const string RecipientMarkerToOthers = "[to others]";
-    private readonly KattGptChannelCache _cache;
 
+    private readonly KattGptChannelCache _cache;
     private readonly ChatGptHttpClient _chatGpt;
     private readonly DalleHttpClient _dalleHttpClient;
     private readonly DiscordErrorLogger _discordErrorLogger;
@@ -68,36 +68,42 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
         if (!ShouldHandleMessage(message)) return;
 
-        var kattGptTokenizer = new KattGptTokenizer(TokenizerModel);
-
-        List<ChatCompletionMessage> systemPromptsMessages = _kattGptService.BuildSystemPromptsMessages(channel);
-
-        int systemMessagesTokenCount = kattGptTokenizer.GetTokenCount(systemPromptsMessages);
-
-        int functionsTokenCount =
-            kattGptTokenizer.GetTokenCount(DalleFunctionBuilder.BuildDalleImageFunctionDefinition());
-
-        int reservedTokens = systemMessagesTokenCount + functionsTokenCount;
-
-        BoundedQueue<ChatCompletionMessage> boundedMessageQueue = GetBoundedMessageQueue(channel, reservedTokens);
-
-        // Add new message from notification
-        string newMessageUser = author.GetDisplayName();
-        string newMessageContent = message.SubstituteMentions();
-
-        bool shouldReplyToMessage = ShouldReplyToMessage(message);
-
-        string recipientMarker = shouldReplyToMessage
-            ? RecipientMarkerToYou
-            : RecipientMarkerToOthers;
-
-        ChatCompletionMessage newUserMessage =
-            ChatCompletionMessage.AsUser($"{newMessageUser}{recipientMarker}: {newMessageContent}");
-
-        boundedMessageQueue.Enqueue(newUserMessage, kattGptTokenizer.GetTokenCount(newUserMessage.Content));
-
-        if (shouldReplyToMessage)
+        try
         {
+            var kattGptTokenizer = new KattGptTokenizer(TokenizerModel);
+
+            List<ChatCompletionMessage> systemPromptsMessages = _kattGptService.BuildSystemPromptsMessages(channel);
+
+            int systemMessagesTokenCount = kattGptTokenizer.GetTokenCount(systemPromptsMessages);
+
+            int functionsTokenCount =
+                kattGptTokenizer.GetTokenCount(DalleFunctionBuilder.BuildDalleImageFunctionDefinition());
+
+            int reservedTokens = systemMessagesTokenCount + functionsTokenCount;
+
+            BoundedQueue<ChatCompletionMessage> boundedMessageQueue = GetBoundedMessageQueue(channel, reservedTokens);
+
+            // Add new message from notification
+            string newMessageUser = author.GetDisplayName();
+            string newMessageContent = message.SubstituteMentions();
+
+            bool shouldReplyToMessage = ShouldReplyToMessage(message);
+
+            string recipientMarker = shouldReplyToMessage
+                ? RecipientMarkerToYou
+                : RecipientMarkerToOthers;
+
+            ChatCompletionMessage newUserMessage =
+                ChatCompletionMessage.AsUser($"{newMessageUser}{recipientMarker}: {newMessageContent}");
+
+            boundedMessageQueue.Enqueue(newUserMessage, kattGptTokenizer.GetTokenCount(newUserMessage.Content));
+
+            if (!shouldReplyToMessage)
+            {
+                SaveBoundedMessageQueue(channel, boundedMessageQueue);
+                return;
+            }
+
             await channel.TriggerTypingAsync();
 
             ChatCompletionCreateRequest request = BuildRequest(
@@ -125,9 +131,14 @@ public class KattGptMessageHandler : BaseNotificationHandler,
                 // Add the chat gpt response message to the bounded queue
                 boundedMessageQueue.Enqueue(chatGptResponse, kattGptTokenizer.GetTokenCount(chatGptResponse.Content));
             }
-        }
 
-        SaveBoundedMessageQueue(channel, boundedMessageQueue);
+            SaveBoundedMessageQueue(channel, boundedMessageQueue);
+        }
+        catch (Exception ex)
+        {
+            await SendReply("Something went wrong", message);
+            _discordErrorLogger.LogError(ex.Message);
+        }
     }
 
     private static ChatCompletionCreateRequest BuildRequest(
@@ -227,7 +238,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
         try
         {
-            ulong authorId = message.Author.Id;
+            ulong authorId = message.Author!.Id;
 
             // Force a content value for the chat gpt response due the api not allowing nulls even though it says it does
             chatGptResponse.Content ??= "null";
@@ -247,7 +258,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             ImageStreamResult dalleResult = await GetDalleResult(prompt, authorId.ToString());
 
             // Send request with function result
-            var functionCallResult = "The resulting image file will be attached to your next message.";
+            const string functionCallResult = "The resulting image file will be attached to your next message.";
 
             ChatCompletionMessage functionCallResultMessage =
                 ChatCompletionMessage.AsFunctionCallResult(functionCallName, functionCallResult);
@@ -278,12 +289,11 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
             await SendDalleResultReply(functionCallResponse.Content!, message, prompt, dalleResult);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             if (workingOnItMessage is not null) await workingOnItMessage.DeleteAsync();
 
-            await SendReply("Something went wrong", message);
-            _discordErrorLogger.LogError(ex.Message);
+            throw;
         }
     }
 
