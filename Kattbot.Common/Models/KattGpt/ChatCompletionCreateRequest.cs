@@ -2,6 +2,10 @@
 
 namespace Kattbot.Common.Models.KattGpt;
 
+/// <summary>
+///     Creates a model response for the given chat conversation.
+///     https://platform.openai.com/docs/api-reference/chat/create
+/// </summary>
 public record ChatCompletionCreateRequest
 {
     /// <summary>
@@ -19,22 +23,34 @@ public record ChatCompletionCreateRequest
     public ChatCompletionMessage[] Messages { get; set; } = null!;
 
     /// <summary>
-    ///     Gets or sets a list of functions the model may generate JSON inputs for.
-    ///     https://platform.openai.com/docs/api-reference/chat/create#functions.
+    ///     A list of tools the model may call. Currently, only functions are supported as a tool.
+    ///     Use this to provide a list of functions the model may generate JSON inputs for.
+    ///     A max of 128 functions are supported.
+    ///     https://platform.openai.com/docs/api-reference/chat/create#chat-create-tools
     /// </summary>
-    [JsonPropertyName("functions")]
-    public ChatCompletionFunction[]? Functions { get; set; }
+    [JsonPropertyName("tools")]
+    public ChatCompletionTool[]? Tools { get; set; }
 
     /// <summary>
-    ///     Gets or sets the mode for controlling the model responds to function calls. none means the model does not call a
-    ///     function,
-    ///     and responds to the end-user. auto means the model can pick between an end-user or calling a function.
-    ///     Specifying a particular function via {"name": "my_function"} forces the model to call that function.
-    ///     Defaults to "none" when no functions are present and "auto" if functions are present.
-    ///     https://platform.openai.com/docs/api-reference/chat/create#function_call.
+    ///     Controls which (if any) tool is called by the model.
+    ///     none means the model will not call any tool and instead generates a message.
+    ///     auto means the model can pick between generating a message or calling one or more tools.
+    ///     required means the model must call one or more tools.
+    ///     Specifying a particular tool via {"type": "function", "function": {"name": "my_function"}}
+    ///     forces the model to call that tool.
+    ///     none is the default when no tools are present. auto is the default if tools are present.
+    ///     https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
     /// </summary>
-    [JsonPropertyName("function_call")]
-    public string? FunctionCall { get; set; }
+    [JsonPropertyName("tool_choice")]
+    public StringOrObject<ChatCompletionToolChoice> ToolChoice { get; set; }
+
+    /// <summary>
+    ///     Whether to enable parallel function calling during tool use.
+    ///     Defaults to true
+    ///     https://platform.openai.com/docs/api-reference/chat/create#chat-create-parallel_tool_calls
+    /// </summary>
+    [JsonPropertyName("parallel_tool_calls")]
+    public bool ParallelToolCalls { get; set; } = false;
 
     /// <summary>
     ///     Gets or sets what sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more

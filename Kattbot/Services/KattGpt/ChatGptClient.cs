@@ -26,15 +26,19 @@ public class ChatGptHttpClient
 
     public async Task<ChatCompletionCreateResponse> ChatCompletionCreate(ChatCompletionCreateRequest request)
     {
-        var opts = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
+        var opts = new JsonSerializerOptions
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+        };
 
-        HttpResponseMessage? response;
         Stream? responseContentStream = null;
 
         try
         {
-            response = await _client.PostAsJsonAsync("completions", request, opts);
-
+            HttpResponseMessage response = await _client.PostAsJsonAsync("completions", request, opts);
+#if DEBUG
+            string stringContent = await response.Content.ReadAsStringAsync();
+#endif
             responseContentStream = await response.Content.ReadAsStreamAsync();
 
             response.EnsureSuccessStatusCode();

@@ -64,7 +64,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         MessageCreatedEventArgs args = notification.EventArgs;
         DiscordMessage message = args.Message;
         DiscordUser author = args.Author;
-        DiscordChannel? channel = args.Message.Channel;
+        DiscordChannel channel = args.Message.Channel ?? throw new Exception("Channel is null.");
 
         if (!ShouldHandleMessage(message)) return;
 
@@ -77,7 +77,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             int systemMessagesTokenCount = kattGptTokenizer.GetTokenCount(systemPromptsMessages);
 
             int functionsTokenCount =
-                kattGptTokenizer.GetTokenCount(DalleFunctionBuilder.BuildDalleImageFunctionDefinition());
+                kattGptTokenizer.GetTokenCount(DalleToolBuilder.BuildDalleImageToolDefinition().Function);
 
             int reservedTokens = systemMessagesTokenCount + functionsTokenCount;
 
@@ -113,23 +113,27 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
             ChatCompletionCreateResponse response = await _chatGpt.ChatCompletionCreate(request);
 
-            ChatCompletionMessage chatGptResponse = response.Choices[0].Message;
+            ChatCompletionChoice chatGptResponse = response.Choices[0];
+            ChatCompletionMessage chatGptResponseMessage = chatGptResponse.Message;
 
-            if (chatGptResponse.FunctionCall != null)
+            if (chatGptResponse.FinishReason == ChoiceFinishReason.tool_calls)
             {
-                await HandleFunctionCallResponse(
+                await HandleToolCallResponse(
                     message,
                     kattGptTokenizer,
                     systemPromptsMessages,
                     boundedMessageQueue,
-                    chatGptResponse);
+                    chatGptResponseMessage);
             }
             else
             {
-                await SendReply(chatGptResponse.Content!, message);
+                // TODO: Handle other finish reasons
+                await SendReply(chatGptResponseMessage.Content!, message);
 
-                // Add the chat gpt response message to the bounded queue
-                boundedMessageQueue.Enqueue(chatGptResponse, kattGptTokenizer.GetTokenCount(chatGptResponse.Content));
+                // Add the ChatGPT response message to the bounded queue
+                boundedMessageQueue.Enqueue(
+                    chatGptResponseMessage,
+                    kattGptTokenizer.GetTokenCount(chatGptResponseMessage.Content));
             }
 
             SaveBoundedMessageQueue(channel, boundedMessageQueue);
@@ -146,11 +150,11 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         BoundedQueue<ChatCompletionMessage> boundedMessageQueue,
         float temperature)
     {
-        // Build functions
-        ChatCompletionFunction[] chatCompletionFunctions =
-        {
-            DalleFunctionBuilder.BuildDalleImageFunctionDefinition(),
-        };
+        // Build tools
+        ChatCompletionTool[] chatCompletionTools =
+        [
+            DalleToolBuilder.BuildDalleImageToolDefinition(),
+        ];
 
         // Collect request messages
         var requestMessages = new List<ChatCompletionMessage>();
@@ -164,7 +168,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             Messages = requestMessages.ToArray(),
             Temperature = temperature,
             MaxTokens = MaxTokensToGenerate,
-            Functions = chatCompletionFunctions,
+            Tools = chatCompletionTools,
         };
 
         return request;
@@ -227,12 +231,12 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         return imageStream;
     }
 
-    private async Task HandleFunctionCallResponse(
+    private async Task HandleToolCallResponse(
         DiscordMessage message,
         KattGptTokenizer kattGptTokenizer,
         List<ChatCompletionMessage> systemPromptsMessages,
         BoundedQueue<ChatCompletionMessage> boundedMessageQueue,
-        ChatCompletionMessage chatGptResponse)
+        ChatCompletionMessage chatGptToolCallResponse)
     {
         DiscordMessage? workingOnItMessage = null;
 
@@ -240,12 +244,16 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         {
             ulong authorId = message.Author!.Id;
 
-            // Force a content value for the chat gpt response due the api not allowing nulls even though it says it does
-            chatGptResponse.Content ??= "null";
+            // Force a content value for the ChatGPT response due the api not allowing nulls even though it says it does
+            chatGptToolCallResponse.Content ??= "null";
 
-            // Parse and execute function call
-            string functionCallName = chatGptResponse.FunctionCall!.Name;
-            string functionCallArguments = chatGptResponse.FunctionCall.Arguments;
+            ChatCompletionToolCall toolCall =
+                chatGptToolCallResponse.ToolCalls?[0] ?? throw new Exception("Tool call is null.");
+
+            string toolCallId = toolCall.Id;
+
+            // Parse the function call arguments
+            string functionCallArguments = toolCall.FunctionCall.Arguments;
 
             JsonNode parsedArguments = JsonNode.Parse(functionCallArguments)
                                        ?? throw new Exception("Could not parse function call arguments.");
@@ -257,19 +265,18 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
             ImageStreamResult dalleResult = await GetDalleResult(prompt, authorId.ToString());
 
-            // Send request with function result
+            // Add ChatGPT response to the context
+            int chatGptResponseTokenCount = kattGptTokenizer.GetTokenCount(chatGptToolCallResponse.Content);
+            boundedMessageQueue.Enqueue(chatGptToolCallResponse, chatGptResponseTokenCount);
+
+            // Add function call result to the context
             const string functionCallResult = "The resulting image file will be attached to your next message.";
 
             ChatCompletionMessage functionCallResultMessage =
-                ChatCompletionMessage.AsFunctionCallResult(functionCallName, functionCallResult);
+                ChatCompletionMessage.AsToolCallResult(functionCallResult, toolCallId);
+
             int functionCallResultTokenCount =
-                kattGptTokenizer.GetTokenCount(functionCallName, functionCallArguments, functionCallResult);
-
-            // Add chat gpt response to the context
-            int chatGptResponseTokenCount = kattGptTokenizer.GetTokenCount(chatGptResponse.Content);
-            boundedMessageQueue.Enqueue(chatGptResponse, chatGptResponseTokenCount);
-
-            // Add function call result to the context
+                kattGptTokenizer.GetTokenCount(toolCallId, functionCallArguments, functionCallResult);
             boundedMessageQueue.Enqueue(functionCallResultMessage, functionCallResultTokenCount);
 
             ChatCompletionCreateRequest request = BuildRequest(
@@ -333,15 +340,15 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     }
 
     /// <summary>
-    ///     Checks if the message should be handled by Kattgpt.
+    ///     Checks if the message should be handled by KattGpt.
     /// </summary>
     /// <param name="message">The message.</param>
-    /// <returns>True if the message should be handled by Kattgpt.</returns>
+    /// <returns>True if the message should be handled by KattGpt.</returns>
     private bool ShouldHandleMessage(DiscordMessage message)
     {
         if (!IsRelevantMessage(message)) return false;
 
-        DiscordChannel? channel = message.Channel;
+        DiscordChannel channel = message.Channel!;
 
         ChannelOptions? channelOptions = _kattGptService.GetChannelOptions(channel);
 
@@ -359,13 +366,13 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     }
 
     /// <summary>
-    ///     Checks if Kattgpt should reply to the message.
+    ///     Checks if KattGpt should reply to the message.
     /// </summary>
     /// <param name="message">The message.</param>
-    /// <returns>True if Kattgpt should reply.</returns>
+    /// <returns>True if KattGpt should reply.</returns>
     private bool ShouldReplyToMessage(DiscordMessage message)
     {
-        DiscordChannel? channel = message.Channel;
+        DiscordChannel channel = message.Channel!;
 
         ChannelOptions? channelOptions = _kattGptService.GetChannelOptions(channel);
 

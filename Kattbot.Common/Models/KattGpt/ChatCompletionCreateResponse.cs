@@ -6,17 +6,17 @@ namespace Kattbot.Common.Models.KattGpt;
 public record ChatCompletionCreateResponse
 {
     [JsonPropertyName("id")]
-    public string Id { get; set; } = null!;
+    public string Id { get; init; } = null!;
 
     [JsonPropertyName("object")]
-    public string Object { get; set; } = null!;
+    public string Object { get; init; } = null!;
 
     [JsonPropertyName("created")]
-    public int Created { get; set; }
+    public int Created { get; init; }
 
     [JsonPropertyName("choices")]
-    public List<Choice> Choices { get; set; } = new();
+    public List<ChatCompletionChoice> Choices { get; init; } = [];
 
     [JsonPropertyName("usage")]
-    public Usage Usage { get; set; } = null!;
+    public ChatCompletionUsage Usage { get; init; } = null!;
 }

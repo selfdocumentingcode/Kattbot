@@ -2,7 +2,7 @@
 
 namespace Kattbot.Common.Models.KattGpt;
 
-public record Usage
+public record ChatCompletionUsage
 {
     [JsonPropertyName("prompt_tokens")]
     public int PromptTokens { get; set; }
