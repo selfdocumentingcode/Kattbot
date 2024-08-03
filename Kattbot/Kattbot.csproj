@@ -9,9 +9,9 @@
     <ItemGroup>
         <PackageReference Include="TiktokenSharp" Version="1.1.4" />
         <PackageReference Include="CommandLineArgumentsParser" Version="3.0.23" />
-        <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02317" />
-        <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-02317" />
-        <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02317" />
+        <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02345" />
+        <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-02345" />
+        <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02345" />
         <PackageReference Include="MediatR" Version="12.4.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="8.0.0" />
