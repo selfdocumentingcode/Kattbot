@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
@@ -7,6 +8,7 @@ using DSharpPlus.Entities;
 using Kattbot.Attributes;
 using Kattbot.Common.Models.BotRoles;
 using Kattbot.Common.Models.KattGpt;
+using Kattbot.Common.Utils;
 using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
 using Kattbot.Services;
@@ -105,33 +107,13 @@ public class AdminModule : BaseCommandModule
     {
         List<ChatCompletionMessage> systemPromptsMessages = _kattGptService.BuildSystemPromptsMessages(channel);
 
-        var tokenizer = new KattGptTokenizer("gpt-3.5");
-
-        int tokenCount = tokenizer.GetTokenCount(systemPromptsMessages);
-
-        var sb = new StringBuilder($"System prompt messages. Context size {tokenCount} tokens");
-        sb.AppendLine();
-
-        foreach (ChatCompletionMessage message in systemPromptsMessages)
+        if (systemPromptsMessages.Count == 0)
         {
-            sb.AppendLine();
-            sb.AppendLine(message.Content);
-        }
-
-        var responseMessage = sb.ToString();
-
-        if (responseMessage.Length <= DiscordConstants.MaxMessageLength)
-        {
-            await ctx.RespondAsync(responseMessage);
+            await ctx.RespondAsync("No prompts found");
             return;
         }
 
-        List<string> messageChunks = responseMessage.SplitString(DiscordConstants.MaxMessageLength, string.Empty);
-
-        foreach (string messageChunk in messageChunks)
-        {
-            await ctx.RespondAsync(messageChunk);
-        }
+        await SendDumpReply(ctx, systemPromptsMessages);
     }
 
     [Command("dump-context")]
@@ -143,13 +125,18 @@ public class AdminModule : BaseCommandModule
 
         if (boundedMessageQueue == null)
         {
-            await ctx.RespondAsync("No prompts found");
+            await ctx.RespondAsync("No messages found");
             return;
         }
 
-        IEnumerable<ChatCompletionMessage> contextMessages = boundedMessageQueue.GetAll();
+        List<ChatCompletionMessage>? contextMessages = boundedMessageQueue.GetAll().ToList();
 
-        var tokenizer = new KattGptTokenizer("gpt-3.5");
+        await SendDumpReply(ctx, contextMessages);
+    }
+
+    private static async Task SendDumpReply(CommandContext ctx, List<ChatCompletionMessage> contextMessages)
+    {
+        var tokenizer = new KattGptTokenizer("gpt-4o");
 
         int tokenCount = tokenizer.GetTokenCount(contextMessages);
 
@@ -158,11 +145,10 @@ public class AdminModule : BaseCommandModule
 
         foreach (ChatCompletionMessage message in contextMessages)
         {
-            sb.AppendLine($"{message.Role}:");
-            sb.AppendLine($"> {message.Content}");
+            sb.AppendLine(message.ToString());
         }
 
-        var responseMessage = sb.ToString();
+        string responseMessage = sb.ToString().TrimEnd();
 
         if (responseMessage.Length <= DiscordConstants.MaxMessageLength)
         {

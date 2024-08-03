@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using Kattbot.Common.Models.KattGpt;
+using Kattbot.Common.Utils;
 using Kattbot.Config;
 using Kattbot.Helpers;
 using Kattbot.Services;
@@ -26,7 +27,6 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     private const string TokenizerModel = "gpt-4o";
     private const string CreateImageModel = "dall-e-3";
     private const float DefaultTemperature = 1.1f;
-    private const float FunctionCallTemperature = 0.8f;
     private const int MaxTotalTokens = 24_576;
     private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
     private const string MessageSplitToken = "[cont.] ";
@@ -282,7 +282,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             ChatCompletionCreateRequest request = BuildRequest(
                 systemPromptsMessages,
                 boundedMessageQueue,
-                FunctionCallTemperature);
+                DefaultTemperature);
 
             ChatCompletionCreateResponse response = await _chatGpt.ChatCompletionCreate(request);
 

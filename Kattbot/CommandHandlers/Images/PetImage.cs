@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using Kattbot.Common.Utils;
 using Kattbot.Helpers;
 using Kattbot.Services.Images;
 using MediatR;

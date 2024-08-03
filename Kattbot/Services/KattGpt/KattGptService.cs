@@ -5,8 +5,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using DSharpPlus.Entities;
 using Kattbot.Common.Models.KattGpt;
+using Kattbot.Common.Utils;
 using Kattbot.Config;
-using Kattbot.Helpers;
 using Microsoft.Extensions.Options;
 
 namespace Kattbot.Services.KattGpt;
@@ -74,8 +74,7 @@ public class KattGptService
                 : ChannelContextWithoutTopicTemplate;
 
             Template? channelContextTemplate = _kattGptOptions.Templates
-                .Where(x => x.Name == channelContextTemplateName)
-                .SingleOrDefault();
+                .SingleOrDefault(x => x.Name == channelContextTemplateName);
 
             if (channelContextTemplate is not null)
             {
@@ -83,11 +82,11 @@ public class KattGptService
                 systemPromptBuilder.AppendLine(channelContextTemplate.Content);
             }
 
-            Template? headerTemplate = _kattGptOptions.Templates.Where(x => x.Name == ChannelGuidelinesHeaderTemplate)
-                .SingleOrDefault();
+            Template? headerTemplate = _kattGptOptions.Templates
+                .SingleOrDefault(x => x.Name == ChannelGuidelinesHeaderTemplate);
 
             // get the system prompts for this channel
-            string[] channelPromptStrings = channelOptions.SystemPrompts ?? Array.Empty<string>();
+            string[] channelPromptStrings = channelOptions.SystemPrompts;
 
             if (headerTemplate is not null && channelPromptStrings.Length > 0)
             {
@@ -120,7 +119,7 @@ public class KattGptService
         ulong guildId = guild.Id;
 
         // First check if kattgpt is enabled for this guild
-        GuildOptions? guildOptions = _kattGptOptions.GuildOptions.Where(x => x.Id == guildId).SingleOrDefault();
+        GuildOptions? guildOptions = _kattGptOptions.GuildOptions.SingleOrDefault(x => x.Id == guildId);
         if (guildOptions == null)
         {
             return null;
@@ -129,16 +128,13 @@ public class KattGptService
         ChannelOptions[] guildChannelOptions = guildOptions.ChannelOptions;
         ChannelOptions[] guildCategoryOptions = guildOptions.CategoryOptions;
 
-        // Get the channel options for this channel or for the category this channel is in
-        ChannelOptions? channelOptions = guildChannelOptions.Where(x => x.Id == channel.Id).SingleOrDefault();
-        if (channelOptions == null)
-        {
-            DiscordChannel? category = channel.Parent;
-            if (category is not null)
-            {
-                channelOptions = guildCategoryOptions.Where(x => x.Id == category.Id).SingleOrDefault();
-            }
-        }
+        // Get the channel options for this channel
+        ChannelOptions? channelOptions = guildChannelOptions.SingleOrDefault(x => x.Id == channel.Id);
+        if (channelOptions != null) return channelOptions;
+
+        // If the channel itself doesn't have options, check if the category has options
+        DiscordChannel category = channel.Parent;
+        channelOptions = guildCategoryOptions.SingleOrDefault(x => x.Id == category.Id);
 
         return channelOptions;
     }

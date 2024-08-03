@@ -1,6 +1,7 @@
 ﻿using System;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using Kattbot.Common.Utils;
 using Kattbot.Config;
 using Kattbot.Helpers;
 using Kattbot.NotificationHandlers;
@@ -25,10 +26,10 @@ public class DiscordErrorLogger
         string user = ctx.User.GetFullUsername();
         string channelName = !ctx.Channel.IsPrivate ? ctx.Channel.Name : "DM";
         string guildName = ctx.Guild?.Name ?? "Unknown guild";
-        string command = EscapeTicks(ctx.Message.Content);
+        string? command = ctx.Message.Content.EscapeTicks();
 
         var contextMessage = $"**Failed command** `{command}` by `{user}` in `{channelName}`(`{guildName}`)";
-        var escapedErrorMessage = $"`{EscapeTicks(errorMessage)}`";
+        var escapedErrorMessage = $"`{errorMessage.EscapeTicks()}`";
 
         var fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMessage}";
 
@@ -41,7 +42,7 @@ public class DiscordErrorLogger
         string channelName = ctx?.Channel?.Name ?? "Unknown channel";
         string guildName = ctx?.Guild?.Name ?? "Unknown guild";
         string eventName = ctx?.EventName ?? "Unknown event";
-        string message = ctx?.Message is not null ? EscapeTicks(ctx.Message.Content) : string.Empty;
+        string? message = ctx?.Message is not null ? ctx.Message.Content.EscapeTicks() : string.Empty;
 
         var contextMessage = $"**Failed event** `{eventName}` by `{user}` in `{channelName}`(`{guildName}`)";
 
@@ -50,7 +51,7 @@ public class DiscordErrorLogger
             contextMessage += $"{Environment.NewLine}Message: `{message}`";
         }
 
-        var escapedErrorMessage = $"`{EscapeTicks(errorMessage)}`";
+        var escapedErrorMessage = $"`{errorMessage.EscapeTicks()}`";
 
         var fullErrorMessage = $"{contextMessage}{Environment.NewLine}{escapedErrorMessage}";
 
@@ -75,11 +76,6 @@ public class DiscordErrorLogger
     public void LogWarning(string warning, string warningMessage)
     {
         SendErrorLogChannelEmbed(warning, warningMessage, DiscordConstants.WarningEmbedColor);
-    }
-
-    private static string EscapeTicks(string value)
-    {
-        return string.IsNullOrWhiteSpace(value) ? value : value.Replace('`', '\'');
     }
 
     private void SendErrorLogChannelEmbed(string title, string message, int color)

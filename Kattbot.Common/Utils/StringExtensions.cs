@@ -4,13 +4,18 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Kattbot.Helpers;
+namespace Kattbot.Common.Utils;
 
 public static class StringExtensions
 {
     public static string RemoveQuotes(this string input)
     {
         return string.IsNullOrEmpty(input) ? string.Empty : input.Trim('"');
+    }
+
+    public static string? EscapeTicks(this string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? value : value.Replace('`', '\'');
     }
 
     public static List<string> SplitString(this string input, int chunkLength, string? splitToken = null)

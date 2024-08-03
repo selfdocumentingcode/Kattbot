@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Text.Json.Serialization;
+using Kattbot.Common.Utils;
 
 namespace Kattbot.Common.Models.KattGpt;
 
@@ -91,5 +94,36 @@ public record ChatCompletionMessage
     public static ChatCompletionMessage AsToolCallResult(string content, string toolCallId)
     {
         return new ChatCompletionMessage("tool", content, toolCallId);
+    }
+
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+        sb.Append($"{Role}");
+        switch (Role)
+        {
+            case "user":
+                if (!string.IsNullOrWhiteSpace(Name))
+                {
+                    sb.Append($" [name: {Name}]");
+                }
+
+                break;
+            case "assistant":
+                if (ToolCalls?.Count > 0)
+                {
+                    sb.Append($" [tool_calls: {string.Join(", ", ToolCalls.Select(t => t.Id))}]");
+                }
+
+                break;
+            case "tool":
+                sb.Append($" [tool_call_id: {ToolCallId}]");
+                break;
+        }
+
+        sb.AppendLine(":");
+        sb.Append($"```{Content.EscapeTicks()}```");
+
+        return sb.ToString();
     }
 }

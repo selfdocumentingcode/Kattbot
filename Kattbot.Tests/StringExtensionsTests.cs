@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Kattbot.Helpers;
+using Kattbot.Common.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Kattbot.Tests;
