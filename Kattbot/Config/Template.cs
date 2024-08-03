@@ -1,6 +1,6 @@
 ﻿namespace Kattbot.Config;
 
-public abstract record Template
+public record Template
 {
     public string Name { get; set; } = null!;
 

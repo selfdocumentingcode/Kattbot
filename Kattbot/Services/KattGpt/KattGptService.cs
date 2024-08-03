@@ -37,14 +37,14 @@ public class KattGptService
     {
         var systemPromptBuilder = new StringBuilder();
 
-        List<string> coreSystemPromptStringsa = _kattGptOptions.CoreSystemPrompts.ToList();
-        systemPromptBuilder.AppendLines(coreSystemPromptStringsa);
+        List<string> coreSystemPromptStrings = _kattGptOptions.CoreSystemPrompts.ToList();
+        systemPromptBuilder.AppendLines(coreSystemPromptStrings);
 
         DiscordGuild guild = channel.Guild;
         ulong guildId = guild.Id;
 
         // Get the channel options for this guild
-        GuildOptions guildOptions = _kattGptOptions.GuildOptions.Where(x => x.Id == guildId).SingleOrDefault()
+        GuildOptions guildOptions = _kattGptOptions.GuildOptions.SingleOrDefault(x => x.Id == guildId)
                                     ?? throw new Exception($"No guild options found for guild {guildId}");
 
         // Get the guild display name
@@ -57,7 +57,6 @@ public class KattGptService
 
         ChannelOptions? channelOptions = GetChannelOptions(channel);
 
-        // if there are no channel options, return the system prompts messages
         if (channelOptions != null)
         {
             // get a sanitized channel name that only includes letters, digits, - and _
