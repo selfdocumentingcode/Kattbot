@@ -8,42 +8,61 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace Kattbot.Tests;
 
 [TestClass]
-[Ignore]
+[Ignore] // TODO: Fix tests failing when running on GitHub Actions/docker container
 public class ImageTests
 {
-    [TestMethod]
-    public void PetPetTest(string inputImage)
+    [DataTestMethod]
+    [DataRow("froge.png")]
+    public async Task PetPetTest(string inputFilename)
     {
-        Assert.IsTrue(true);
+        string inputFile = Path.Combine("Resources", inputFilename);
+
+        using Image<Rgba32> image = Image.Load<Rgba32>(inputFile);
+
+        Image result = ImageEffects.PetPet(image, 1);
+
+        Assert.IsNotNull(result);
+
+        string outputFile = Path.Combine(Path.GetTempPath(), "kattbot", "z_output_petpet_froge.gif");
+
+        await result.SaveAsGifAsync(outputFile);
+
+        Assert.IsTrue(File.Exists(outputFile));
     }
 
     [DataTestMethod]
     [DataRow("froge.png")]
-    [DataRow("test_working.png")]
-    [DataRow("test_not_working.png")]
     public async Task CropToCircle(string inputFilename)
     {
-        string inputFile = Path.Combine(Path.GetTempPath(), inputFilename);
-        string ouputFile = Path.Combine(Path.GetTempPath(), "kattbot", $"cropped_{inputFilename}");
+        string inputFile = Path.Combine("Resources", inputFilename);
+        string outputFile = Path.Combine(Path.GetTempPath(), "kattbot", $"cropped_{inputFilename}");
 
         using Image<Rgba32> image = Image.Load<Rgba32>(inputFile);
 
         Image<Rgba32> croppedImage = ImageEffects.CropToCircle(image);
 
-        await croppedImage.SaveAsPngAsync(ouputFile);
+        Assert.IsNotNull(croppedImage);
+
+        await croppedImage.SaveAsPngAsync(outputFile);
+
+        Assert.IsTrue(File.Exists(outputFile));
     }
 
     [DataTestMethod]
     [DataRow("froge.png")]
     public async Task Twirl(string inputFilename)
     {
-        string inputFile = Path.Combine(Path.GetTempPath(), inputFilename);
-        string ouputFile = Path.Combine(Path.GetTempPath(), "kattbot", $"twirled_{inputFilename}");
+        string inputFile = Path.Combine("Resources", inputFilename);
+        string outputFile = Path.Combine(Path.GetTempPath(), "kattbot", $"twirled_{inputFilename}");
 
         using Image<Rgba32> image = Image.Load<Rgba32>(inputFile);
 
         Image croppedImage = ImageEffects.TwirlImage(image);
 
-        await croppedImage.SaveAsPngAsync(ouputFile);
+        Assert.IsNotNull(croppedImage);
+
+        await croppedImage.SaveAsPngAsync(outputFile);
+
+        Assert.IsTrue(File.Exists(outputFile));
     }
 }

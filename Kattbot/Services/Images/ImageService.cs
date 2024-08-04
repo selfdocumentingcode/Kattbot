@@ -123,6 +123,23 @@ public class ImageService
         return new ImageStreamResult(outputStream, extensionName);
     }
 
+    public async Task<ImageStreamResult> GetGifImageStream(Image image)
+    {
+        var outputStream = new MemoryStream();
+
+        const string extensionName = "gif";
+
+        IImageEncoder encoder = GetImageEncoderByFileType(extensionName);
+
+        await image.SaveAsync(outputStream, encoder);
+
+        await outputStream.FlushAsync();
+
+        outputStream.Position = 0;
+
+        return new ImageStreamResult(outputStream, extensionName);
+    }
+
     public string GetImageFileExtension(Image image)
     {
         IImageFormat format = image.Metadata.GetFormatOrDefault();

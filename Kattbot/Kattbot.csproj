@@ -29,4 +29,10 @@
         <ProjectReference Include="..\Kattbot.Common\Kattbot.Common.csproj" />
         <ProjectReference Include="..\Kattbot.Data\Kattbot.Data.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <None Update="Resources\pet_sprite_sheet.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
 </Project>

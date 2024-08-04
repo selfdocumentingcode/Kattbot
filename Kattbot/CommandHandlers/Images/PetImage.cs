@@ -80,7 +80,7 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
 
         string imageName = emoji.Id != 0 ? emoji.Id.ToString() : emoji.Name;
 
-        var fileName = $"{imageName}.{imageStreamResult.FileExtension}";
+        var fileName = $"{imageName}.{fileExtension}";
 
         var responseBuilder = new DiscordMessageBuilder();
 
@@ -146,6 +146,23 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
         await ctx.RespondAsync(responseBuilder);
     }
 
+    private static int ParseSpeed(string? speed = null)
+    {
+        const int speedSlow = 8;
+        const int speedNormal = 16;
+        const int speedFast = 32;
+        const int speedLightspeed = 60;
+
+        return (speed ?? string.Empty).ToLower() switch
+        {
+            "slow" => speedSlow,
+            "normal" => speedNormal,
+            "fast" => speedFast,
+            "lightspeed" => speedLightspeed,
+            _ => speedNormal,
+        };
+    }
+
     private async Task<ImageStreamResult> PetImage(
         string imageUrl,
         string? speed,
@@ -158,17 +175,12 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
             inputImage = preTransform(inputImage);
         }
 
-        string extension = _imageService.GetImageFileExtension(inputImage);
+        int speedValue = ParseSpeed(speed);
 
-        string imagePath = await _imageService.SaveImageToTempPath(inputImage, $"{Guid.NewGuid()}.{extension}");
+        Image petImage = ImageEffects.PetPet(inputImage, speedValue);
 
-        // byte[] animatedEmojiBytes = await _petPetClient.PetPet(imagePath, speed);
-        byte[] animatedEmojiBytes = Array.Empty<byte>();
+        ImageStreamResult outputImageStream = await _imageService.GetGifImageStream(petImage);
 
-        Image outputImage = ImageService.LoadImage(animatedEmojiBytes);
-
-        ImageStreamResult ouputImageStream = await _imageService.GetImageStream(outputImage);
-
-        return ouputImageStream;
+        return outputImageStream;
     }
 }
