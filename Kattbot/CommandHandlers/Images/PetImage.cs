@@ -59,12 +59,10 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
 {
     private readonly DiscordResolver _discordResolver;
     private readonly ImageService _imageService;
-    private readonly PetPetClient _petPetClient;
 
-    public PetImageHandlers(ImageService imageService, PetPetClient petPetClient, DiscordResolver discordResolver)
+    public PetImageHandlers(ImageService imageService, DiscordResolver discordResolver)
     {
         _imageService = imageService;
-        _petPetClient = petPetClient;
         _discordResolver = discordResolver;
     }
 
@@ -131,7 +129,10 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
                           ?? userAsMember.AvatarUrl
                           ?? throw new Exception("Couldn't load user avatar");
 
-        ImageStreamResult imageStreamResult = await PetImage(imageUrl, request.Speed, _imageService.CropToCircle);
+        ImageStreamResult imageStreamResult = await PetImage(
+            imageUrl,
+            request.Speed,
+            ImageEffects.CropToCircle);
 
         using MemoryStream imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;
@@ -161,7 +162,8 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
 
         string imagePath = await _imageService.SaveImageToTempPath(inputImage, $"{Guid.NewGuid()}.{extension}");
 
-        byte[] animatedEmojiBytes = await _petPetClient.PetPet(imagePath, speed);
+        // byte[] animatedEmojiBytes = await _petPetClient.PetPet(imagePath, speed);
+        byte[] animatedEmojiBytes = Array.Empty<byte>();
 
         Image outputImage = ImageService.LoadImage(animatedEmojiBytes);
 

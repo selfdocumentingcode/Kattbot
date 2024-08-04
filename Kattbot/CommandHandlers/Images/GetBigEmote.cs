@@ -46,7 +46,7 @@ public class GetBigEmoteHandler : IRequestHandler<GetBigEmoteRequest>
 
         if (hasScaleFactor)
         {
-            image = _imageService.ScaleImage(image, request.ScaleFactor!.Value);
+            image = ImageEffects.ScaleImage(image, request.ScaleFactor!.Value);
         }
 
         ImageStreamResult imageStreamResult = await _imageService.GetImageStream(image);

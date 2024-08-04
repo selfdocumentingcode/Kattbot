@@ -138,7 +138,7 @@ public class ImageModule : BaseCommandModule
     [Cooldown(5, 30, CooldownBucketType.Global)]
     public Task Dallify(CommandContext ctx, DiscordEmoji emoji)
     {
-        var request = new DallifyEmoteRequest(ctx, emoji);
+        var request = new DallifyImageEmoteRequest(ctx, emoji);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
@@ -147,7 +147,7 @@ public class ImageModule : BaseCommandModule
     [Cooldown(5, 30, CooldownBucketType.Global)]
     public Task Dallify(CommandContext ctx, DiscordUser user)
     {
-        var request = new DallifyUserRequest(ctx, user);
+        var request = new DallifyImageUserRequest(ctx, user);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
@@ -158,7 +158,7 @@ public class ImageModule : BaseCommandModule
     public Task Dallify(CommandContext ctx, string _ = "")
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
     {
-        var request = new DallifyImageRequest(ctx);
+        var request = new DallifyImageMessageRequest(ctx);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
