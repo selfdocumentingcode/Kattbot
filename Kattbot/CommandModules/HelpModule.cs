@@ -122,7 +122,7 @@ public class HelpModule : BaseCommandModule
         sb.AppendLine("`                  reply-to message is checked.`");
         sb.AppendLine("`speed          .. Petting speed`");
         sb.AppendLine("`                  Valid speeds: \"slow\", \"normal\",`");
-        sb.AppendLine("`                                \"fast\", \"lightspeed\"`");
+        sb.AppendLine("`                                \"fast\", \"faster\"`");
 
         sb.AppendLine();
         sb.AppendLine("Usage examples:");

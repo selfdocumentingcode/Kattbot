@@ -151,14 +151,14 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
         const int speedSlow = 8;
         const int speedNormal = 16;
         const int speedFast = 32;
-        const int speedLightspeed = 60;
+        const int speedFaster = 50;
 
         return (speed ?? string.Empty).ToLower() switch
         {
             "slow" => speedSlow,
             "normal" => speedNormal,
             "fast" => speedFast,
-            "lightspeed" => speedLightspeed,
+            "faster" => speedFaster,
             _ => speedNormal,
         };
     }
