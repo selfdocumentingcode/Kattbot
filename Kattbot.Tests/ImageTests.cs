@@ -19,7 +19,7 @@ public class ImageTests
 
         using Image<Rgba32> image = Image.Load<Rgba32>(inputFile);
 
-        Image result = ImageEffects.PetPet(image, 1);
+        Image result = ImageEffects.PetPet(image);
 
         Assert.IsNotNull(result);
 

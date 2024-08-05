@@ -7,7 +7,6 @@ using SixLabors.ImageSharp.Formats.Gif;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Processing.Processors.Quantization;
 using Path = System.IO.Path;
 
 namespace Kattbot.Services.Images;
@@ -152,20 +151,29 @@ public static class ImageEffects
     ///     Algorithm and sprite sheet source: https://benisland.neocities.org/petpet/
     /// </summary>
     /// <param name="inputImage"> The input image. </param>
-    /// <param name="speed">The animation speed.</param>
+    /// <param name="fps">The animation speed in frames per second.</param>
     /// <returns>An animated gif.</returns>
-    public static Image PetPet(Image<Rgba32> inputImage, int speed)
+    public static Image PetPet(Image<Rgba32> inputImage, int fps = default)
     {
         const int frameCount = 5;
         const int frameSize = 112;
-        const float squishScale = 1f;
         const float scale = 0.85f;
-        const int spriteX = 14;
         const int overlayY = 0;
+        const int alphaThreshold = 120;
 
-        const int minDelay = 2; // 20ms
-        const int maxDelay = 20; // 200ms
-        const int defaultDelay = 10; // 100ms
+        // TODO implement squishFactor
+        const float squishFactor = 1f;
+
+        // The maximum fps of 50 results in a delay of 20ms between frames
+        // which is the minimum delay for a gif in most renderers.
+        const int maxFps = 50;
+        const int minFps = 1;
+        const int defaultFps = 16;
+
+        int animationFps = fps != default ? Math.Clamp(fps, minFps, maxFps) : defaultFps;
+
+        // Convert the fps value to a delay value represented as the number of frames in hundredths (1/100) of a second
+        var animationDelay = (int)Math.Round(100f / animationFps);
 
         string overlayFile = Path.Combine("Resources", "pet_sprite_sheet.png");
         using Image<Rgba32> overlaySpriteSheet = Image.Load<Rgba32>(overlayFile);
@@ -177,7 +185,28 @@ public static class ImageEffects
         float[] squishFactors = [0.9f, 0.8f, 0.75f, 0.8f, 0.85f];
 
         // Resize the input image to match the frame size
-        Image<Rgba32> resizedImage = inputImage.Clone(i => i.Resize(frameSize, frameSize));
+        Image<Rgba32> resizedImage = inputImage.Clone(
+            ctx =>
+            {
+                // Crop the image to a square
+                ctx.Crop(
+                    Math.Min(inputImage.Width, inputImage.Height),
+                    Math.Min(inputImage.Width, inputImage.Height));
+
+                // Downscale the image to the frame size and then some
+                const int newWidth = (int)(frameSize * scale);
+                const int newHeight = (int)(frameSize * scale);
+
+                ctx.Resize(
+                    new ResizeOptions
+                    {
+                        Size = new Size(newWidth, newHeight),
+                        Sampler = KnownResamplers.Hermite,
+                    });
+            });
+
+        // Optimize transparency by clipping pixels with low alpha values in order to reduce dithering artifacts
+        resizedImage.ProcessPixelRows(a => ImageProcessors.ClipTransparencyProcessor(a, alphaThreshold));
 
         for (var i = 0; i < frameCount; i++)
         {
@@ -187,27 +216,12 @@ public static class ImageEffects
 
             float frameSquishFactor = squishFactors[i];
 
-            Image<Rgba32> inputFrame = resizedImage.Clone(
-                ctx =>
-                {
-                    Size currentSize = ctx.GetCurrentSize();
-                    var newWidth = (int)(currentSize.Width * scale);
-                    var newHeight = (int)(currentSize.Height * scale);
-
-                    var resizeOptions = new ResizeOptions
-                    {
-                        Size = new Size(newWidth, newHeight),
-                        Mode = ResizeMode.Max,
-                    };
-                    ctx.Resize(resizeOptions);
-                });
-
             // Squish the frame
-            Image<Rgba32> workingFrame =
-                inputFrame.Clone(x => x.Resize((int)frameSize, (int)(frameSize * frameSquishFactor)));
+            Image<Rgba32> squishedFrame =
+                resizedImage.Clone(x => x.Resize(resizedImage.Width, (int)(resizedImage.Height * frameSquishFactor)));
 #if DEBUG
             // temporarily save the frame to disk
-            workingFrame.SaveAsPng(Path.Combine(Path.GetTempPath(), "kattbot", $"a_squished_frame_{i}.png"));
+            squishedFrame.SaveAsPng(Path.Combine(Path.GetTempPath(), "kattbot", $"a_squished_frame_{i}.png"));
 #endif
             var outputFrame = new Image<Rgba32>(frameSize, frameSize);
 
@@ -215,9 +229,9 @@ public static class ImageEffects
             outputFrame.Mutate(
                 x =>
                 {
-                    int newFrameOffsetX = frameSize - workingFrame.Width;
-                    int newFrameOffsetY = frameSize - workingFrame.Height;
-                    x.DrawImage(workingFrame, new Point(newFrameOffsetX, newFrameOffsetY), 1f);
+                    int newFrameOffsetX = frameSize - squishedFrame.Width;
+                    int newFrameOffsetY = frameSize - squishedFrame.Height;
+                    x.DrawImage(squishedFrame, new Point(newFrameOffsetX, newFrameOffsetY), 1f);
                 });
 
             // Draw the overlay frame
@@ -231,17 +245,14 @@ public static class ImageEffects
 
         var outputGif = new Image<Rgba32>(frameSize, frameSize);
 
-        // TODO: This dithering algorithm seems to work best, but not completely satisfied with the results
-        IQuantizer quantizer = new OctreeQuantizer(new QuantizerOptions { Dither = KnownDitherings.StevensonArce });
-
         for (var i = 0; i < frameCount; i++)
         {
-            Image<Rgba32> currFrame = frames[i].Clone(x => x.Quantize(quantizer));
+            Image<Rgba32> currFrame = frames[i].Clone();
 
             ImageFrame<Rgba32> currRootFrame = currFrame.Frames.RootFrame;
 
             GifFrameMetadata gifFrameMetadata = currRootFrame.Metadata.GetGifMetadata();
-            gifFrameMetadata.FrameDelay = defaultDelay;
+            gifFrameMetadata.FrameDelay = animationDelay;
             gifFrameMetadata.DisposalMethod = GifDisposalMethod.RestoreToBackground;
 
             outputGif.Frames.AddFrame(currRootFrame);
