@@ -40,6 +40,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     private readonly ImageService _imageService;
     private readonly KattGptOptions _kattGptOptions;
     private readonly KattGptService _kattGptService;
+    private readonly BotOptions _botOptions;
 
     public KattGptMessageHandler(
         ChatGptHttpClient chatGpt,
@@ -48,7 +49,8 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         DalleHttpClient dalleHttpClient,
         ImageService imageService,
         DiscordErrorLogger discordErrorLogger,
-        IOptions<KattGptOptions> kattGptOptions)
+        IOptions<KattGptOptions> kattGptOptions,
+        IOptions<BotOptions> botOptions)
     {
         _chatGpt = chatGpt;
         _cache = cache;
@@ -57,6 +59,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         _imageService = imageService;
         _discordErrorLogger = discordErrorLogger;
         _kattGptOptions = kattGptOptions.Value;
+        _botOptions = botOptions.Value;
     }
 
     public async Task Handle(MessageCreatedNotification notification, CancellationToken cancellationToken)
@@ -348,6 +351,14 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     {
         if (!IsRelevantMessage(message)) return false;
 
+        string[] commandPrefixes = [_botOptions.CommandPrefix, _botOptions.AlternateCommandPrefix];
+        string messageContent = message.Content.ToLower().TrimStart();
+
+        bool messageStartsWithCommandPrefix = commandPrefixes.Any(messageContent.StartsWith);
+
+        if (messageStartsWithCommandPrefix)
+            return false;
+
         DiscordChannel channel = message.Channel!;
 
         ChannelOptions? channelOptions = _kattGptService.GetChannelOptions(channel);
@@ -359,7 +370,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
         // otherwise check if the message does not start with the MetaMessagePrefix
         string[] metaMessagePrefixes = _kattGptOptions.AlwaysOnIgnoreMessagePrefixes;
-        bool messageStartsWithMetaMessagePrefix = metaMessagePrefixes.Any(message.Content.TrimStart().StartsWith);
+        bool messageStartsWithMetaMessagePrefix = metaMessagePrefixes.Any(messageContent.StartsWith);
 
         // if it does, return false
         return !messageStartsWithMetaMessagePrefix;
