@@ -52,7 +52,6 @@ public class Program
 
                     services.AddSingleton<SharedCache>();
                     services.AddSingleton<KattGptChannelCache>();
-                    services.AddSingleton<PuppeteerFactory>();
 
                     AddWorkers(services);
 
@@ -84,7 +83,6 @@ public class Program
         services.AddTransient<GuildSettingsService>();
         services.AddTransient<ImageService>();
         services.AddTransient<DiscordErrorLogger>();
-        services.AddTransient<PetPetClient>();
         services.AddTransient<DiscordResolver>();
         services.AddTransient<KattGptService>();
     }

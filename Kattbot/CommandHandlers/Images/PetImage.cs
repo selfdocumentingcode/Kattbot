@@ -59,12 +59,10 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
 {
     private readonly DiscordResolver _discordResolver;
     private readonly ImageService _imageService;
-    private readonly PetPetClient _petPetClient;
 
-    public PetImageHandlers(ImageService imageService, PetPetClient petPetClient, DiscordResolver discordResolver)
+    public PetImageHandlers(ImageService imageService, DiscordResolver discordResolver)
     {
         _imageService = imageService;
-        _petPetClient = petPetClient;
         _discordResolver = discordResolver;
     }
 
@@ -82,7 +80,7 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
 
         string imageName = emoji.Id != 0 ? emoji.Id.ToString() : emoji.Name;
 
-        var fileName = $"{imageName}.{imageStreamResult.FileExtension}";
+        var fileName = $"{imageName}.{fileExtension}";
 
         var responseBuilder = new DiscordMessageBuilder();
 
@@ -131,7 +129,10 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
                           ?? userAsMember.AvatarUrl
                           ?? throw new Exception("Couldn't load user avatar");
 
-        ImageStreamResult imageStreamResult = await PetImage(imageUrl, request.Speed, _imageService.CropToCircle);
+        ImageStreamResult imageStreamResult = await PetImage(
+            imageUrl,
+            request.Speed,
+            ImageEffects.CropToCircle);
 
         using MemoryStream imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;
@@ -143,6 +144,23 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
         responseBuilder.AddFile(imageFilename, imageStreamResult.MemoryStream);
 
         await ctx.RespondAsync(responseBuilder);
+    }
+
+    private static int ParseSpeed(string? speed = null)
+    {
+        const int speedSlow = 8;
+        const int speedNormal = 16;
+        const int speedFast = 32;
+        const int speedFaster = 50;
+
+        return (speed ?? string.Empty).ToLower() switch
+        {
+            "slow" => speedSlow,
+            "normal" => speedNormal,
+            "fast" => speedFast,
+            "faster" => speedFaster,
+            _ => speedNormal,
+        };
     }
 
     private async Task<ImageStreamResult> PetImage(
@@ -157,16 +175,12 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
             inputImage = preTransform(inputImage);
         }
 
-        string extension = _imageService.GetImageFileExtension(inputImage);
+        int speedValue = ParseSpeed(speed);
 
-        string imagePath = await _imageService.SaveImageToTempPath(inputImage, $"{Guid.NewGuid()}.{extension}");
+        Image petImage = ImageEffects.PetPet(inputImage, speedValue);
 
-        byte[] animatedEmojiBytes = await _petPetClient.PetPet(imagePath, speed);
+        ImageStreamResult outputImageStream = await _imageService.GetGifImageStream(petImage);
 
-        Image outputImage = ImageService.LoadImage(animatedEmojiBytes);
-
-        ImageStreamResult ouputImageStream = await _imageService.GetImageStream(outputImage);
-
-        return ouputImageStream;
+        return outputImageStream;
     }
 }

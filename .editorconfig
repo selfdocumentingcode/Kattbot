@@ -46,11 +46,11 @@ dotnet_naming_symbols.private_or_internal_static_field.required_modifiers = stat
 
 dotnet_naming_symbols.private_or_internal_field.applicable_kinds = field
 dotnet_naming_symbols.private_or_internal_field.applicable_accessibilities = internal, private, private_protected
-dotnet_naming_symbols.private_or_internal_field.required_modifiers =
+dotnet_naming_symbols.private_or_internal_field.required_modifiers = 
 
 dotnet_naming_symbols.local.applicable_kinds = local
 dotnet_naming_symbols.local.applicable_accessibilities = local
-dotnet_naming_symbols.local.required_modifiers =
+dotnet_naming_symbols.local.required_modifiers = 
 
 dotnet_naming_symbols.constant_field.applicable_kinds = field
 dotnet_naming_symbols.constant_field.applicable_accessibilities = *
@@ -59,18 +59,18 @@ dotnet_naming_symbols.constant_field.required_modifiers = const
 # Naming styles
 
 dotnet_naming_style._fieldname.required_prefix = _
-dotnet_naming_style._fieldname.required_suffix =
-dotnet_naming_style._fieldname.word_separator =
+dotnet_naming_style._fieldname.required_suffix = 
+dotnet_naming_style._fieldname.word_separator = 
 dotnet_naming_style._fieldname.capitalization = camel_case
 
-dotnet_naming_style.camelcase.required_prefix =
-dotnet_naming_style.camelcase.required_suffix =
-dotnet_naming_style.camelcase.word_separator =
+dotnet_naming_style.camelcase.required_prefix = 
+dotnet_naming_style.camelcase.required_suffix = 
+dotnet_naming_style.camelcase.word_separator = 
 dotnet_naming_style.camelcase.capitalization = camel_case
 
-dotnet_naming_style.pascal_case.required_prefix =
-dotnet_naming_style.pascal_case.required_suffix =
-dotnet_naming_style.pascal_case.word_separator =
+dotnet_naming_style.pascal_case.required_prefix = 
+dotnet_naming_style.pascal_case.required_suffix = 
+dotnet_naming_style.pascal_case.word_separator = 
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 
 ### Stylecop rules ###
@@ -174,6 +174,7 @@ resharper_braces_for_while = required
 resharper_braces_redundant = false
 resharper_csharp_empty_block_style = together
 resharper_csharp_insert_final_newline = true
+resharper_csharp_keep_blank_lines_in_code = 1
 resharper_csharp_keep_blank_lines_in_declarations = 1
 resharper_csharp_wrap_after_declaration_lpar = true
 resharper_csharp_wrap_after_invocation_lpar = true
@@ -183,7 +184,7 @@ resharper_csharp_wrap_extends_list_style = chop_always
 resharper_csharp_wrap_parameters_style = chop_if_long
 resharper_for_built_in_types = use_var_when_evident
 resharper_for_other_types = use_var_when_evident
-resharper_instance_members_qualify_declared_in =
+resharper_instance_members_qualify_declared_in = 
 resharper_keep_existing_embedded_block_arrangement = false
 resharper_keep_existing_enum_arrangement = false
 resharper_nested_ternary_style = expanded
