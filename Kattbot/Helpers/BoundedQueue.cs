@@ -16,7 +16,7 @@ public class BoundedQueue<T>
         _queue = new Queue<(T, int)>();
     }
 
-    public int CurrentSize { get; private set; }
+    private int CurrentSize { get; set; }
 
     public void Enqueue(T item, int itemSize)
     {

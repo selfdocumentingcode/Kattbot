@@ -73,22 +73,13 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
         try
         {
-            var kattGptTokenizer = new KattGptTokenizer(TokenizerModel);
-
             List<ChatCompletionMessage> systemPromptsMessages = _kattGptService.BuildSystemPromptsMessages(channel);
+            ChatCompletionFunction chatCompletionFunction = DalleToolBuilder.BuildDalleImageToolDefinition().Function;
 
-            int systemMessagesTokenCount = kattGptTokenizer.GetTokenCount(systemPromptsMessages);
-
-            int functionsTokenCount =
-                kattGptTokenizer.GetTokenCount(DalleToolBuilder.BuildDalleImageToolDefinition().Function);
-
-            int reservedTokens = systemMessagesTokenCount + functionsTokenCount;
-
-            BoundedQueue<ChatCompletionMessage> boundedMessageQueue = GetBoundedMessageQueue(channel, reservedTokens);
-
-            // Add new message from notification
-            string newMessageUser = author.GetDisplayName();
-            string newMessageContent = message.SubstituteMentions();
+            KattGptChannelContext channelContext = GetOrCreateCachedContext(
+                channel,
+                systemPromptsMessages,
+                chatCompletionFunction);
 
             bool shouldReplyToMessage = ShouldReplyToMessage(message);
 
@@ -96,14 +87,16 @@ public class KattGptMessageHandler : BaseNotificationHandler,
                 ? RecipientMarkerToYou
                 : RecipientMarkerToOthers;
 
+            // Add new message from notification
+            string newMessageUser = author.GetDisplayName();
+            string newMessageContent = message.SubstituteMentions();
+
             ChatCompletionMessage newUserMessage =
                 ChatCompletionMessage.AsUser($"{newMessageUser}{recipientMarker}: {newMessageContent}");
 
-            boundedMessageQueue.Enqueue(newUserMessage, kattGptTokenizer.GetTokenCount(newUserMessage.Content));
-
             if (!shouldReplyToMessage)
             {
-                SaveBoundedMessageQueue(channel, boundedMessageQueue);
+                channelContext.AddMessage(newUserMessage);
                 return;
             }
 
@@ -111,47 +104,50 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
             ChatCompletionCreateRequest request = BuildRequest(
                 systemPromptsMessages,
-                boundedMessageQueue,
-                DefaultTemperature);
+                channelContext,
+                newUserMessage);
 
             ChatCompletionCreateResponse response = await _chatGpt.ChatCompletionCreate(request);
 
             ChatCompletionChoice chatGptResponse = response.Choices[0];
             ChatCompletionMessage chatGptResponseMessage = chatGptResponse.Message;
 
+            List<ChatCompletionMessage> newResponseMessages = [];
+
             if (chatGptResponse.FinishReason == ChoiceFinishReason.tool_calls)
             {
-                await HandleToolCallResponse(
+                List<ChatCompletionMessage> toolResponseMessages = await HandleToolCallResponse(
                     message,
-                    kattGptTokenizer,
                     systemPromptsMessages,
-                    boundedMessageQueue,
+                    channelContext,
                     chatGptResponseMessage);
+
+                newResponseMessages.AddRange(toolResponseMessages);
             }
             else
             {
                 // TODO: Handle other finish reasons
                 await SendReply(chatGptResponseMessage.Content!, message);
 
-                // Add the ChatGPT response message to the bounded queue
-                boundedMessageQueue.Enqueue(
-                    chatGptResponseMessage,
-                    kattGptTokenizer.GetTokenCount(chatGptResponseMessage.Content));
+                newResponseMessages.Add(chatGptResponseMessage);
             }
 
-            SaveBoundedMessageQueue(channel, boundedMessageQueue);
+            // If everything went well, add the new messages to the context
+            channelContext.AddMessage(newUserMessage);
+            channelContext.AddMessage(chatGptResponseMessage);
+            channelContext.AddMessages(newResponseMessages);
         }
         catch (Exception ex)
         {
-            await SendReply("Something went wrong", message);
+            await SendReply($"Something went wrong: {ex.Message}", message);
             _discordErrorLogger.LogError(ex.Message);
         }
     }
 
     private static ChatCompletionCreateRequest BuildRequest(
         List<ChatCompletionMessage> systemPromptsMessages,
-        BoundedQueue<ChatCompletionMessage> boundedMessageQueue,
-        float temperature)
+        KattGptChannelContext channelContext,
+        params ChatCompletionMessage[] newMessages)
     {
         // Build tools
         ChatCompletionTool[] chatCompletionTools =
@@ -162,14 +158,15 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         // Collect request messages
         var requestMessages = new List<ChatCompletionMessage>();
         requestMessages.AddRange(systemPromptsMessages);
-        requestMessages.AddRange(boundedMessageQueue.GetAll());
+        requestMessages.AddRange(channelContext.GetMessages());
+        requestMessages.AddRange(newMessages);
 
         // Make request
         var request = new ChatCompletionCreateRequest
         {
             Model = ChatGptModel,
             Messages = requestMessages.ToArray(),
-            Temperature = temperature,
+            Temperature = DefaultTemperature,
             MaxTokens = MaxTokensToGenerate,
             Tools = chatCompletionTools,
         };
@@ -234,17 +231,18 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         return imageStream;
     }
 
-    private async Task HandleToolCallResponse(
+    private async Task<List<ChatCompletionMessage>> HandleToolCallResponse(
         DiscordMessage message,
-        KattGptTokenizer kattGptTokenizer,
         List<ChatCompletionMessage> systemPromptsMessages,
-        BoundedQueue<ChatCompletionMessage> boundedMessageQueue,
+        KattGptChannelContext channelContext,
         ChatCompletionMessage chatGptToolCallResponse)
     {
         DiscordMessage? workingOnItMessage = null;
 
         try
         {
+            List<ChatCompletionMessage> responseMessages = [];
+
             ulong authorId = message.Author!.Id;
 
             // Force a content value for the ChatGPT response due the api not allowing nulls even though it says it does
@@ -268,9 +266,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
             ImageStreamResult dalleResult = await GetDalleResult(prompt, authorId.ToString());
 
-            // Add ChatGPT response to the context
-            int chatGptResponseTokenCount = kattGptTokenizer.GetTokenCount(chatGptToolCallResponse.Content);
-            boundedMessageQueue.Enqueue(chatGptToolCallResponse, chatGptResponseTokenCount);
+            // responseMessages.Add(chatGptToolCallResponse);
 
             // Add function call result to the context
             const string functionCallResult = "The resulting image file will be attached to your next message.";
@@ -278,26 +274,26 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             ChatCompletionMessage functionCallResultMessage =
                 ChatCompletionMessage.AsToolCallResult(functionCallResult, toolCallId);
 
-            int functionCallResultTokenCount =
-                kattGptTokenizer.GetTokenCount(toolCallId, functionCallArguments, functionCallResult);
-            boundedMessageQueue.Enqueue(functionCallResultMessage, functionCallResultTokenCount);
-
             ChatCompletionCreateRequest request = BuildRequest(
                 systemPromptsMessages,
-                boundedMessageQueue,
-                DefaultTemperature);
+                channelContext,
+                chatGptToolCallResponse,
+                functionCallResultMessage);
 
             ChatCompletionCreateResponse response = await _chatGpt.ChatCompletionCreate(request);
 
             // Handle new response
             ChatCompletionMessage functionCallResponse = response.Choices[0].Message;
-            boundedMessageQueue.Enqueue(
-                functionCallResponse,
-                kattGptTokenizer.GetTokenCount(functionCallResponse.Content));
 
             await workingOnItMessage.DeleteAsync();
 
             await SendDalleResultReply(functionCallResponse.Content!, message, prompt, dalleResult);
+
+            // Return the function messages
+            responseMessages.Add(functionCallResultMessage);
+            responseMessages.Add(functionCallResponse);
+
+            return responseMessages;
         }
         catch (Exception)
         {
@@ -308,38 +304,42 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     }
 
     /// <summary>
-    ///     Gets the bounded message queue for the channel from the cache or creates a new one.
+    ///     Gets the channel context from the cache or creates a new one.
     /// </summary>
     /// <param name="channel">The channel.</param>
-    /// <param name="reservedTokenCount">The token count for the system messages and functions.</param>
+    /// <param name="systemPromptsMessages">The list of system prompts messages.</param>
+    /// <param name="chatCompletionFunction">The tool function gpt can call.</param>
     /// <returns>The bounded message queue for the channel.</returns>
-    private BoundedQueue<ChatCompletionMessage> GetBoundedMessageQueue(DiscordChannel channel, int reservedTokenCount)
-    {
-        string cacheKey = KattGptChannelCache.KattGptChannelCacheKey(channel.Id);
-
-        BoundedQueue<ChatCompletionMessage>? boundedMessageQueue = _cache.GetCache(cacheKey);
-
-        if (boundedMessageQueue == null)
-        {
-            int remainingTokensForContextMessages = MaxTotalTokens - MaxTokensToGenerate - reservedTokenCount;
-
-            boundedMessageQueue = new BoundedQueue<ChatCompletionMessage>(remainingTokensForContextMessages);
-        }
-
-        return boundedMessageQueue;
-    }
-
-    /// <summary>
-    ///     Saves the bounded message queue for the channel to the cache.
-    /// </summary>
-    /// <param name="channel">The channel.</param>
-    /// <param name="boundedMessageQueue">The bounded message queue.</param>
-    private void SaveBoundedMessageQueue(
+    private KattGptChannelContext GetOrCreateCachedContext(
         DiscordChannel channel,
-        BoundedQueue<ChatCompletionMessage> boundedMessageQueue)
+        List<ChatCompletionMessage> systemPromptsMessages,
+        ChatCompletionFunction chatCompletionFunction)
     {
         string cacheKey = KattGptChannelCache.KattGptChannelCacheKey(channel.Id);
-        _cache.SetCache(cacheKey, boundedMessageQueue);
+
+        KattGptChannelContext? channelContext = _cache.GetCache(cacheKey);
+
+        if (channelContext != null)
+            return channelContext;
+
+        var kattGptTokenizer = new KattGptTokenizer(TokenizerModel);
+
+        int systemMessagesTokenCount = kattGptTokenizer.GetTokenCount(systemPromptsMessages);
+
+        int functionsTokenCount =
+            kattGptTokenizer.GetTokenCount(chatCompletionFunction);
+
+        int reservedTokenCount = systemMessagesTokenCount + functionsTokenCount;
+
+        int remainingTokensForContextMessages = MaxTotalTokens - MaxTokensToGenerate - reservedTokenCount;
+
+        var tokenizer = new KattGptTokenizer(ChatGptModel);
+
+        channelContext = new KattGptChannelContext(remainingTokensForContextMessages, tokenizer);
+
+        _cache.SetCache(cacheKey, channelContext);
+
+        return channelContext;
     }
 
     /// <summary>

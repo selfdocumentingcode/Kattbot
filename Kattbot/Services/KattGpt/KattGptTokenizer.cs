@@ -31,9 +31,10 @@ public class KattGptTokenizer
     public int GetTokenCount(ChatCompletionFunction functionCall)
     {
         int nameTokenCount = _tokenizer.Encode(functionCall.Name).Count;
+        int descriptionTokenCount = _tokenizer.Encode(functionCall.Description ?? string.Empty).Count;
         int argumentsTokenCount = _tokenizer.Encode(functionCall.Parameters.ToString()).Count;
 
-        return nameTokenCount + argumentsTokenCount;
+        return nameTokenCount + +descriptionTokenCount + argumentsTokenCount;
     }
 
     public int GetTokenCount(IEnumerable<ChatCompletionMessage> systemMessage)

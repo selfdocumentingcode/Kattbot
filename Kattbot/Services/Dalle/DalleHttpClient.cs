@@ -27,12 +27,11 @@ public class DalleHttpClient
     {
         var opts = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
 
-        HttpResponseMessage? response;
         Stream? responseContentStream = null;
 
         try
         {
-            response = await _client.PostAsJsonAsync("generations", request, opts);
+            HttpResponseMessage response = await _client.PostAsJsonAsync("generations", request, opts);
 
             responseContentStream = await response.Content.ReadAsStreamAsync();
 
@@ -84,12 +83,11 @@ public class DalleHttpClient
 
         postBody.Add(new ByteArrayContent(request.Image), "image", fileName);
 
-        HttpResponseMessage? response;
         Stream? responseContentStream = null;
 
         try
         {
-            response = await _client.PostAsync("variations", postBody);
+            HttpResponseMessage? response = await _client.PostAsync("variations", postBody);
 
             responseContentStream = await response.Content.ReadAsStreamAsync();
 

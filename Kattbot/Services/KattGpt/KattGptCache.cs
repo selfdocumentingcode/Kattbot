@@ -1,6 +1,4 @@
 ﻿using System;
-using Kattbot.Common.Models.KattGpt;
-using Kattbot.Helpers;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Kattbot.Services.KattGpt;
@@ -12,28 +10,23 @@ public class KattGptChannelCache
     private const int AbsoluteCacheDurationInDays = 7;
     private const int SlidingCacheDurationInHours = 1;
 
-    private readonly MemoryCache _cache;
-
-    public KattGptChannelCache()
-    {
-        _cache = new MemoryCache(
-            new MemoryCacheOptions
-            {
-                SizeLimit = CacheSize,
-            });
-    }
+    private readonly MemoryCache _cache = new(
+        new MemoryCacheOptions
+        {
+            SizeLimit = CacheSize,
+        });
 
     public static string KattGptChannelCacheKey(ulong channelId)
     {
         return $"{nameof(KattGptChannelCache)}_{channelId}";
     }
 
-    public BoundedQueue<ChatCompletionMessage>? GetCache(string key)
+    public KattGptChannelContext? GetCache(string key)
     {
-        return _cache.Get<BoundedQueue<ChatCompletionMessage>>(key);
+        return _cache.Get<KattGptChannelContext>(key);
     }
 
-    public void SetCache(string key, BoundedQueue<ChatCompletionMessage> value)
+    public void SetCache(string key, KattGptChannelContext value)
     {
         _cache.Set(
             key,

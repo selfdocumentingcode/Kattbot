@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
@@ -13,7 +12,6 @@ using Kattbot.Data.Repositories;
 using Kattbot.Helpers;
 using Kattbot.Services;
 using Kattbot.Services.KattGpt;
-using Microsoft.Extensions.Logging;
 
 namespace Kattbot.CommandModules;
 
@@ -27,16 +25,13 @@ public class AdminModule : BaseCommandModule
     private readonly KattGptChannelCache _cache;
     private readonly GuildSettingsService _guildSettingsService;
     private readonly KattGptService _kattGptService;
-    private readonly ILogger<AdminModule> _logger;
 
     public AdminModule(
-        ILogger<AdminModule> logger,
         BotUserRolesRepository botUserRolesRepo,
         GuildSettingsService guildSettingsService,
         KattGptChannelCache cache,
         KattGptService kattGptService)
     {
-        _logger = logger;
         _botUserRolesRepo = botUserRolesRepo;
         _guildSettingsService = guildSettingsService;
         _cache = cache;
@@ -121,15 +116,15 @@ public class AdminModule : BaseCommandModule
     {
         string cacheKey = KattGptChannelCache.KattGptChannelCacheKey(channel.Id);
 
-        BoundedQueue<ChatCompletionMessage>? boundedMessageQueue = _cache.GetCache(cacheKey);
+        KattGptChannelContext? channelContext = _cache.GetCache(cacheKey);
 
-        if (boundedMessageQueue == null)
+        if (channelContext == null)
         {
             await ctx.RespondAsync("No messages found");
             return;
         }
 
-        List<ChatCompletionMessage>? contextMessages = boundedMessageQueue.GetAll().ToList();
+        List<ChatCompletionMessage> contextMessages = channelContext.GetMessages();
 
         await SendDumpReply(ctx, contextMessages);
     }

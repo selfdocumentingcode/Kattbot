@@ -14,7 +14,7 @@ public record ChatCompletionFunction
     public string Name { get; init; } = null!;
 
     /// <summary>
-    ///     Gets or sets a description of what the function does, used by the model to choose when and how to call the
+    ///     Gets a description of what the function does, used by the model to choose when and how to call the
     ///     function.
     ///     https://platform.openai.com/docs/api-reference/chat/create#functions-description.
     /// </summary>
