@@ -112,7 +112,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             ChatCompletionChoice chatGptResponse = response.Choices[0];
             ChatCompletionMessage chatGptResponseMessage = chatGptResponse.Message;
 
-            List<ChatCompletionMessage> newResponseMessages = [];
+            List<ChatCompletionMessage> chatGptFollowUpMessages = [];
 
             if (chatGptResponse.FinishReason == ChoiceFinishReason.tool_calls)
             {
@@ -122,20 +122,18 @@ public class KattGptMessageHandler : BaseNotificationHandler,
                     channelContext,
                     chatGptResponseMessage);
 
-                newResponseMessages.AddRange(toolResponseMessages);
+                chatGptFollowUpMessages.AddRange(toolResponseMessages);
             }
             else
             {
                 // TODO: Handle other finish reasons
                 await SendReply(chatGptResponseMessage.Content!, message);
-
-                newResponseMessages.Add(chatGptResponseMessage);
             }
 
             // If everything went well, add the new messages to the context
             channelContext.AddMessage(newUserMessage);
             channelContext.AddMessage(chatGptResponseMessage);
-            channelContext.AddMessages(newResponseMessages);
+            channelContext.AddMessages(chatGptFollowUpMessages);
         }
         catch (Exception ex)
         {
@@ -266,10 +264,8 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
             ImageStreamResult dalleResult = await GetDalleResult(prompt, authorId.ToString());
 
-            // responseMessages.Add(chatGptToolCallResponse);
-
             // Add function call result to the context
-            const string functionCallResult = "The resulting image file will be attached to your next message.";
+            var functionCallResult = $"An image of {prompt} has been created.";
 
             ChatCompletionMessage functionCallResultMessage =
                 ChatCompletionMessage.AsToolCallResult(functionCallResult, toolCallId);

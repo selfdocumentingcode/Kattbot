@@ -44,7 +44,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{DC67
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{26E4A78E-3DA9-4825-896B-4A9B0B017188}"
 	ProjectSection(SolutionItems) = preProject
-		docker\.env.local = docker\.env.local
 		docker\docker-compose.yml = docker\docker-compose.yml
 		docker\Dockerfile = docker\Dockerfile
 		docker\prod-compose.yml = docker\prod-compose.yml
