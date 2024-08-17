@@ -15,7 +15,7 @@ public static class StringExtensions
 
     public static string? EscapeTicks(this string? value)
     {
-        return string.IsNullOrWhiteSpace(value) ? value : value.Replace('`', '\'');
+        return string.IsNullOrWhiteSpace(value) ? value : value.Replace(oldChar: '`', newChar: '\'');
     }
 
     public static List<string> SplitString(this string input, int chunkLength, string? splitToken = null)
@@ -33,21 +33,21 @@ public static class StringExtensions
         // Read the next word + the following whitespace character
         Func<string> readNextWord = () =>
         {
-            var sb = new StringBuilder();
+            var wordSb = new StringBuilder();
             while (true)
             {
                 int c = sr.Read();
 
                 if (c == -1)
                 {
-                    return sb.Length > 0 ? sb.ToString() : string.Empty;
+                    return wordSb.Length > 0 ? wordSb.ToString() : string.Empty;
                 }
 
-                sb.Append((char)c);
+                wordSb.Append((char)c);
 
                 if (char.IsWhiteSpace((char)c))
                 {
-                    return sb.ToString();
+                    return wordSb.ToString();
                 }
             }
         };

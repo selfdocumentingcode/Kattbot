@@ -75,6 +75,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         {
             List<ChatCompletionMessage> systemPromptsMessages = _kattGptService.BuildSystemPromptsMessages(channel);
             ChatCompletionFunction chatCompletionFunction = DalleToolBuilder.BuildDalleImageToolDefinition().Function;
+            List<ChatCompletionMessage> newContextMessages = [];
 
             KattGptChannelContext channelContext = GetOrCreateCachedContext(
                 channel,
@@ -94,9 +95,11 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             ChatCompletionMessage newUserMessage =
                 ChatCompletionMessage.AsUser($"{newMessageUser}{recipientMarker}: {newMessageContent}");
 
+            newContextMessages.Add(newUserMessage);
+
             if (!shouldReplyToMessage)
             {
-                channelContext.AddMessage(newUserMessage);
+                channelContext.AddMessages(newContextMessages);
                 return;
             }
 
@@ -105,6 +108,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             ChatCompletionCreateRequest request = BuildRequest(
                 systemPromptsMessages,
                 channelContext,
+                allowToolCalls: true,
                 newUserMessage);
 
             ChatCompletionCreateResponse response = await _chatGpt.ChatCompletionCreate(request);
@@ -112,7 +116,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             ChatCompletionChoice chatGptResponse = response.Choices[0];
             ChatCompletionMessage chatGptResponseMessage = chatGptResponse.Message;
 
-            List<ChatCompletionMessage> chatGptFollowUpMessages = [];
+            newContextMessages.Add(chatGptResponseMessage);
 
             if (chatGptResponse.FinishReason == ChoiceFinishReason.tool_calls)
             {
@@ -122,7 +126,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
                     channelContext,
                     chatGptResponseMessage);
 
-                chatGptFollowUpMessages.AddRange(toolResponseMessages);
+                newContextMessages.AddRange(toolResponseMessages);
             }
             else
             {
@@ -131,9 +135,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             }
 
             // If everything went well, add the new messages to the context
-            channelContext.AddMessage(newUserMessage);
-            channelContext.AddMessage(chatGptResponseMessage);
-            channelContext.AddMessages(chatGptFollowUpMessages);
+            channelContext.AddMessages(newContextMessages);
         }
         catch (Exception ex)
         {
@@ -145,13 +147,13 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     private static ChatCompletionCreateRequest BuildRequest(
         List<ChatCompletionMessage> systemPromptsMessages,
         KattGptChannelContext channelContext,
+        bool allowToolCalls = true,
         params ChatCompletionMessage[] newMessages)
     {
-        // Build tools
-        ChatCompletionTool[] chatCompletionTools =
-        [
-            DalleToolBuilder.BuildDalleImageToolDefinition(),
-        ];
+        // The tools field in the request is not allowed to be an empty array
+        ChatCompletionTool[]? chatCompletionTools = allowToolCalls
+            ? [DalleToolBuilder.BuildDalleImageToolDefinition()]
+            : null;
 
         // Collect request messages
         var requestMessages = new List<ChatCompletionMessage>();
@@ -241,11 +243,6 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         {
             List<ChatCompletionMessage> responseMessages = [];
 
-            ulong authorId = message.Author!.Id;
-
-            // Force a content value for the ChatGPT response due the api not allowing nulls even though it says it does
-            chatGptToolCallResponse.Content ??= "null";
-
             ChatCompletionToolCall toolCall =
                 chatGptToolCallResponse.ToolCalls?[0] ?? throw new Exception("Tool call is null.");
 
@@ -262,7 +259,9 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
             workingOnItMessage = await message.RespondAsync($"Kattbot used: {prompt}");
 
-            ImageStreamResult dalleResult = await GetDalleResult(prompt, authorId.ToString());
+            var authorId = message.Author!.Id.ToString();
+
+            ImageStreamResult dalleResult = await GetDalleResult(prompt, authorId);
 
             // Add function call result to the context
             var functionCallResult = $"An image of {prompt} has been created.";
@@ -270,16 +269,20 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             ChatCompletionMessage functionCallResultMessage =
                 ChatCompletionMessage.AsToolCallResult(functionCallResult, toolCallId);
 
+            // Force a content value for the ChatGPT response due the api not allowing nulls even though it says it does
+            chatGptToolCallResponse.Content ??= "null";
+
             ChatCompletionCreateRequest request = BuildRequest(
                 systemPromptsMessages,
                 channelContext,
+                allowToolCalls: false,
                 chatGptToolCallResponse,
                 functionCallResultMessage);
 
             ChatCompletionCreateResponse response = await _chatGpt.ChatCompletionCreate(request);
 
             // Handle new response
-            ChatCompletionMessage functionCallResponse = response.Choices[0].Message;
+            ChatCompletionMessage functionCallResponse = response.Choices[index: 0].Message;
 
             await workingOnItMessage.DeleteAsync();
 
