@@ -121,12 +121,6 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
             if (chatGptResponse.FinishReason == ChoiceFinishReason.tool_calls)
             {
-                // Tool call messages have content only sometimes
-                if (!string.IsNullOrWhiteSpace(chatGptResponseMessage.Content))
-                {
-                    await SendReply(chatGptResponseMessage.Content, message);
-                }
-
                 List<ChatCompletionMessage> toolResponseMessages = await HandleToolCallResponse(
                     message,
                     systemPromptsMessages,
@@ -138,7 +132,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             else
             {
                 // TODO: Handle other finish reasons
-                await SendReply(chatGptResponseMessage.Content!, message);
+                await SendTextReply(chatGptResponseMessage.Content!, message);
             }
 
             // If everything went well, add the new messages to the context
@@ -146,7 +140,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         }
         catch (Exception ex)
         {
-            await SendReply($"Something went wrong: {ex.Message}", message);
+            await SendTextReply($"Something went wrong: {ex.Message}", message);
             _discordErrorLogger.LogError(ex.Message);
         }
     }
@@ -181,32 +175,28 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         return request;
     }
 
-    private static async Task SendDalleResultReply(
+    private static async Task SendImageReply(
         string responseMessageText,
         DiscordMessage messageToReplyTo,
-        string prompt,
+        string filename,
         ImageStreamResult imageStream)
     {
-        string toolUseText = string.Format(MessageToolUseTemplate, prompt);
-
         const int maxFilenameLength = 32;
 
-        string truncatedPrompt = prompt.Length > maxFilenameLength
-            ? prompt[..maxFilenameLength]
-            : prompt;
+        string truncatedFilename = filename.Length > maxFilenameLength
+            ? filename[..maxFilenameLength]
+            : filename;
 
-        string filename = truncatedPrompt.ToSafeFilename(imageStream.FileExtension);
-
-        var responseTextWithToolUse = $"{toolUseText}\n\n{responseMessageText}";
+        string safeFilename = truncatedFilename.ToSafeFilename(imageStream.FileExtension);
 
         DiscordMessageBuilder mb = new DiscordMessageBuilder()
-            .AddFile(filename, imageStream.MemoryStream)
-            .WithContent(responseTextWithToolUse);
+            .AddFile(safeFilename, imageStream.MemoryStream)
+            .WithContent(responseMessageText);
 
         await messageToReplyTo.RespondAsync(mb);
     }
 
-    private static async Task SendReply(string responseMessage, DiscordMessage messageToReplyTo)
+    private static async Task SendTextReply(string responseMessage, DiscordMessage messageToReplyTo)
     {
         List<string> messageChunks = responseMessage.SplitString(DiscordConstants.MaxMessageLength, MessageSplitToken);
 
@@ -216,6 +206,22 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         {
             nextMessageToReplyTo = await nextMessageToReplyTo.RespondAsync(messageChunk);
         }
+    }
+
+    private static async Task SendToolUseReply(
+        DiscordMessage message,
+        ChatCompletionMessage chatGptToolCallResponse,
+        string prompt)
+    {
+        string toolUseText = string.Format(MessageToolUseTemplate, prompt);
+        string responseMessageText = chatGptToolCallResponse.Content ?? string.Empty;
+
+        // Tool call messages have content only sometimes
+        string responseTextWithToolUse = !string.IsNullOrWhiteSpace(responseMessageText)
+            ? $"{responseMessageText.TrimEnd()}\n\n{toolUseText}"
+            : toolUseText;
+
+        await message.RespondAsync(responseTextWithToolUse);
     }
 
     private async Task<ImageStreamResult> GetDalleResult(string prompt, string userId)
@@ -245,65 +251,55 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         KattGptChannelContext channelContext,
         ChatCompletionMessage chatGptToolCallResponse)
     {
-        DiscordMessage? workingOnItMessage = null;
         List<ChatCompletionMessage> responseMessages = [];
 
-        try
-        {
-            ChatCompletionToolCall toolCall =
-                chatGptToolCallResponse.ToolCalls?[0] ?? throw new Exception("Tool call is null.");
+        ChatCompletionToolCall toolCall =
+            chatGptToolCallResponse.ToolCalls?[0] ?? throw new Exception("Tool call is null.");
 
-            string toolCallId = toolCall.Id;
+        // Parse the function call arguments
+        string functionCallArguments = toolCall.FunctionCall.Arguments;
 
-            // Parse the function call arguments
-            string functionCallArguments = toolCall.FunctionCall.Arguments;
+        JsonNode parsedArguments = JsonNode.Parse(functionCallArguments)
+                                   ?? throw new Exception("Could not parse function call arguments.");
 
-            JsonNode parsedArguments = JsonNode.Parse(functionCallArguments)
-                                       ?? throw new Exception("Could not parse function call arguments.");
+        string prompt = parsedArguments["prompt"]?.GetValue<string>()
+                        ?? throw new Exception("Function call arguments are invalid.");
 
-            string prompt = parsedArguments["prompt"]?.GetValue<string>()
-                            ?? throw new Exception("Function call arguments are invalid.");
+        // Send the tool use message as a confirmation
+        await SendToolUseReply(message, chatGptToolCallResponse, prompt);
 
-            workingOnItMessage = await message.RespondAsync(string.Format(MessageToolUseTemplate, prompt));
+        var authorId = message.Author!.Id.ToString();
 
-            var authorId = message.Author!.Id.ToString();
+        ImageStreamResult dalleResult = await GetDalleResult(prompt, authorId);
 
-            ImageStreamResult dalleResult = await GetDalleResult(prompt, authorId);
+        // Build the function call result message
+        var functionCallResult = $"An image of {prompt} has been generated and attached to this message.";
 
-            // Add function call result to the context
-            var functionCallResult = $"An image of {prompt} has been generated and attached to this message.";
+        ChatCompletionMessage functionCallResultMessage =
+            ChatCompletionMessage.AsToolCallResult(functionCallResult, toolCall.Id);
 
-            ChatCompletionMessage functionCallResultMessage =
-                ChatCompletionMessage.AsToolCallResult(functionCallResult, toolCallId);
+        // Force a content value for the ChatGPT response due the api not allowing nulls even though it says it does
+        chatGptToolCallResponse.Content ??= "null";
 
-            // Force a content value for the ChatGPT response due the api not allowing nulls even though it says it does
-            chatGptToolCallResponse.Content ??= "null";
+        ChatCompletionCreateRequest request = BuildRequest(
+            systemPromptsMessages,
+            channelContext,
+            allowToolCalls: false,
+            chatGptToolCallResponse,
+            functionCallResultMessage);
 
-            ChatCompletionCreateRequest request = BuildRequest(
-                systemPromptsMessages,
-                channelContext,
-                allowToolCalls: false,
-                chatGptToolCallResponse,
-                functionCallResultMessage);
+        ChatCompletionCreateResponse response = await _chatGpt.ChatCompletionCreate(request);
 
-            ChatCompletionCreateResponse response = await _chatGpt.ChatCompletionCreate(request);
+        // Handle new response
+        ChatCompletionMessage functionCallResponse = response.Choices[0].Message;
 
-            // Handle new response
-            ChatCompletionMessage functionCallResponse = response.Choices[index: 0].Message;
+        await SendImageReply(functionCallResponse.Content!, message, prompt, dalleResult);
 
-            await SendDalleResultReply(functionCallResponse.Content!, message, prompt, dalleResult);
+        // Return the function messages
+        responseMessages.Add(functionCallResultMessage);
+        responseMessages.Add(functionCallResponse);
 
-            // Return the function messages
-            responseMessages.Add(functionCallResultMessage);
-            responseMessages.Add(functionCallResponse);
-
-            return responseMessages;
-        }
-        finally
-        {
-            if (workingOnItMessage is not null)
-                await workingOnItMessage.DeleteAsync();
-        }
+        return responseMessages;
     }
 
     /// <summary>
