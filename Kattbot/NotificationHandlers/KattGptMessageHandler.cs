@@ -105,11 +105,12 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             ChatCompletionCreateRequest request = BuildRequest(
                 systemPromptsMessages,
                 channelContext,
+                allowToolCalls: true,
                 newUserMessage);
 
             ChatCompletionCreateResponse response = await _chatGpt.ChatCompletionCreate(request);
 
-            ChatCompletionChoice chatGptResponse = response.Choices[0];
+            ChatCompletionChoice chatGptResponse = response.Choices[index: 0];
             ChatCompletionMessage chatGptResponseMessage = chatGptResponse.Message;
 
             List<ChatCompletionMessage> chatGptFollowUpMessages = [];
@@ -145,13 +146,13 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     private static ChatCompletionCreateRequest BuildRequest(
         List<ChatCompletionMessage> systemPromptsMessages,
         KattGptChannelContext channelContext,
+        bool allowToolCalls = true,
         params ChatCompletionMessage[] newMessages)
     {
         // Build tools
-        ChatCompletionTool[] chatCompletionTools =
-        [
-            DalleToolBuilder.BuildDalleImageToolDefinition(),
-        ];
+        ChatCompletionTool[] chatCompletionTools = allowToolCalls
+            ? [DalleToolBuilder.BuildDalleImageToolDefinition()]
+            : [];
 
         // Collect request messages
         var requestMessages = new List<ChatCompletionMessage>();
@@ -273,13 +274,14 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             ChatCompletionCreateRequest request = BuildRequest(
                 systemPromptsMessages,
                 channelContext,
+                allowToolCalls: false,
                 chatGptToolCallResponse,
                 functionCallResultMessage);
 
             ChatCompletionCreateResponse response = await _chatGpt.ChatCompletionCreate(request);
 
             // Handle new response
-            ChatCompletionMessage functionCallResponse = response.Choices[0].Message;
+            ChatCompletionMessage functionCallResponse = response.Choices[index: 0].Message;
 
             await workingOnItMessage.DeleteAsync();
 
