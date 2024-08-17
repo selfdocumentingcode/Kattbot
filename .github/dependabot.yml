@@ -3,15 +3,29 @@ updates:
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "saturday"
+      interval: "daily"
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: "DSharpPlus*"
     groups:
-        dsharp-packages:
-            patterns:
-            - "DSharpPlus*"
-        other-packages:
-            patterns:
-            - "*"
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - patch
+          - minor
+      entity-framework:
+        patterns:
+          - "Microsoft.EntityFrameworkCore*"
+          - "Npgsql.EntityFrameworkCore*"
+      test-framework:
+        patterns:
+          - "Microsoft.NET.Test*"
+          - "MSTest*"
+          - "NSubstitute*"
+          - "FluentAssertions*"
+      microsoft:
+        patterns:
+          - "Microsoft.*"
+      image-sharp:
+        patterns:
+          - "SixLabors.ImageSharp*"
