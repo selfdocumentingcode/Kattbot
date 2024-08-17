@@ -32,6 +32,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     private const string MessageSplitToken = "[cont.] ";
     private const string RecipientMarkerToYou = "[to you]";
     private const string RecipientMarkerToOthers = "[to others]";
+    private const string MessageToolUseTemplate = "`Kattbot used: {0}`";
 
     private readonly KattGptChannelCache _cache;
     private readonly ChatGptHttpClient _chatGpt;
@@ -181,25 +182,26 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     }
 
     private static async Task SendDalleResultReply(
-        string responseMessage,
+        string responseMessageText,
         DiscordMessage messageToReplyTo,
         string prompt,
         ImageStreamResult imageStream)
     {
-        string truncatedPrompt = prompt.Length > DiscordConstants.MaxEmbedTitleLength
-            ? $"{prompt[..(DiscordConstants.MaxEmbedTitleLength - 3)]}..."
+        string toolUseText = string.Format(MessageToolUseTemplate, prompt);
+
+        const int maxFilenameLength = 32;
+
+        string truncatedPrompt = prompt.Length > maxFilenameLength
+            ? prompt[..maxFilenameLength]
             : prompt;
 
-        string filename = prompt.ToSafeFilename(imageStream.FileExtension);
+        string filename = truncatedPrompt.ToSafeFilename(imageStream.FileExtension);
 
-        DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
-            .WithTitle(truncatedPrompt)
-            .WithImageUrl($"attachment://{filename}");
+        var responseTextWithToolUse = $"{toolUseText}\n\n{responseMessageText}";
 
         DiscordMessageBuilder mb = new DiscordMessageBuilder()
             .AddFile(filename, imageStream.MemoryStream)
-            .AddEmbed(eb)
-            .WithContent(responseMessage);
+            .WithContent(responseTextWithToolUse);
 
         await messageToReplyTo.RespondAsync(mb);
     }
@@ -244,11 +246,10 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         ChatCompletionMessage chatGptToolCallResponse)
     {
         DiscordMessage? workingOnItMessage = null;
+        List<ChatCompletionMessage> responseMessages = [];
 
         try
         {
-            List<ChatCompletionMessage> responseMessages = [];
-
             ChatCompletionToolCall toolCall =
                 chatGptToolCallResponse.ToolCalls?[0] ?? throw new Exception("Tool call is null.");
 
@@ -263,14 +264,14 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             string prompt = parsedArguments["prompt"]?.GetValue<string>()
                             ?? throw new Exception("Function call arguments are invalid.");
 
-            workingOnItMessage = await message.RespondAsync($"Kattbot used: {prompt}");
+            workingOnItMessage = await message.RespondAsync(string.Format(MessageToolUseTemplate, prompt));
 
             var authorId = message.Author!.Id.ToString();
 
             ImageStreamResult dalleResult = await GetDalleResult(prompt, authorId);
 
             // Add function call result to the context
-            var functionCallResult = $"An image of {prompt} has been created.";
+            var functionCallResult = $"An image of {prompt} has been generated and attached to this message.";
 
             ChatCompletionMessage functionCallResultMessage =
                 ChatCompletionMessage.AsToolCallResult(functionCallResult, toolCallId);
@@ -290,8 +291,6 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             // Handle new response
             ChatCompletionMessage functionCallResponse = response.Choices[index: 0].Message;
 
-            await workingOnItMessage.DeleteAsync();
-
             await SendDalleResultReply(functionCallResponse.Content!, message, prompt, dalleResult);
 
             // Return the function messages
@@ -300,11 +299,10 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
             return responseMessages;
         }
-        catch (Exception)
+        finally
         {
-            if (workingOnItMessage is not null) await workingOnItMessage.DeleteAsync();
-
-            throw;
+            if (workingOnItMessage is not null)
+                await workingOnItMessage.DeleteAsync();
         }
     }
 
