@@ -120,6 +120,12 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
             if (chatGptResponse.FinishReason == ChoiceFinishReason.tool_calls)
             {
+                // Tool call messages have content only sometimes
+                if (!string.IsNullOrWhiteSpace(chatGptResponseMessage.Content))
+                {
+                    await SendReply(chatGptResponseMessage.Content, message);
+                }
+
                 List<ChatCompletionMessage> toolResponseMessages = await HandleToolCallResponse(
                     message,
                     systemPromptsMessages,
