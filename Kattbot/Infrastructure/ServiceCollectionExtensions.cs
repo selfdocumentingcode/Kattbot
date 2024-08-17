@@ -40,6 +40,8 @@ public static class ServiceCollectionExtensions
 
         clientBuilder.RegisterEventHandlers();
 
+        clientBuilder.RegisterCommands(configuration);
+
         // This replacement has to happen after the DiscordClientBuilder.CreateDefault call
         // and before the DiscordClient is built.
         services.Replace<IGatewayController, NoWayGateway>();
