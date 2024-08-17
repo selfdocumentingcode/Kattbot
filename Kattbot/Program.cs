@@ -2,7 +2,6 @@ using System.Threading.Channels;
 using Kattbot.CommandHandlers;
 using Kattbot.Config;
 using Kattbot.Data.Repositories;
-using Kattbot.EventHandlers;
 using Kattbot.Helpers;
 using Kattbot.Infrastructure;
 using Kattbot.Services;
@@ -57,8 +56,6 @@ public class Program
 
                     AddChannels(services);
 
-                    AddBotEventHandlers(services);
-
                     AddInternalServices(services);
 
                     AddRepositories(services);
@@ -68,11 +65,6 @@ public class Program
                     services.AddDiscordClient(configuration);
                 })
             .UseSystemd();
-    }
-
-    private static void AddBotEventHandlers(IServiceCollection services)
-    {
-        services.AddSingleton<CommandEventHandler>();
     }
 
     private static void AddInternalServices(IServiceCollection services)
