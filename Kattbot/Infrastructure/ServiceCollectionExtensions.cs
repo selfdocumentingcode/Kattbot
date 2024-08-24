@@ -38,9 +38,9 @@ public static class ServiceCollectionExtensions
 
         clientBuilder.SetLogLevel(logLevel);
 
-        clientBuilder.RegisterEventHandlers();
-
         clientBuilder.RegisterCommands(configuration);
+
+        clientBuilder.RegisterEventHandlers();
 
         // This replacement has to happen after the DiscordClientBuilder.CreateDefault call
         // and before the DiscordClient is built.
@@ -80,6 +80,7 @@ public static class ServiceCollectionExtensions
             EnableDefaultHelp = false,
             EnableMentionPrefix = false,
         };
+
         builder.UseCommandsNext(
             commands =>
             {

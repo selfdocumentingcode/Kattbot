@@ -17,7 +17,7 @@ public class SpeakTextRequest : CommandRequest
         Text = text;
     }
 
-    public string Text { get; set; }
+    public string Text { get; }
 }
 
 public class SpeakRequestHandler : IRequestHandler<SpeakTextRequest>
@@ -79,7 +79,7 @@ public class SpeakRequestHandler : IRequestHandler<SpeakTextRequest>
 
     private static string GetRandomVoice()
     {
-        int random = new Random().Next(AudioVoices.Length);
+        int random = new System.Random().Next(AudioVoices.Length);
 
         return AudioVoices[random];
     }

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using Kattbot.Attributes;
+using Kattbot.CommandHandlers.Random;
 using Kattbot.CommandHandlers.Speech;
 using Kattbot.Workers;
 
@@ -21,7 +22,7 @@ public class RandomModule : BaseCommandModule
     [Command("meow")]
     public Task Meow(CommandContext ctx)
     {
-        int result = new Random().Next(0, 10);
+        int result = new Random().Next(minValue: 0, maxValue: 10);
 
         if (result == 0)
         {
@@ -34,7 +35,7 @@ public class RandomModule : BaseCommandModule
     [Command("mjau")]
     public Task Mjau(CommandContext ctx)
     {
-        int result = new Random().Next(0, 10);
+        int result = new Random().Next(minValue: 0, maxValue: 10);
 
         if (result == 0)
         {
@@ -51,10 +52,17 @@ public class RandomModule : BaseCommandModule
     }
 
     [Command("speak")]
-    [Cooldown(1, 60, CooldownBucketType.User)]
+    [Cooldown(maxUses: 1, resetAfter: 10, CooldownBucketType.User)]
     public async Task Speak(CommandContext ctx, [RemainingText] string text)
     {
         var request = new SpeakTextRequest(ctx, text);
+        await _commandParallelQueue.Writer.WriteAsync(request);
+    }
+
+    [Command("clap")]
+    public async Task Clap(CommandContext ctx, [RemainingText] string message)
+    {
+        var request = new ClapTextRequest(ctx, message);
         await _commandParallelQueue.Writer.WriteAsync(request);
     }
 }
