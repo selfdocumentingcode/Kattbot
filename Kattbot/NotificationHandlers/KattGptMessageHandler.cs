@@ -256,6 +256,12 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         ChatCompletionToolCall toolCall =
             chatGptToolCallResponse.ToolCalls?[0] ?? throw new Exception("Tool call is null.");
 
+        if (chatGptToolCallResponse.ToolCalls.Count > 1)
+        {
+            _discordErrorLogger.LogError($"Too many tool calls: {chatGptToolCallResponse.ToolCalls.Count.ToString()}");
+            chatGptToolCallResponse.ToolCalls.RemoveRange(index: 1, chatGptToolCallResponse.ToolCalls.Count - 1);
+        }
+
         // Parse the function call arguments
         string functionCallArguments = toolCall.FunctionCall.Arguments;
 

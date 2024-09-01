@@ -73,11 +73,6 @@ public class DiscordErrorLogger
         SendErrorLogChannelEmbed(error, errorMessage, DiscordConstants.ErrorEmbedColor);
     }
 
-    public void LogWarning(string warning, string warningMessage)
-    {
-        SendErrorLogChannelEmbed(warning, warningMessage, DiscordConstants.WarningEmbedColor);
-    }
-
     private void SendErrorLogChannelEmbed(string title, string message, int color)
     {
         ulong errorLogGuildId = _options.ErrorLogGuildId;
