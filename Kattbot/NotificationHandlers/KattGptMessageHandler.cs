@@ -170,6 +170,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
             Temperature = DefaultTemperature,
             MaxTokens = MaxTokensToGenerate,
             Tools = chatCompletionTools,
+            ParallelToolCalls = false,
         };
 
         return request;
@@ -258,8 +259,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
         if (chatGptToolCallResponse.ToolCalls.Count > 1)
         {
-            _discordErrorLogger.LogError($"Too many tool calls: {chatGptToolCallResponse.ToolCalls.Count.ToString()}");
-            chatGptToolCallResponse.ToolCalls.RemoveRange(index: 1, chatGptToolCallResponse.ToolCalls.Count - 1);
+            throw new Exception($"Too many tool calls: {chatGptToolCallResponse.ToolCalls.Count.ToString()}");
         }
 
         // Parse the function call arguments
