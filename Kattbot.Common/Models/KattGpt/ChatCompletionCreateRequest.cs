@@ -50,7 +50,7 @@ public record ChatCompletionCreateRequest
     ///     https://platform.openai.com/docs/api-reference/chat/create#chat-create-parallel_tool_calls
     /// </summary>
     [JsonPropertyName("parallel_tool_calls")]
-    public bool ParallelToolCalls { get; set; }
+    public bool? ParallelToolCalls { get; set; }
 
     /// <summary>
     ///     Gets or sets what sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more
