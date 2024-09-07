@@ -19,7 +19,7 @@ public class UtilsModule : BaseCommandModule
 
         if (isUnicodeEmoji)
         {
-            var unicodeEncoding = new UnicodeEncoding(true, false);
+            var unicodeEncoding = new UnicodeEncoding(bigEndian: true, byteOrderMark: false);
 
             byte[] bytes = unicodeEncoding.GetBytes(emoji.Name);
 
@@ -35,7 +35,7 @@ public class UtilsModule : BaseCommandModule
 
             for (var i = 0; i < sb.Length; i += 4)
             {
-                formattedSb.Append($"\\u{bytesAsString.Substring(i, 4)}");
+                formattedSb.Append($"\\u{bytesAsString.Substring(i, length: 4)}");
             }
 
             var result = formattedSb.ToString();
@@ -61,5 +61,18 @@ public class UtilsModule : BaseCommandModule
         return !result.Resolved
             ? ctx.RespondAsync(result.ErrorMessage)
             : ctx.RespondAsync($"Role {roleName} has id {discordRole.Id}");
+    }
+
+    [Command("avatar-url")]
+    public Task GetAvatarUrl(CommandContext ctx, DiscordMember member)
+    {
+        string memberAvatarUrl = member.AvatarUrl;
+        string memberGuildAvatarUrl = member.GuildAvatarUrl;
+
+        var response = $"User avatar: {memberAvatarUrl}";
+        if (!string.IsNullOrEmpty(memberGuildAvatarUrl))
+            response += $"\nServer avatar: {memberGuildAvatarUrl}";
+
+        return ctx.RespondAsync(response);
     }
 }
