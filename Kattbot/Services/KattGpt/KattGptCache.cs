@@ -8,7 +8,7 @@ public class KattGptChannelCache
     private const int CacheSize = 128;
 
     private const int AbsoluteCacheDurationInDays = 7;
-    private const int SlidingCacheDurationInHours = 1;
+    private const int SlidingCacheDurationInHours = 4;
 
     private readonly MemoryCache _cache = new(
         new MemoryCacheOptions
