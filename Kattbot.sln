@@ -3,54 +3,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot", "Kattbot\Kattbot.csproj", "{9EB340B8-8D7D-4BBA-A146-33F7A15B13CE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot", "src\Kattbot\Kattbot.csproj", "{9EB340B8-8D7D-4BBA-A146-33F7A15B13CE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot.Tests", "Kattbot.Tests\Kattbot.Tests.csproj", "{1C2153F7-4660-4021-9864-8F1F704054BF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot.Tests", "tests\Kattbot.Tests\Kattbot.Tests.csproj", "{1C2153F7-4660-4021-9864-8F1F704054BF}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2D6F1BD9-5D5D-4C85-B254-B773679A5AF9}"
-	ProjectSection(SolutionItems) = preProject
-		.dockerignore = .dockerignore
-		.editorconfig = .editorconfig
-		.gitattributes = .gitattributes
-		.gitignore = .gitignore
-		Directory.Build.props = Directory.Build.props
-		Dotnet_cheatsheet.md = Dotnet_cheatsheet.md
-		Readme.md = Readme.md
-	EndProjectSection
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot.Data", "src\Kattbot.Data\Kattbot.Data.csproj", "{F454BCE5-C964-4720-AD84-96A07FA7B8B1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot.Data", "Kattbot.Data\Kattbot.Data.csproj", "{F454BCE5-C964-4720-AD84-96A07FA7B8B1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot.Common", "src\Kattbot.Common\Kattbot.Common.csproj", "{FFC07C89-ECA8-4887-9376-DA43C5FC83AB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot.Common", "Kattbot.Common\Kattbot.Common.csproj", "{FFC07C89-ECA8-4887-9376-DA43C5FC83AB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot.Data.Migrations", "src\Kattbot.Data.Migrations\Kattbot.Data.Migrations.csproj", "{D26776E6-F360-425C-9281-F4E7B176197E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kattbot.Data.Migrations", "Kattbot.Data.Migrations\Kattbot.Data.Migrations.csproj", "{D26776E6-F360-425C-9281-F4E7B176197E}"
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker", "docker\docker.dcproj", "{642D827F-5BA9-4177-AE3D-4BAEE013BC3F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{727EE4ED-CFEC-4BBC-B67A-3DA7F8EE3F1E}"
-	ProjectSection(SolutionItems) = preProject
-		scripts\kattbot-backup-db.sh = scripts\kattbot-backup-db.sh
-	EndProjectSection
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E845ABD6-198E-45CF-92D5-97F1A5E741A3}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".config", ".config", "{524F91BA-735B-4F73-BEDD-A3CC1DEB452C}"
-	ProjectSection(SolutionItems) = preProject
-		.config\dotnet-tools.json = .config\dotnet-tools.json
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{DC675219-AB3D-40B1-BA7C-27C5613023BC}"
-	ProjectSection(SolutionItems) = preProject
-		.github\workflows\build.yml = .github\workflows\build.yml
-		.github\dependabot.yml = .github\dependabot.yml
-		.github\workflows\release-v2.yml = .github\workflows\release-v2.yml
-		.github\workflows\restart-v2.yml = .github\workflows\restart-v2.yml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{26E4A78E-3DA9-4825-896B-4A9B0B017188}"
-	ProjectSection(SolutionItems) = preProject
-		docker\docker-compose.yml = docker\docker-compose.yml
-		docker\Dockerfile = docker\Dockerfile
-		docker\prod-compose.yml = docker\prod-compose.yml
-		docker\Prod.Dockerfile = docker\Prod.Dockerfile
-	EndProjectSection
-EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-vs", "docker-vs\docker-vs.dcproj", "{642D827F-5BA9-4177-AE3D-4BAEE013BC3F}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{17BE3AFF-E650-40BC-A5EF-DF77B794D988}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -100,10 +67,11 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{727EE4ED-CFEC-4BBC-B67A-3DA7F8EE3F1E} = {2D6F1BD9-5D5D-4C85-B254-B773679A5AF9}
-		{524F91BA-735B-4F73-BEDD-A3CC1DEB452C} = {2D6F1BD9-5D5D-4C85-B254-B773679A5AF9}
-		{DC675219-AB3D-40B1-BA7C-27C5613023BC} = {2D6F1BD9-5D5D-4C85-B254-B773679A5AF9}
-		{26E4A78E-3DA9-4825-896B-4A9B0B017188} = {2D6F1BD9-5D5D-4C85-B254-B773679A5AF9}
+		{9EB340B8-8D7D-4BBA-A146-33F7A15B13CE} = {E845ABD6-198E-45CF-92D5-97F1A5E741A3}
+		{FFC07C89-ECA8-4887-9376-DA43C5FC83AB} = {E845ABD6-198E-45CF-92D5-97F1A5E741A3}
+		{F454BCE5-C964-4720-AD84-96A07FA7B8B1} = {E845ABD6-198E-45CF-92D5-97F1A5E741A3}
+		{D26776E6-F360-425C-9281-F4E7B176197E} = {E845ABD6-198E-45CF-92D5-97F1A5E741A3}
+		{1C2153F7-4660-4021-9864-8F1F704054BF} = {17BE3AFF-E650-40BC-A5EF-DF77B794D988}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {49047B12-10BC-4E9D-9DA6-758947DF9CE8}

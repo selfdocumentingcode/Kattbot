@@ -1,22 +1,24 @@
-version: '3.4'
+name: kattbot-dev
 
 services:
   kattbot:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
-    depends_on:
-      - kattbot-pgsql
+      dockerfile: src/Kattbot/Dockerfile
     environment:
       - DOTNET_ENVIRONMENT=Development
     env_file:
       - path: .env.local
         required: false
-
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+  
   kattbot-pgsql:
     image: postgres:15.5
     ports:
       - "5433:5432"
+    profiles:
+      - database
     environment:
       POSTGRES_USER: kattbot
       POSTGRES_PASSWORD: hunter2

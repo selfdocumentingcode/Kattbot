@@ -339,6 +339,6 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 
-Kattbot.Data.Migrations/database_migration.sql
-
-.env.local
+*.local
+*.swp
+.secrets
