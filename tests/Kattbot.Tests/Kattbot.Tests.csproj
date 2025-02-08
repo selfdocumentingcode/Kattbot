@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Kattbot\Kattbot.csproj" />
+        <ProjectReference Include="..\..\src\Kattbot\Kattbot.csproj" />
     </ItemGroup>
 
     <ItemGroup>
