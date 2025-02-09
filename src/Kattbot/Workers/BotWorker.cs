@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using System.Diagnostics;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -43,7 +45,23 @@ public class BotWorker : IHostedService
     {
         string commandPrefix = _options.CommandPrefix;
 
-        var activity = new DiscordActivity($"\"{commandPrefix}help\" for help", DiscordActivityType.Playing);
+        string? productVersion =
+            FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
+
+        var versionString = "?.?.?";
+
+        if (!string.IsNullOrWhiteSpace(productVersion))
+        {
+            const int gitFullShaLength = 40;
+
+            versionString = productVersion.Length > gitFullShaLength
+                ? productVersion[..^(gitFullShaLength + 1)]
+                : productVersion;
+        }
+
+        var activity = new DiscordActivity(
+            $"Use {commandPrefix}help for help (v{versionString})",
+            DiscordActivityType.Custom);
 
         await _client.ConnectAsync(activity);
     }

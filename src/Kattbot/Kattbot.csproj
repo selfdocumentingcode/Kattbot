@@ -6,6 +6,17 @@
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <!-- AssemblySemvVer: Major.Minor.Patch.0 -->
+        <AssemblyVersion>1.2.3.0</AssemblyVersion>
+        <!-- AssemblySemFileVer: Major.Minor.Patch.0 -->
+        <FileVersion>1.2.3.0</FileVersion>
+        <!-- FullSemVer: SemVer + BuildMetaData -->
+        <InformationalVersion>1.2.3-a.4+5</InformationalVersion>
+        <!-- SemVer: The semantical version number, including PreReleaseTagWithDash for pre-release version numbers. -->
+        <Version>1.2.3-a.4</Version>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.1" />
         <PackageReference Include="TiktokenSharp" Version="1.1.5" />

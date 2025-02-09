@@ -23,36 +23,73 @@ env:
   DB_MIGRATION_SCRIPT: database_migration.sql
 
 jobs:
-  release:
+  setup:
     runs-on: ubuntu-latest
+    
+    outputs:
+      imageTag: ${{ steps.setup-vars.outputs.IMAGE_TAG }}
+      needsSemver: ${{ steps.setup-vars.outputs.NEEDS_SEMVER }}
+      repositoryOwnerLC: ${{ steps.setup-vars.outputs.REPOSITORY_OWNER_LC }}
+      repositoryName: ${{ steps.setup-vars.outputs.REPOSITORY_NAME }}
+    
     steps:
-      - uses: actions/checkout@v4
-        with:
-          sparse-checkout: |
-            docker/${{ env.COMPOSE_FILE_NAME }}
-          sparse-checkout-cone-mode: false
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up environment variables
+        id: setup-vars
         run: |
+          BRANCH_NAME_DASH=$(echo "${GITHUB_REF#refs/heads/}" | tr '/' '-')
+          
           # Set the image tag based on the branch name. If the branch is main, use "latest".
           # If the image tag is provided as an input, use that instead. 
           if [ -z "$IMAGE_TAG_OVERRIDE" ]; then
             if [ "$GITHUB_REF" = "refs/heads/main" ]; then
               IMAGE_TAG=latest
             else
-              IMAGE_TAG=$(echo "${GITHUB_REF#refs/heads/}" | tr '/' '-')
+              IMAGE_TAG="$BRANCH_NAME_DASH"
             fi
           else
-            IMAGE_TAG=$IMAGE_TAG_OVERRIDE
+            IMAGE_TAG="$IMAGE_TAG_OVERRIDE"
           fi
-          echo "IMAGE_TAG=$IMAGE_TAG" >> "$GITHUB_ENV"
+          echo "IMAGE_TAG=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          
+          # If the image tag is "latest" or the branch name, flag it as needing semver.
+          if [ "$IMAGE_TAG" = "latest" ]; then
+              NEEDS_SEMVER=true
+          elif [ "$IMAGE_TAG" = "$BRANCH_NAME_DASH" ]; then
+              NEEDS_SEMVER=true
+          fi
+          echo "NEEDS_SEMVER: $NEEDS_SEMVER"
+          echo "NEEDS_SEMVER=$NEEDS_SEMVER" >> "$GITHUB_OUTPUT"
 
           # Set the repository name to lowercase
-          REPOSITORY_NAME=$(echo $REPOSITORY_OWNER | tr '[:upper:]' '[:lower:]');
-          echo "REPOSITORY_NAME=$REPOSITORY_NAME" >> "$GITHUB_ENV"
+          REPOSITORY_OWNER_LC=$(echo $REPOSITORY_OWNER | tr '[:upper:]' '[:lower:]');
+          echo "REPOSITORY_OWNER_LC=$REPOSITORY_OWNER_LC" >> "$GITHUB_OUTPUT"
+          
+          # Extract the repository name from the repository env i.e. selfdocumentingcode/kattbot => kattbot
+          REPOSITORY_NAME=${REPOSITORY##*/}
+          echo "REPOSITORY_NAME=$REPOSITORY_NAME" >> "$GITHUB_OUTPUT"
         env:
           IMAGE_TAG_OVERRIDE: ${{ inputs.imageTag }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
+          REPOSITORY: ${{ github.repository }}
+  
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    needs: setup
+    env:
+      IMAGE_TAG: ${{ needs.setup.outputs.imageTag }}
+      REPOSITORY_OWNER_LC: ${{ needs.setup.outputs.repositoryOwnerLC }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            ${{ env.COMPOSE_FILE_PATH_SRC }}
+          sparse-checkout-cone-mode: false
 
       - name: Upload compose.yml
         uses: appleboy/scp-action@v0.1.7
@@ -84,7 +121,7 @@ jobs:
           debug: ${{vars.ACTIONS_RUNNER_DEBUG}}
           script_stop: true
           script: |
-            FULL_IMAGE_NAME="$REGISTRY/$REPOSITORY_NAME/$IMAGE_NAME:$IMAGE_TAG"
+            FULL_IMAGE_NAME="$REGISTRY/$REPOSITORY_OWNER_LC/$IMAGE_NAME:$IMAGE_TAG"
             echo "Full image name: $FULL_IMAGE_NAME"
             
             MIGRATIONS_CONTAINER_NAME="$COMPOSE_PROJECT_NAME-migrations"
@@ -128,7 +165,7 @@ jobs:
           envs: >-
             HOST_GATEWAY_IP,
             REGISTRY,
-            REPOSITORY_NAME,
+            REPOSITORY_OWNER_LC,
             IMAGE_NAME,
             IMAGE_TAG,
             COMPOSE_PROJECT_NAME,
@@ -141,3 +178,93 @@ jobs:
             BOT_TOKEN,
             OPENAI_API_KEY,
             DB_CONNECTION_STRING
+            
+  create-release:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+    permissions:
+      packages: read
+      contents: read
+    needs: [setup, release]
+    env:
+      IMAGE_TAG: ${{ needs.setup.outputs.imageTag }}
+      NEEDS_SEMVER: ${{ needs.setup.outputs.needsSemver }}
+      REPOSITORY_NAME: ${{ needs.setup.outputs.repositoryName }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: GitHub Packages Admin
+        id: package-info
+        uses: selfdocumentingcode/ghaction-package-admin@v1.1
+        with:
+          ghtoken: ${{ github.token }}
+          operation: listPackageVersions
+          user: ${{ github.repository_owner }}
+          package_type: container
+          package_name: ${{ env.REPOSITORY_NAME }}
+          include: metadata.container.tags[*] ${{ env.IMAGE_TAG }}
+          slice: __NONE__ 1 # get the first item only
+          
+      - name: Get container tags
+        run: |
+          echo "IMAGE_TAG: $IMAGE_TAG"
+          echo "NEEDS_SEMVER: $NEEDS_SEMVER"
+          
+          TAG_LIST=$(echo "$PACKAGE_INFO" | jq --raw-output '.[0].metadata.container.tags')
+          echo "TAG_LIST: $TAG_LIST"
+          
+          SHA_TAG=$(echo "$PACKAGE_INFO" | jq --raw-output '.[0].metadata.container.tags | map(select(startswith("sha"))) | .[0]')
+          echo "SHA_TAG: $SHA_TAG"
+          
+          # Exclude "sha-" prefix from SHA_TAG
+          COMMIT_SHA=${SHA_TAG#"sha-"}
+          echo "COMMIT_SHA: $COMMIT_SHA"
+          echo "COMMIT_SHA=$COMMIT_SHA" >> $GITHUB_ENV
+          
+          if [ "${NEEDS_SEMVER}" == "true" ]; then
+            SEMVER_TAG=$(echo "$PACKAGE_INFO" | jq --raw-output '.[0].metadata.container.tags | map(select((startswith("sha") | not) and . != "${IMAGE_TAG}")) | .[0]')
+          else
+            SEMVER_TAG=${IMAGE_TAG}
+          fi
+          echo "SEMVER_TAG: $SEMVER_TAG"
+          echo "SEMVER_TAG=$SEMVER_TAG" >> $GITHUB_ENV
+        env:
+          PACKAGE_INFO: ${{ steps.package-info.outputs.result_json_output }}
+
+      - name: Check if commit exists on current branch
+        id: check_commit
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "BRANCH_NAME: $BRANCH_NAME"
+
+          if git branch --contains "$COMMIT_SHA" | grep -q "$BRANCH_NAME"; then
+            echo "Commit $COMMIT_SHA exists on branch $BRANCH_NAME."
+          else
+            echo "Commit $COMMIT_SHA does not exist on $BRANCH_NAME."
+            exit 1
+          fi
+        env:
+          COMMIT_SHA: ${{ env.COMMIT_SHA }}
+      
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          
+      - name: Create Release
+        run: | 
+          gh release create $SEMVER_TAG \
+          --target $COMMIT_SHA \
+          --title $SEMVER_TAG \
+          --draft \
+          --repo $REPOSITORY
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPOSITORY: ${{ github.repository }}
+          SEMVER_TAG: ${{ env.SEMVER_TAG }}
+          COMMIT_SHA: ${{ env.COMMIT_SHA }}
+          

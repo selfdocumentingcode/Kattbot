@@ -21,16 +21,47 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v3
+        with:
+          versionSpec: '6.0.x'
+
+      - name: Execute GitVersion
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v3
+        with:
+          useConfigFile: true
+
+      - name: Display GitVersion config
+        uses: gittools/actions/gitversion/command@v3
+        if: ${{ env.ACTIONS_RUNNER_DEBUG == 'true' }}
+        with:
+          arguments: '/showConfig'
+
+      - name: Output the FullSemVer variable
+        uses: gittools/actions/gitversion/command@v3.0.0
+        if: ${{ env.ACTIONS_RUNNER_DEBUG == 'true' }}
+        with:
+          arguments: '/showvariable FullSemVer'
+
+      - name: Update the version number in the project files
+        uses: gittools/actions/gitversion/command@v3.0.0
+        with:
+          arguments: '/updateprojectfiles'
 
       - name: Test
         run: dotnet test
@@ -48,9 +79,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # set latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=branch,enable=${{ github.ref != format('refs/heads/{0}', 'main') }}
+            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/main' }}
+            type=raw,value=${{ steps.gitversion.outputs.semVer }}
+            type=sha,format=long
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5.1.0
