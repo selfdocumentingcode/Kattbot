@@ -86,7 +86,7 @@ public class DiscordLoggerWorker : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Welp");
+            _logger.LogCritical(ex, "Welp");
         }
     }
 
@@ -101,6 +101,6 @@ public class DiscordLoggerWorker : BackgroundService
 
         discordGuild.Channels.TryGetValue(channelId, out DiscordChannel? discordChannel);
 
-        return discordChannel ??= await discordGuild.GetChannelAsync(channelId);
+        return discordChannel ?? await discordGuild.GetChannelAsync(channelId);
     }
 }

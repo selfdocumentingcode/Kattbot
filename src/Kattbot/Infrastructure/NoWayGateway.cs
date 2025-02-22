@@ -6,13 +6,17 @@ namespace Kattbot.Infrastructure;
 // ReSharper disable once ClassNeverInstantiated.Global
 public class NoWayGateway : IGatewayController
 {
-    public Task ZombiedAsync(IGatewayClient client)
+    public async Task ZombiedAsync(IGatewayClient client)
     {
-        // TODO implement zombie handling
-        return Task.CompletedTask;
+        await client.ReconnectAsync();
     }
 
     public Task HeartbeatedAsync(IGatewayClient client)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task ResumeAttemptedAsync(IGatewayClient client)
     {
         return Task.CompletedTask;
     }
