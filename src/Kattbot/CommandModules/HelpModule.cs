@@ -46,7 +46,7 @@ public class HelpModule : BaseCommandModule
         sb.AppendLine($"`{commandPrefix}deepfry [emote|user|image]`");
         sb.AppendLine($"`{commandPrefix}pet [emote|user|image] [?speed]`");
         sb.AppendLine($"`{commandPrefix}dallify [emote|user|image]`");
-        sb.AppendLine($"`{commandPrefix}dalle [text]`");
+        sb.AppendLine($"`{commandPrefix}gpt-image [text]`");
         sb.AppendLine($"`{commandPrefix}help images .. See all image commands`");
 
         sb.AppendLine();
@@ -112,6 +112,7 @@ public class HelpModule : BaseCommandModule
         sb.AppendLine($"`{commandPrefix}pet [emote|user|image] [?speed]`");
         sb.AppendLine($"`{commandPrefix}dallify [emote|user|image]`");
         sb.AppendLine($"`{commandPrefix}dalle [text]`");
+        sb.AppendLine($"`{commandPrefix}gpt-image [text] [?image]`");
 
         sb.AppendLine();
         sb.AppendLine("Command arguments:");
