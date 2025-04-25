@@ -32,7 +32,7 @@ public class ImageService
         return Image.Load(imageBytes);
     }
 
-    public async Task<Image> ConvertImageToPng(Image image, int? maxSizeInMb = null)
+    public static async Task<Image> ConvertImageToPng(Image image, int? maxSizeInMb = null)
     {
         using var pngMemoryStream = new MemoryStream();
 
@@ -58,6 +58,13 @@ public class ImageService
         }
 
         return imageAsPng;
+    }
+
+    public static Image ConvertBase64ToImage(string base64)
+    {
+        byte[] bytes = Convert.FromBase64String(base64);
+
+        return Image.Load(bytes);
     }
 
     public async Task<Image> DownloadImage(string url)
@@ -173,7 +180,7 @@ public class ImageService
         }
         else if (effect == TransformImageEffect.Twirl)
         {
-            imageResult = ImageEffects.TwirlImage(inputImage, 90);
+            imageResult = ImageEffects.TwirlImage(inputImage, angleDeg: 90);
         }
         else
         {

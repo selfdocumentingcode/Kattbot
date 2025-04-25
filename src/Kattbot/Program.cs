@@ -7,6 +7,7 @@ using Kattbot.Infrastructure;
 using Kattbot.Services;
 using Kattbot.Services.Cache;
 using Kattbot.Services.Dalle;
+using Kattbot.Services.GptImages;
 using Kattbot.Services.Images;
 using Kattbot.Services.KattGpt;
 using Kattbot.Services.Speech;
@@ -28,42 +29,41 @@ public class Program
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
         return Host.CreateDefaultBuilder(args)
-            .ConfigureServices(
-                (hostContext, services) =>
+            .ConfigureServices((hostContext, services) =>
+            {
+                IConfiguration configuration = hostContext.Configuration;
+
+                services.Configure<BotOptions>(hostContext.Configuration.GetSection(BotOptions.OptionsKey));
+                services.Configure<KattGptOptions>(hostContext.Configuration.GetSection(KattGptOptions.OptionsKey));
+
+                services.AddHttpClient();
+                services.AddHttpClient<ChatGptHttpClient>();
+                services.AddHttpClient<DalleHttpClient>();
+                services.AddHttpClient<SpeechHttpClient>();
+                services.AddHttpClient<GptImagesHttpClient>();
+
+                services.AddMediatR(cfg =>
                 {
-                    IConfiguration configuration = hostContext.Configuration;
+                    cfg.RegisterServicesFromAssemblyContaining<Program>();
+                    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
+                });
+                services.AddSingleton<NotificationPublisher>();
 
-                    services.Configure<BotOptions>(hostContext.Configuration.GetSection(BotOptions.OptionsKey));
-                    services.Configure<KattGptOptions>(hostContext.Configuration.GetSection(KattGptOptions.OptionsKey));
+                services.AddSingleton<SharedCache>();
+                services.AddSingleton<KattGptChannelCache>();
 
-                    services.AddHttpClient();
-                    services.AddHttpClient<ChatGptHttpClient>();
-                    services.AddHttpClient<DalleHttpClient>();
-                    services.AddHttpClient<SpeechHttpClient>();
+                AddWorkers(services);
 
-                    services.AddMediatR(
-                        cfg =>
-                        {
-                            cfg.RegisterServicesFromAssemblyContaining<Program>();
-                            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
-                        });
-                    services.AddSingleton<NotificationPublisher>();
+                AddChannels(services);
 
-                    services.AddSingleton<SharedCache>();
-                    services.AddSingleton<KattGptChannelCache>();
+                AddInternalServices(services);
 
-                    AddWorkers(services);
+                AddRepositories(services);
 
-                    AddChannels(services);
+                services.AddDbContext(configuration);
 
-                    AddInternalServices(services);
-
-                    AddRepositories(services);
-
-                    services.AddDbContext(configuration);
-
-                    services.AddDiscordClient(configuration);
-                })
+                services.AddDiscordClient(configuration);
+            })
             .UseSystemd();
     }
 
