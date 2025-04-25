@@ -135,10 +135,10 @@ public static class DiscordExtensions
 
     private static async Task<string?> WaitForEmbedImage(this DiscordMessage message)
     {
-        const int maxWaitDurationms = 5 * 1000;
+        const int maxWaitDurationMs = 5 * 1000;
         const int delayMs = 100;
 
-        var cts = new CancellationTokenSource(maxWaitDurationms);
+        var cts = new CancellationTokenSource(maxWaitDurationMs);
 
         try
         {
@@ -151,6 +151,13 @@ public static class DiscordExtensions
                     if (imgEmbed?.Url != null)
                     {
                         return imgEmbed.Url.AbsoluteUri;
+                    }
+
+                    DiscordEmbed? imgAttachmentEmbed = message.Embeds.FirstOrDefault(e => e.Image != null);
+
+                    if (imgAttachmentEmbed?.Image?.Url != null)
+                    {
+                        return imgAttachmentEmbed.Image.Url.Value.ToString();
                     }
                 }
 
