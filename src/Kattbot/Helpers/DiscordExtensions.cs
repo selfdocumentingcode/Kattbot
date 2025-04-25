@@ -117,14 +117,15 @@ public static class DiscordExtensions
     {
         if (message.Attachments.Count > 0)
         {
-            DiscordAttachment? imgAttachment = message.Attachments.FirstOrDefault(a => a.MediaType.StartsWith("image"));
+            DiscordAttachment? imgAttachment =
+                message.Attachments.FirstOrDefault(a => a.MediaType?.StartsWith("image") ?? false);
 
             if (imgAttachment != null)
             {
                 return imgAttachment.Url;
             }
         }
-        else if (message.Stickers.Count > 0)
+        else if (message.Stickers?.Count > 0)
         {
             return message.Stickers[0].StickerUrl;
         }
@@ -147,13 +148,13 @@ public static class DiscordExtensions
                 {
                     DiscordEmbed? imgEmbed = message.Embeds.FirstOrDefault(e => e.Type == "image");
 
-                    if (imgEmbed != null)
+                    if (imgEmbed?.Url != null)
                     {
                         return imgEmbed.Url.AbsoluteUri;
                     }
                 }
 
-                await Task.Delay(delayMs);
+                await Task.Delay(delayMs, cts.Token);
             }
         }
         catch (OperationCanceledException)

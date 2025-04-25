@@ -64,7 +64,7 @@ public class DallePromptHandler : IRequestHandler<DallePromptCommand>
 
             Image image = await _imageService.DownloadImage(imageUrl.Url);
 
-            ImageStreamResult imageStream = await _imageService.GetImageStream(image);
+            ImageStreamResult imageStream = await ImageService.GetImageStream(image);
 
             string fileName = prompt.ToSafeFilename(imageStream.FileExtension);
 

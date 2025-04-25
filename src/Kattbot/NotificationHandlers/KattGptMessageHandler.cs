@@ -244,7 +244,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
         Image? image = await _imageService.DownloadImage(imageUrl.Url);
 
-        ImageStreamResult? imageStream = await _imageService.GetImageStream(image);
+        ImageStreamResult? imageStream = await ImageService.GetImageStream(image);
 
         return imageStream;
     }

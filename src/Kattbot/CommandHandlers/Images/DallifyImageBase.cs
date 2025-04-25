@@ -38,9 +38,7 @@ public abstract class DallifyImageHandlerBase
             maxSize,
             Math.Max(ValidSizes.Reverse().FirstOrDefault(s => squaredImage.Height >= s), ValidSizes[0]));
 
-        var fileName = $"{Guid.NewGuid()}.png";
-
-        ImageStreamResult inputImageStream = await _imageService.GetImageStream(squaredImage);
+        ImageStreamResult inputImageStream = await ImageService.GetImageStream(squaredImage);
 
         var imageVariationRequest = new CreateImageVariationRequest
         {
@@ -48,6 +46,8 @@ public abstract class DallifyImageHandlerBase
             Size = $"{resultSize}x{resultSize}",
             User = userId.ToString(),
         };
+
+        var fileName = $"{Guid.NewGuid()}.png";
 
         CreateImageResponse response = await _dalleHttpClient.CreateImageVariation(imageVariationRequest, fileName);
 
@@ -57,7 +57,7 @@ public abstract class DallifyImageHandlerBase
 
         Image imageResult = await _imageService.DownloadImage(imageResponseUrl.Url);
 
-        ImageStreamResult imageStream = await _imageService.GetImageStream(imageResult);
+        ImageStreamResult imageStream = await ImageService.GetImageStream(imageResult);
 
         return imageStream;
     }

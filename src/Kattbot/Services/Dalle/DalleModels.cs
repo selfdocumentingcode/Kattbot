@@ -132,24 +132,3 @@ public record ImageResponseUrlData
     [JsonPropertyName("url")]
     public string Url { get; set; } = null!;
 }
-
-public record ImageResponseErrorWrapper
-{
-    [JsonPropertyName("error")]
-    public ImageResponseError Error { get; set; } = null!;
-}
-
-public record ImageResponseError
-{
-    [JsonPropertyName("code")]
-    public string Code { get; set; } = null!;
-
-    [JsonPropertyName("message")]
-    public string Message { get; set; } = null!;
-
-    [JsonPropertyName("param")]
-    public string Param { get; set; } = null!;
-
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = null!;
-}

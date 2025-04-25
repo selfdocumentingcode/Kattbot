@@ -49,7 +49,7 @@ public class GetBigEmoteHandler : IRequestHandler<GetBigEmoteRequest>
             image = ImageEffects.ScaleImage(image, request.ScaleFactor!.Value);
         }
 
-        ImageStreamResult imageStreamResult = await _imageService.GetImageStream(image);
+        ImageStreamResult imageStreamResult = await ImageService.GetImageStream(image);
 
         MemoryStream imageStream = imageStreamResult.MemoryStream;
         string fileExtension = imageStreamResult.FileExtension;

@@ -40,10 +40,10 @@ public class ImageService
 
         double sizeInMb = (double)pngMemoryStream.Length / (1024 * 1024);
 
-        bool imageLargerThanMaxSize = maxSizeInMb.HasValue && sizeInMb > maxSizeInMb;
-        bool imageNotPng = image.Metadata.DecodedImageFormat is not PngFormat;
+        bool imageSizeUnderMaxSize = sizeInMb <= maxSizeInMb;
+        bool imageIsPngFormat = image.Metadata.DecodedImageFormat is PngFormat;
 
-        if (!imageLargerThanMaxSize && !imageNotPng)
+        if (imageSizeUnderMaxSize && imageIsPngFormat)
         {
             return image;
         }
@@ -51,11 +51,10 @@ public class ImageService
         pngMemoryStream.Position = 0;
         Image imageAsPng = await Image.LoadAsync(pngMemoryStream);
 
-        if (imageLargerThanMaxSize)
-        {
-            double differenceRatio = sizeInMb / (int)maxSizeInMb!;
-            imageAsPng = ImageEffects.ScaleImage(imageAsPng, 1 / differenceRatio);
-        }
+        if (!imageSizeUnderMaxSize) return imageAsPng;
+
+        double differenceRatio = sizeInMb / (int)maxSizeInMb!;
+        imageAsPng = ImageEffects.ScaleImage(imageAsPng, 1 / differenceRatio);
 
         return imageAsPng;
     }
@@ -84,9 +83,13 @@ public class ImageService
 
     private async Task<byte[]> DownloadImageBytes(string url)
     {
+        const long maxImageSizeInBytes = 1024 * 1024 * 1024; // 1GB
+
         try
         {
             HttpClient client = _httpClientFactory.CreateClient();
+
+            client.MaxResponseContentBufferSize = maxImageSizeInBytes;
 
             return await client.GetByteArrayAsync(url);
         }
@@ -111,7 +114,7 @@ public class ImageService
         return tempFilePath;
     }
 
-    public async Task<ImageStreamResult> GetImageStream(Image image)
+    public static async Task<ImageStreamResult> GetImageStream(Image image)
     {
         var outputStream = new MemoryStream();
 
@@ -130,7 +133,7 @@ public class ImageService
         return new ImageStreamResult(outputStream, extensionName);
     }
 
-    public async Task<ImageStreamResult> GetGifImageStream(Image image)
+    public static async Task<ImageStreamResult> GetGifImageStream(Image image)
     {
         var outputStream = new MemoryStream();
 

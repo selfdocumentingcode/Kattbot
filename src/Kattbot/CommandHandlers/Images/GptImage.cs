@@ -29,9 +29,11 @@ public class GptImageCommand : CommandRequest
 
 public class GptImageHandler : IRequestHandler<GptImageCommand>
 {
-    private const string CreateImageModel = "gpt-image-1";
+    private const string GptImageModel = "gpt-image-1";
     private const string Moderation = "low";
     private const string Quality = "medium";
+
+    private const int MaxImageSizeInMb = 25;
 
     private readonly GptImagesHttpClient _gptImagesHttpClient;
     private readonly ImageService _imageService;
@@ -47,22 +49,50 @@ public class GptImageHandler : IRequestHandler<GptImageCommand>
         CommandContext ctx = request.Ctx;
         DiscordMessage discordMessage = ctx.Message;
 
-        DiscordMessage message = await request.Ctx.RespondAsync("Working on it");
+        DiscordMessage ackMessage = await request.Ctx.RespondAsync("Working on it");
 
         try
         {
             string prompt = discordMessage.SubstituteMentions(request.Prompt);
 
-            var imageRequest = new CreateImageRequest
-            {
-                Prompt = prompt,
-                Model = CreateImageModel,
-                Quality = Quality,
-                Moderation = Moderation,
-                User = request.Ctx.User.Id.ToString(),
-            };
+            string? imageUrl = await discordMessage.GetImageUrlFromMessage();
 
-            CreateImageResponse response = await _gptImagesHttpClient.CreateImage(imageRequest);
+            CreateImageResponse response;
+
+            if (imageUrl == null)
+            {
+                var imageRequest = new CreateImageRequest
+                {
+                    Prompt = prompt,
+                    Model = GptImageModel,
+                    Quality = Quality,
+                    Moderation = Moderation,
+                    User = request.Ctx.User.Id.ToString(),
+                };
+
+                response = await _gptImagesHttpClient.CreateImage(imageRequest);
+            }
+            else
+            {
+                Image editImage = await _imageService.DownloadImage(imageUrl);
+
+                // TODO: Allow jpg and webp to be uploaded directly without converting to png
+                Image imageAsPng = await ImageService.ConvertImageToPng(editImage, MaxImageSizeInMb);
+                var tempFileName = $"{Guid.NewGuid()}.png";
+
+                ImageStreamResult inputImageStream = await ImageService.GetImageStream(imageAsPng);
+
+                var editImageRequest = new CreateImageEditRequest
+                {
+                    Prompt = prompt,
+                    Image = inputImageStream.MemoryStream.ToArray(),
+                    Model = GptImageModel,
+                    Quality = Quality,
+                    User = request.Ctx.User.Id.ToString(),
+                };
+
+                response = await _gptImagesHttpClient.CreateImageEdit(editImageRequest, tempFileName);
+            }
 
             if (response.Data == null || !response.Data.Any()) throw new Exception("Empty result");
 
@@ -70,7 +100,7 @@ public class GptImageHandler : IRequestHandler<GptImageCommand>
 
             Image image = ImageService.ConvertBase64ToImage(imageData.B64Json);
 
-            ImageStreamResult imageStream = await _imageService.GetImageStream(image);
+            ImageStreamResult imageStream = await ImageService.GetImageStream(image);
 
             string fileName = prompt.ToSafeFilename(imageStream.FileExtension);
 
@@ -91,7 +121,7 @@ public class GptImageHandler : IRequestHandler<GptImageCommand>
         }
         finally
         {
-            await message.DeleteAsync();
+            await ackMessage.DeleteAsync();
         }
     }
 }

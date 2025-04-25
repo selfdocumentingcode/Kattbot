@@ -7,14 +7,15 @@ namespace Kattbot.Services.GptImages;
 public record CreateImageRequest
 {
     /// <summary>
-    ///     Gets or sets a text description of the desired image(s). The maximum length is 1000 characters.
+    ///     A text description of the desired image(s).
+    ///     The maximum length is 32000 characters for gpt-image-1.
     ///     https://platform.openai.com/docs/api-reference/images/create#images/create-prompt.
     /// </summary>
     [JsonPropertyName("prompt")]
     public string Prompt { get; set; } = null!;
 
     /// <summary>
-    ///     Gets or sets the model to use for image generation.
+    ///     The model to use for image generation.
     ///     Defaults to dall-e-2
     ///     https://platform.openai.com/docs/api-reference/images/create#images-create-model.
     /// </summary>
@@ -83,38 +84,105 @@ public record CreateImageRequest
     public string? User { get; set; }
 }
 
+public record CreateImageEditRequest
+{
+    /// <summary>
+    ///     The image(s) to edit. Must be a supported image file or an array of images.
+    ///     For gpt-image-1, each image should be a png, webp, or jpg file less than 25MB.
+    ///     https://platform.openai.com/docs/api-reference/images/createEdit#images-createedit-image
+    /// </summary>
+    [JsonPropertyName("image")]
+    public byte[] Image { get; set; } = null!;
+
+    /// <summary>
+    ///     A text description of the desired image(s).
+    ///     The maximum length is 32000 characters for gpt-image-1.
+    ///     https://platform.openai.com/docs/api-reference/images/createEdit#images-createedit-prompt
+    /// </summary>
+    [JsonPropertyName("prompt")]
+    public string Prompt { get; set; } = null!;
+
+    /// <summary>
+    ///     The model to use for image generation.
+    ///     Defaults to dall-e-2 unless a parameter specific to gpt-image-1 is used.
+    ///     https://platform.openai.com/docs/api-reference/images/createEdit#images-createedit-model
+    /// </summary>
+    [JsonPropertyName("model")]
+    public string? Model { get; set; }
+
+    /// <summary>
+    ///     The number of images to generate. Must be between 1 and 10.
+    ///     Defaults to 1.
+    ///     https://platform.openai.com/docs/api-reference/images/createVariation#n.
+    /// </summary>
+    [JsonPropertyName("n")]
+    public int? N { get; set; }
+
+    /// <summary>
+    ///     The quality of the image that will be generated.
+    ///     - auto will automatically select the best quality for the given model.
+    ///     - high, medium and low are supported for gpt-image-1.
+    ///     Defaults to "auto".
+    ///     https://platform.openai.com/docs/api-reference/images/createEdit#images-createedit-quality
+    /// </summary>
+    [JsonPropertyName("quality")]
+    public string? Quality { get; set; }
+
+    /// <summary>
+    ///     The size of the generated images.
+    ///     Must be one of 1024x1024, 1536x1024 (landscape), 1024x1536 (portrait), or auto.
+    ///     Defaults to auto.
+    ///     https://platform.openai.com/docs/api-reference/images/create#images/create-size.
+    /// </summary>
+    [JsonPropertyName("size")]
+    public string? Size { get; set; }
+
+    /// <summary>
+    ///     Gets or sets a unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
+    ///     https://platform.openai.com/docs/api-reference/images/createVariation#user.
+    /// </summary>
+    [JsonPropertyName("user")]
+    public string? User { get; set; }
+}
+
 public record CreateImageResponse
 {
     [JsonPropertyName("created")]
-    public long Created { get; set; }
+    public long Created { get; init; }
 
     [JsonPropertyName("data")]
-    public IEnumerable<ImageResponseData> Data { get; set; } = null!;
+    public IEnumerable<ImageResponseData> Data { get; init; } = null!;
+
+    [JsonPropertyName("usage")]
+    public ImageGenerationUsage Usage { get; set; } = null!;
+}
+
+public record ImageGenerationUsage
+{
+    [JsonPropertyName("input_tokens")]
+    public int InputTokens { get; set; }
+
+    [JsonPropertyName("input_tokens_details")]
+    public ImageGenerationInputTokensDetails InputTokensDetails { get; set; } = null!;
+
+    [JsonPropertyName("output_tokens")]
+    public int OutputTokens { get; set; }
+
+    [JsonPropertyName("total_tokens")]
+    public int TotalTokens { get; set; }
+}
+
+public record ImageGenerationInputTokensDetails
+{
+    [JsonPropertyName("image_tokens")]
+    public int ImageTokens { get; set; }
+
+    [JsonPropertyName("text_tokens")]
+    public int TextTokens { get; set; }
 }
 
 public record ImageResponseData
 {
     [JsonPropertyName("b64_json")]
     public string B64Json { get; set; } = null!;
-}
-
-public record ImageResponseErrorWrapper
-{
-    [JsonPropertyName("error")]
-    public ImageResponseError Error { get; set; } = null!;
-}
-
-public record ImageResponseError
-{
-    [JsonPropertyName("code")]
-    public string Code { get; set; } = null!;
-
-    [JsonPropertyName("message")]
-    public string Message { get; set; } = null!;
-
-    [JsonPropertyName("param")]
-    public string Param { get; set; } = null!;
-
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = null!;
 }
