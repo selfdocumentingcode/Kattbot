@@ -30,9 +30,14 @@ public abstract class DallifyImageHandlerBase
     {
         Image image = await _imageService.DownloadImage(imageUrl);
 
-        Image imageAsPng = await ImageService.ConvertImageToPng(image, MaxImageSizeInMb);
+        Image imageInSupportedFormat =
+            await ImageService.EnsureSupportedImageFormatOrPng(image, ["png"]);
 
-        Image squaredImage = ImageEffects.CropToSquare(imageAsPng);
+        Image resizedImage = await ImageService.EnsureMaxImageFileSize(
+            imageInSupportedFormat,
+            MaxImageSizeInMb);
+
+        Image squaredImage = ImageEffects.CropToSquare(resizedImage);
 
         int resultSize = Math.Min(
             maxSize,

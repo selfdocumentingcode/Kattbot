@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Kattbot.Helpers;
 
@@ -77,35 +77,64 @@ public static class DiscordExtensions
         return newMessageContent;
     }
 
-    public static async Task<string?> GetImageUrlFromMessage(this DiscordMessage message)
+    public static async Task<string?> GetImageUrlFromMessage(this DiscordMessage message, ILogger? logger = null)
     {
-        string? imgUrl = message.GetAttachmentOrStickerImage();
+        logger?.LogDebug("Getting image url from message {MessageId}", message.Id);
 
-        if (imgUrl != null)
+        string? imageUrl = message.GetAttachmentOrStickerImage();
+
+        if (imageUrl != null)
         {
-            return imgUrl;
+            logger?.LogDebug("Found image url {ImageUrl} in message {MessageId}", imageUrl, message.Id);
+            return imageUrl;
         }
 
-        if (message.ReferencedMessage is not null)
+        DiscordMessage? referencedMessage = message.ReferencedMessage;
+
+        if (referencedMessage is not null)
         {
-            imgUrl = message.ReferencedMessage.GetAttachmentOrStickerImage();
+            logger?.LogDebug("Getting image from referenced message {ReferencedMessageId}", referencedMessage.Id);
+            imageUrl = referencedMessage.GetAttachmentOrStickerImage();
+
+            if (imageUrl != null)
+            {
+                logger?.LogDebug(
+                    "Found image url {ImageUrl} in referenced message {ReferencedMessageId}",
+                    imageUrl,
+                    referencedMessage.Id);
+                return imageUrl;
+            }
         }
 
-        if (imgUrl != null)
+        logger?.LogDebug("Waiting for embed image in message {MessageId}", message.Id);
+        imageUrl = await message.WaitForEmbedImage();
+
+        if (imageUrl != null)
         {
-            return imgUrl;
+            logger?.LogDebug("Found embedded image url {ImageUrl} in message {MessageId}", imageUrl, message.Id);
+            return imageUrl;
         }
 
-        var waitTasks = new List<Task<string?>> { message.WaitForEmbedImage() };
-
-        if (message.ReferencedMessage is not null)
+        if (referencedMessage is not null)
         {
-            waitTasks.Add(message.ReferencedMessage.WaitForEmbedImage());
+            logger?.LogDebug(
+                "Waiting for embed image in referenced message {ReferencedMessageId}",
+                referencedMessage.Id);
+            imageUrl = await referencedMessage.WaitForEmbedImage();
+
+            if (imageUrl != null)
+            {
+                logger?.LogDebug(
+                    "Found embedded image url {ImageUrl} in referenced message {ReferencedMessageId}",
+                    imageUrl,
+                    referencedMessage.Id);
+                return imageUrl;
+            }
         }
 
-        imgUrl = await await Task.WhenAny(waitTasks);
+        logger?.LogDebug("Found no image for message {MessageId}", message.Id);
 
-        return imgUrl;
+        return null;
     }
 
     private static bool HasLegacyUsername(this DiscordUser user)

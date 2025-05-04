@@ -11,7 +11,6 @@ using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.PixelFormats;
-using Path = System.IO.Path;
 
 namespace Kattbot.Services.Images;
 
@@ -27,34 +26,54 @@ public class ImageService
         _httpClientFactory = httpClientFactory;
     }
 
-    public static Image LoadImage(byte[] imageBytes)
+    public static async Task<double> GetImageSizeInMb(Image image)
     {
-        return Image.Load(imageBytes);
+        using var memoryStream = new MemoryStream();
+
+        IImageEncoder encoder = GetImageEncoder(image);
+
+        await image.SaveAsync(memoryStream, encoder);
+
+        double sizeInMb = (double)memoryStream.Length / (1024 * 1024);
+
+        return sizeInMb;
     }
 
-    public static async Task<Image> ConvertImageToPng(Image image, int? maxSizeInMb = null)
+    public static async Task<Image> EnsureMaxImageFileSize(Image image, double maxSizeInMb)
     {
-        using var pngMemoryStream = new MemoryStream();
+        double sizeInMb = await GetImageSizeInMb(image);
 
-        await image.SaveAsPngAsync(pngMemoryStream);
+        if (sizeInMb <= maxSizeInMb) return image;
 
-        double sizeInMb = (double)pngMemoryStream.Length / (1024 * 1024);
+        double differenceRatio = sizeInMb / maxSizeInMb;
+        image = ImageEffects.ScaleImage(image, 1 / differenceRatio);
 
-        bool imageSizeUnderMaxSize = sizeInMb <= maxSizeInMb;
-        bool imageIsPngFormat = image.Metadata.DecodedImageFormat is PngFormat;
+        return image;
+    }
 
-        if (imageSizeUnderMaxSize && imageIsPngFormat)
+    /// <summary>
+    ///     Ensures the image file type is one of the supported file types.
+    ///     Otherwise, convert the image file to png.
+    /// </summary>
+    /// <param name="image">The input image.</param>
+    /// <param name="supportedFileTypes">List of supported image file types.</param>
+    /// <returns>The input image if is of the supported image file type, or the image converted to png.</returns>
+    public static async Task<Image> EnsureSupportedImageFormatOrPng(Image image, string[] supportedFileTypes)
+    {
+        string extensionName = GetImageFileExtension(image);
+
+        if (supportedFileTypes.Contains(extensionName))
         {
             return image;
         }
 
-        pngMemoryStream.Position = 0;
-        Image imageAsPng = await Image.LoadAsync(pngMemoryStream);
+        using var memoryStream = new MemoryStream();
 
-        if (!imageSizeUnderMaxSize) return imageAsPng;
+        await image.SaveAsPngAsync(memoryStream);
 
-        double differenceRatio = sizeInMb / (int)maxSizeInMb!;
-        imageAsPng = ImageEffects.ScaleImage(imageAsPng, 1 / differenceRatio);
+        memoryStream.Position = 0;
+
+        Image imageAsPng = await Image.LoadAsync(memoryStream);
 
         return imageAsPng;
     }
@@ -81,24 +100,6 @@ public class ImageService
         return Image.Load<TPixel>(bytes);
     }
 
-    private async Task<byte[]> DownloadImageBytes(string url)
-    {
-        const long maxImageSizeInBytes = 1024 * 1024 * 1024; // 1GB
-
-        try
-        {
-            HttpClient client = _httpClientFactory.CreateClient();
-
-            client.MaxResponseContentBufferSize = maxImageSizeInBytes;
-
-            return await client.GetByteArrayAsync(url);
-        }
-        catch (HttpRequestException)
-        {
-            throw new Exception("Couldn't download image");
-        }
-    }
-
     public async Task<string> SaveImageToTempPath(Image image, string filename)
     {
         IImageFormat format = image.Metadata.GetFormatOrDefault();
@@ -118,9 +119,7 @@ public class ImageService
     {
         var outputStream = new MemoryStream();
 
-        IImageFormat format = image.Metadata.GetFormatOrDefault();
-
-        string extensionName = format.FileExtensions.First();
+        string extensionName = GetImageFileExtension(image);
 
         IImageEncoder encoder = GetImageEncoderByFileType(extensionName);
 
@@ -150,13 +149,22 @@ public class ImageService
         return new ImageStreamResult(outputStream, extensionName);
     }
 
-    public string GetImageFileExtension(Image image)
+    private async Task<byte[]> DownloadImageBytes(string url)
     {
-        IImageFormat format = image.Metadata.GetFormatOrDefault();
+        const long maxImageSizeInBytes = 1024 * 1024 * 1024; // 1GB
 
-        string extensionName = format.FileExtensions.First();
+        try
+        {
+            HttpClient client = _httpClientFactory.CreateClient();
 
-        return extensionName;
+            client.MaxResponseContentBufferSize = maxImageSizeInBytes;
+
+            return await client.GetByteArrayAsync(url);
+        }
+        catch (HttpRequestException)
+        {
+            throw new Exception("Couldn't download image");
+        }
     }
 
     public async Task<ImageStreamResult> TransformImage(
@@ -195,6 +203,22 @@ public class ImageService
         return imageStreamResult;
     }
 
+    private static IImageEncoder GetImageEncoder(Image image)
+    {
+        string extensionName = GetImageFileExtension(image);
+
+        return GetImageEncoderByFileType(extensionName);
+    }
+
+    private static string GetImageFileExtension(Image image)
+    {
+        IImageFormat format = image.Metadata.GetFormatOrDefault();
+
+        string extensionName = format.FileExtensions.First();
+
+        return extensionName;
+    }
+
     private static IImageEncoder GetImageEncoderByFileType(string fileType)
     {
         return fileType switch
@@ -204,7 +228,7 @@ public class ImageService
             "png" => new PngEncoder(),
             "gif" => new GifEncoder { ColorTableMode = GifColorTableMode.Local },
             "webp" => new WebpEncoder(),
-            _ => throw new ArgumentException($"Unknown filetype: {fileType}"),
+            _ => throw new ArgumentException($"Unsupported filetype: {fileType}"),
         };
     }
 }

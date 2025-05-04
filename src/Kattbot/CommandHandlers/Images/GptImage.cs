@@ -9,6 +9,7 @@ using Kattbot.Helpers;
 using Kattbot.Services.GptImages;
 using Kattbot.Services.Images;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using CreateImageRequest = Kattbot.Services.GptImages.CreateImageRequest;
 using CreateImageResponse = Kattbot.Services.GptImages.CreateImageResponse;
@@ -37,11 +38,18 @@ public class GptImageHandler : IRequestHandler<GptImageCommand>
 
     private readonly GptImagesHttpClient _gptImagesHttpClient;
     private readonly ImageService _imageService;
+    private readonly ILogger<GptImageHandler> _logger;
 
-    public GptImageHandler(GptImagesHttpClient gptImagesHttpClient, ImageService imageService)
+    private readonly string[] _supportedImageFormats = ["png", "jpg", "webp"];
+
+    public GptImageHandler(
+        GptImagesHttpClient gptImagesHttpClient,
+        ImageService imageService,
+        ILogger<GptImageHandler> logger)
     {
         _gptImagesHttpClient = gptImagesHttpClient;
         _imageService = imageService;
+        _logger = logger;
     }
 
     public async Task Handle(GptImageCommand request, CancellationToken cancellationToken)
@@ -55,7 +63,7 @@ public class GptImageHandler : IRequestHandler<GptImageCommand>
         {
             string prompt = discordMessage.SubstituteMentions(request.Prompt);
 
-            string? imageUrl = await discordMessage.GetImageUrlFromMessage();
+            string? imageUrl = await discordMessage.GetImageUrlFromMessage(_logger);
 
             CreateImageResponse response;
 
@@ -70,17 +78,22 @@ public class GptImageHandler : IRequestHandler<GptImageCommand>
                     User = request.Ctx.User.Id.ToString(),
                 };
 
-                response = await _gptImagesHttpClient.CreateImage(imageRequest);
+                response = await _gptImagesHttpClient.CreateImage(imageRequest, cancellationToken);
             }
             else
             {
                 Image editImage = await _imageService.DownloadImage(imageUrl);
 
-                // TODO: Allow jpg and webp to be uploaded directly without converting to png
-                Image imageAsPng = await ImageService.ConvertImageToPng(editImage, MaxImageSizeInMb);
+                Image imageInSupportedFormat =
+                    await ImageService.EnsureSupportedImageFormatOrPng(editImage, _supportedImageFormats);
+
+                Image resizedImage = await ImageService.EnsureMaxImageFileSize(
+                    imageInSupportedFormat,
+                    MaxImageSizeInMb);
+
                 var tempFileName = $"{Guid.NewGuid()}.png";
 
-                ImageStreamResult inputImageStream = await ImageService.GetImageStream(imageAsPng);
+                ImageStreamResult inputImageStream = await ImageService.GetImageStream(resizedImage);
 
                 var editImageRequest = new CreateImageEditRequest
                 {
@@ -91,7 +104,10 @@ public class GptImageHandler : IRequestHandler<GptImageCommand>
                     User = request.Ctx.User.Id.ToString(),
                 };
 
-                response = await _gptImagesHttpClient.CreateImageEdit(editImageRequest, tempFileName);
+                response = await _gptImagesHttpClient.CreateImageEdit(
+                    editImageRequest,
+                    tempFileName,
+                    cancellationToken);
             }
 
             if (response.Data == null || !response.Data.Any()) throw new Exception("Empty result");

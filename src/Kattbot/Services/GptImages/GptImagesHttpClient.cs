@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using Kattbot.Common.Models.KattGpt;
 using Kattbot.Config;
@@ -23,7 +24,9 @@ public class GptImagesHttpClient
         _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {options.Value.OpenAiApiKey}");
     }
 
-    public async Task<CreateImageResponse> CreateImage(CreateImageRequest request)
+    public async Task<CreateImageResponse> CreateImage(
+        CreateImageRequest request,
+        CancellationToken cancellationToken = default)
     {
         var opts = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
 
@@ -31,14 +34,20 @@ public class GptImagesHttpClient
 
         try
         {
-            HttpResponseMessage response = await _client.PostAsJsonAsync("generations", request, opts);
+            HttpResponseMessage response = await _client.PostAsJsonAsync(
+                "generations",
+                request,
+                opts,
+                cancellationToken);
 
-            responseContentStream = await response.Content.ReadAsStreamAsync();
+            responseContentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
             CreateImageResponse parsedResponse =
-                await JsonSerializer.DeserializeAsync<CreateImageResponse>(responseContentStream)
+                await JsonSerializer.DeserializeAsync<CreateImageResponse>(
+                    responseContentStream,
+                    cancellationToken: cancellationToken)
                 ?? throw new Exception("Failed to parse response");
 
             return parsedResponse;
@@ -46,7 +55,9 @@ public class GptImagesHttpClient
         catch (HttpRequestException) when (responseContentStream != null)
         {
             ChatCompletionResponseErrorWrapper parsedResponse =
-                await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(responseContentStream)
+                await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(
+                    responseContentStream,
+                    cancellationToken: cancellationToken)
                 ?? throw new Exception("Failed to parse error response");
 
             throw new Exception(parsedResponse.Error.Message);
@@ -57,7 +68,10 @@ public class GptImagesHttpClient
         }
     }
 
-    public async Task<CreateImageResponse> CreateImageEdit(CreateImageEditRequest request, string fileName)
+    public async Task<CreateImageResponse> CreateImageEdit(
+        CreateImageEditRequest request,
+        string fileName,
+        CancellationToken cancellationToken = default)
     {
         var postBody = new MultipartFormDataContent();
 
@@ -94,14 +108,16 @@ public class GptImagesHttpClient
 
         try
         {
-            HttpResponseMessage response = await _client.PostAsync("edits", postBody);
+            HttpResponseMessage response = await _client.PostAsync("edits", postBody, cancellationToken);
 
-            responseContentStream = await response.Content.ReadAsStreamAsync();
+            responseContentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
             CreateImageResponse parsedResponse =
-                await JsonSerializer.DeserializeAsync<CreateImageResponse>(responseContentStream)
+                await JsonSerializer.DeserializeAsync<CreateImageResponse>(
+                    responseContentStream,
+                    cancellationToken: cancellationToken)
                 ?? throw new Exception("Failed to parse response");
 
             return parsedResponse;
@@ -109,7 +125,9 @@ public class GptImagesHttpClient
         catch (HttpRequestException) when (responseContentStream != null)
         {
             ChatCompletionResponseErrorWrapper parsedResponse =
-                await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(responseContentStream)
+                await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(
+                    responseContentStream,
+                    cancellationToken: cancellationToken)
                 ?? throw new Exception("Failed to parse error response");
 
             throw new Exception(parsedResponse.Error.Message);

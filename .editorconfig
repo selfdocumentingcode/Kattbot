@@ -103,6 +103,7 @@ dotnet_diagnostic.sa1402.severity = suggestion # File may only contain a single 
 dotnet_diagnostic.sa1502.severity = none # Element should not be on a single line
 dotnet_diagnostic.sa1503.severity = none # Braces should not be omitted
 dotnet_diagnostic.sa1515.severity = suggestion # Single-line comment should be preceded by blank line
+
 # Documentation
 
 dotnet_diagnostic.sa1600.severity = none # Elements should be documented
@@ -110,6 +111,8 @@ dotnet_diagnostic.sa1601.severity = none # Partial elements should be documented
 dotnet_diagnostic.sa1602.severity = none # Enumeration items should be documented
 dotnet_diagnostic.sa1611.severity = none # Element parameter should be documented
 dotnet_diagnostic.sa1615.severity = none # Element return value should be documented
+dotnet_diagnostic.sa1623.severity = none # The property's documentation summary text should begin with: 'Gets or sets'
+dotnet_diagnostic.sa1629.severity = none # Documentation text should end with a period
 dotnet_diagnostic.sa1633.severity = none # File should have header
 dotnet_diagnostic.sa1649.severity = none # File name should match first type name
 
