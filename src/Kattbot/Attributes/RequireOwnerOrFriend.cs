@@ -27,7 +27,7 @@ public class RequireOwnerOrFriend : CheckBaseAttribute
 
         DiscordApplication botApp = ctx.Client.CurrentApplication;
 
-        bool isBotOwner = botApp.Owners.Any(x => x.Id == userId);
+        bool isBotOwner = botApp.Owners?.Any(x => x.Id == userId) ?? false;
 
         if (isBotOwner)
         {

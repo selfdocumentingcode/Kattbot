@@ -44,6 +44,7 @@ public record CreateImageRequest
     ///     This parameter is only supported for gpt-image-1 with the webp or jpeg output formats
     ///     Defaults to 100.
     ///     https://platform.openai.com/docs/api-reference/images/create#images-create-output_compression
+    /// </summary>
     [JsonPropertyName("output_compression")]
     public string? OutputCompression { get; set; }
 

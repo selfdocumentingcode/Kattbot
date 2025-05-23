@@ -41,14 +41,13 @@ public class EmotesRepository
         await _dbContext.SaveChangesAsync();
     }
 
-    public Task<EmoteEntity> GetExistingEntity(EmoteEntity entity)
+    private Task<EmoteEntity?> GetExistingEntity(EmoteEntity entity)
     {
         Task<EmoteEntity?> emote = _dbContext.Emotes.AsQueryable()
-            .Where(
-                e => e.EmoteId == entity.EmoteId
-                     && e.MessageId == entity.MessageId
-                     && e.UserId == entity.UserId
-                     && e.GuildId == entity.GuildId)
+            .Where(e => e.EmoteId == entity.EmoteId
+                        && e.MessageId == entity.MessageId
+                        && e.UserId == entity.UserId
+                        && e.GuildId == entity.GuildId)
             .FirstOrDefaultAsync();
 
         return emote;
