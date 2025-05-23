@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
@@ -125,49 +126,38 @@ public class ImageModule : BaseCommandModule
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
-    [Command("dalle")]
-    [Cooldown(maxUses: 5, resetAfter: 30, CooldownBucketType.Global)]
-    public Task Dalle(CommandContext ctx, [RemainingText] string prompt)
-    {
-        var request = new DallePromptCommand(ctx, prompt);
-
-        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
-    }
-
-    [Command("dallify")]
-    [Cooldown(maxUses: 5, resetAfter: 30, CooldownBucketType.Global)]
-    public Task Dallify(CommandContext ctx, DiscordEmoji emoji)
-    {
-        var request = new DallifyImageEmoteRequest(ctx, emoji);
-
-        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
-    }
-
-    [Command("dallify")]
-    [Cooldown(maxUses: 5, resetAfter: 30, CooldownBucketType.Global)]
-    public Task Dallify(CommandContext ctx, DiscordUser user)
-    {
-        var request = new DallifyImageUserRequest(ctx, user);
-
-        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
-    }
-
-    [Command("dallify")]
-    [Cooldown(maxUses: 5, resetAfter: 30, CooldownBucketType.Global)]
-#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
-    public Task Dallify(CommandContext ctx, string _ = "")
-#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
-    {
-        var request = new DallifyImageMessageRequest(ctx);
-
-        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
-    }
-
     [Command("gpt-image")]
     [Cooldown(maxUses: 5, resetAfter: 30, CooldownBucketType.Global)]
     public Task GptImage(CommandContext ctx, [RemainingText] string prompt)
     {
+        if (string.IsNullOrWhiteSpace(prompt))
+            throw new ArgumentException("Prompt cannot be empty", nameof(prompt));
+
         var request = new GptImageCommand(ctx, prompt);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("gpt-image-avatar")]
+    [Cooldown(maxUses: 5, resetAfter: 30, CooldownBucketType.Global)]
+    public Task GptImageAvatar(CommandContext ctx, DiscordUser user, [RemainingText] string prompt)
+    {
+        if (string.IsNullOrWhiteSpace(prompt))
+            throw new ArgumentException("Prompt cannot be empty", nameof(prompt));
+
+        var request = new GptImageAvatarCommand(ctx, user, prompt);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("gpt-image-emote")]
+    [Cooldown(maxUses: 5, resetAfter: 30, CooldownBucketType.Global)]
+    public Task GptImageEmote(CommandContext ctx, DiscordEmoji emoji, [RemainingText] string prompt)
+    {
+        if (string.IsNullOrWhiteSpace(prompt))
+            throw new ArgumentException("Prompt cannot be empty", nameof(prompt));
+
+        var request = new GptImageEmoteCommand(ctx, emoji, prompt);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
