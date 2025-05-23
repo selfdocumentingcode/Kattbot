@@ -6,7 +6,6 @@ using Kattbot.Helpers;
 using Kattbot.Infrastructure;
 using Kattbot.Services;
 using Kattbot.Services.Cache;
-using Kattbot.Services.Dalle;
 using Kattbot.Services.GptImages;
 using Kattbot.Services.Images;
 using Kattbot.Services.KattGpt;
@@ -38,7 +37,6 @@ public class Program
 
                 services.AddHttpClient();
                 services.AddHttpClient<ChatGptHttpClient>();
-                services.AddHttpClient<DalleHttpClient>();
                 services.AddHttpClient<SpeechHttpClient>();
                 services.AddHttpClient<GptImagesHttpClient>();
 
