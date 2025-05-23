@@ -11,7 +11,7 @@ using Kattbot.Common.Utils;
 using Kattbot.Config;
 using Kattbot.Helpers;
 using Kattbot.Services;
-using Kattbot.Services.Dalle;
+using Kattbot.Services.GptImages;
 using Kattbot.Services.Images;
 using Kattbot.Services.KattGpt;
 using MediatR;
@@ -25,7 +25,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 {
     private const string ChatGptModel = "gpt-4o";
     private const string TokenizerModel = "gpt-4o";
-    private const string CreateImageModel = "dall-e-3";
+
     private const float DefaultTemperature = 1.1f;
     private const int MaxTotalTokens = 24_576;
     private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
@@ -33,13 +33,16 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     private const string RecipientMarkerToYou = "[to you]";
     private const string RecipientMarkerToOthers = "[to others]";
     private const string MessageToolUseTemplate = "`Kattbot used: {0}`";
-    private readonly BotOptions _botOptions;
 
+    private const string GptImageModel = "gpt-image-1";
+    private const string Moderation = "low";
+    private const string Quality = "medium";
+
+    private readonly BotOptions _botOptions;
     private readonly KattGptChannelCache _cache;
     private readonly ChatGptHttpClient _chatGpt;
-    private readonly DalleHttpClient _dalleHttpClient;
     private readonly DiscordErrorLogger _discordErrorLogger;
-    private readonly ImageService _imageService;
+    private readonly GptImagesHttpClient _gptImagesHttpClient;
     private readonly KattGptOptions _kattGptOptions;
     private readonly KattGptService _kattGptService;
 
@@ -47,8 +50,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         ChatGptHttpClient chatGpt,
         KattGptChannelCache cache,
         KattGptService kattGptService,
-        DalleHttpClient dalleHttpClient,
-        ImageService imageService,
+        GptImagesHttpClient gptImagesHttpClient,
         DiscordErrorLogger discordErrorLogger,
         IOptions<KattGptOptions> kattGptOptions,
         IOptions<BotOptions> botOptions)
@@ -56,8 +58,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         _chatGpt = chatGpt;
         _cache = cache;
         _kattGptService = kattGptService;
-        _dalleHttpClient = dalleHttpClient;
-        _imageService = imageService;
+        _gptImagesHttpClient = gptImagesHttpClient;
         _discordErrorLogger = discordErrorLogger;
         _kattGptOptions = kattGptOptions.Value;
         _botOptions = botOptions.Value;
@@ -75,7 +76,8 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         try
         {
             List<ChatCompletionMessage> systemPromptsMessages = _kattGptService.BuildSystemPromptsMessages(channel);
-            ChatCompletionFunction chatCompletionFunction = DalleToolBuilder.BuildDalleImageToolDefinition().Function;
+            ChatCompletionFunction chatCompletionFunction =
+                KattGptToolBuilder.BuildGenerateImageToolDefinition().Function;
             List<ChatCompletionMessage> newContextMessages = [];
 
             KattGptChannelContext channelContext = GetOrCreateCachedContext(
@@ -153,7 +155,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
     {
         // The "tools" field in the request is not allowed to be an empty array
         ChatCompletionTool[]? chatCompletionTools = allowToolCalls
-            ? [DalleToolBuilder.BuildDalleImageToolDefinition()]
+            ? [KattGptToolBuilder.BuildGenerateImageToolDefinition()]
             : null;
 
         // Not allowed to include parallel tool calls field when "tools" is null
@@ -228,21 +230,23 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         await message.RespondAsync(responseTextWithToolUse);
     }
 
-    private async Task<ImageStreamResult> GetDalleResult(string prompt, string userId)
+    private async Task<ImageStreamResult> GetImageGenerationResult(string prompt, string userId)
     {
         var imageRequest = new CreateImageRequest
         {
             Prompt = prompt,
-            Model = CreateImageModel,
+            Model = GptImageModel,
+            Quality = Quality,
+            Moderation = Moderation,
             User = userId,
         };
 
-        CreateImageResponse response = await _dalleHttpClient.CreateImage(imageRequest);
+        CreateImageResponse response = await _gptImagesHttpClient.CreateImage(imageRequest);
         if (response.Data == null || !response.Data.Any()) throw new Exception("Empty result");
 
-        ImageResponseUrlData imageUrl = response.Data.First();
+        ImageResponseData imageData = response.Data.First();
 
-        Image image = await _imageService.DownloadImage(imageUrl.Url);
+        Image image = ImageService.ConvertBase64ToImage(imageData.B64Json);
 
         ImageStreamResult imageStream = await ImageService.GetImageStream(image);
 
@@ -277,7 +281,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
         var authorId = message.Author!.Id.ToString();
 
-        ImageStreamResult dalleResult = await GetDalleResult(prompt, authorId);
+        ImageStreamResult dalleResult = await GetImageGenerationResult(prompt, authorId);
 
         // Build the function call result message
         var functionCallResult = $"An image of {prompt} has been generated and attached to this message.";

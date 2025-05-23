@@ -3,11 +3,11 @@ using Kattbot.Common.Models.KattGpt;
 
 namespace Kattbot.Services.KattGpt;
 
-public static class DalleToolBuilder
+public static class KattGptToolBuilder
 {
     private const string FunctionName = "image_generation";
 
-    public static ChatCompletionTool BuildDalleImageToolDefinition()
+    public static ChatCompletionTool BuildGenerateImageToolDefinition()
     {
         var function = new ChatCompletionFunction
         {

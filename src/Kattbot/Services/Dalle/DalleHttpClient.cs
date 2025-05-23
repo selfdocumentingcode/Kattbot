@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace Kattbot.Services.Dalle;
 
+[Obsolete("Replaced by GptImages")]
 public class DalleHttpClient
 {
     private readonly HttpClient _client;
