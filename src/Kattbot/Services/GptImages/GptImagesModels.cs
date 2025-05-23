@@ -104,6 +104,18 @@ public record CreateImageEditRequest
     public string Prompt { get; set; } = null!;
 
     /// <summary>
+    ///     Allows setting the transparency for the background of the generated image(s).
+    ///     Must be one of "transparent", "opaque" or "auto".
+    ///     When auto is used, the model will automatically determine the best background for the image.
+    ///     If transparent, the output format needs to support transparency, so it should be set to either png (default value)
+    ///     or webp.
+    ///     Defaults to "auto".
+    ///     https://platform.openai.com/docs/api-reference/images/createEdit#images-createedit-background
+    /// </summary>
+    [JsonPropertyName("background")]
+    public string? Background { get; set; }
+
+    /// <summary>
     ///     The model to use for image generation.
     ///     Defaults to dall-e-2 unless a parameter specific to gpt-image-1 is used.
     ///     https://platform.openai.com/docs/api-reference/images/createEdit#images-createedit-model
