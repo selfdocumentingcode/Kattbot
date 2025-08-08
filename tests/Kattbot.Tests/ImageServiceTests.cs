@@ -14,7 +14,7 @@ namespace Kattbot.Tests;
 [Ignore] // Can't save to /tmp on GitHub Actions. TODO: fix
 public class ImageServiceTests
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("cute_cat.jpg")]
     [DataRow("froge.png")]
     public async Task EnsureMaxSize_DownscalesImageIfNeeded(string inputFilename)
@@ -32,7 +32,7 @@ public class ImageServiceTests
         Assert.IsTrue(resizedImageSize <= maxSizeMb);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("slowpoke.jpg", "jpg")]
     [DataRow("slowpoke.png", "png")]
     [DataRow("slowpoke.webp", "webp")]
