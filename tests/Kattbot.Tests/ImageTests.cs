@@ -8,7 +8,7 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace Kattbot.Tests;
 
 [TestClass]
-[Ignore] // TODO: Fix tests failing when running on GitHub Actions/docker container
+[Ignore] // Can't save to /tmp on GitHub Actions. TODO: fix
 public class ImageTests
 {
     [DataTestMethod]
@@ -20,8 +20,6 @@ public class ImageTests
         using Image<Rgba32> image = Image.Load<Rgba32>(inputFile);
 
         Image result = ImageEffects.PetPet(image);
-
-        Assert.IsNotNull(result);
 
         string outputFile = Path.Combine(Path.GetTempPath(), "kattbot", "z_output_petpet_froge.gif");
 
@@ -41,8 +39,6 @@ public class ImageTests
 
         Image<Rgba32> croppedImage = ImageEffects.CropToCircle(image);
 
-        Assert.IsNotNull(croppedImage);
-
         await croppedImage.SaveAsPngAsync(outputFile);
 
         Assert.IsTrue(File.Exists(outputFile));
@@ -58,8 +54,6 @@ public class ImageTests
         using Image<Rgba32> image = Image.Load<Rgba32>(inputFile);
 
         Image croppedImage = ImageEffects.TwirlImage(image);
-
-        Assert.IsNotNull(croppedImage);
 
         await croppedImage.SaveAsPngAsync(outputFile);
 

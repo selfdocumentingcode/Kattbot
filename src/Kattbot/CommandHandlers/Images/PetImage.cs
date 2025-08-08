@@ -179,7 +179,7 @@ public class PetImageHandlers : IRequestHandler<PetEmoteRequest>,
 
         Image petImage = ImageEffects.PetPet(inputImage, speedValue);
 
-        ImageStreamResult outputImageStream = await _imageService.GetGifImageStream(petImage);
+        ImageStreamResult outputImageStream = await ImageService.GetGifImageStream(petImage);
 
         return outputImageStream;
     }

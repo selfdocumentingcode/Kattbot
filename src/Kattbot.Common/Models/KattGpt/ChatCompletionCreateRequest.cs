@@ -25,7 +25,7 @@ public record ChatCompletionCreateRequest
     /// <summary>
     ///     A list of tools the model may call. Currently, only functions are supported as a tool.
     ///     Use this to provide a list of functions the model may generate JSON inputs for.
-    ///     A max of 128 functions are supported.
+    ///     A max of 128 functions is supported.
     ///     https://platform.openai.com/docs/api-reference/chat/create#chat-create-tools
     /// </summary>
     [JsonPropertyName("tools")]
@@ -33,16 +33,16 @@ public record ChatCompletionCreateRequest
 
     /// <summary>
     ///     Controls which (if any) tool is called by the model.
-    ///     none means the model will not call any tool and instead generates a message.
-    ///     auto means the model can pick between generating a message or calling one or more tools.
-    ///     required means the model must call one or more tools.
+    ///     - "none" means the model will not call any tool and instead generates a message.
+    ///     - "auto" means the model can pick between generating a message or calling one or more tools.
+    ///     - "required" means the model must call one or more tools.
     ///     Specifying a particular tool via {"type": "function", "function": {"name": "my_function"}}
     ///     forces the model to call that tool.
-    ///     none is the default when no tools are present. auto is the default if tools are present.
+    ///     "none" is the default when no tools are present. "auto" is the default if tools are present.
     ///     https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
     /// </summary>
     [JsonPropertyName("tool_choice")]
-    public StringOrObject<ChatCompletionToolChoice> ToolChoice { get; set; }
+    public StringOrObject<ChatCompletionToolChoice>? ToolChoice { get; set; }
 
     /// <summary>
     ///     Whether to enable parallel function calling during tool use.

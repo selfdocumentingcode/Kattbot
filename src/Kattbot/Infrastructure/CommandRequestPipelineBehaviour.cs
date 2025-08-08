@@ -35,7 +35,7 @@ public class CommandRequestPipelineBehaviour<TRequest, TResponse> : IPipelineBeh
     {
         try
         {
-            return await next().ConfigureAwait(false);
+            return await next(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
@@ -19,7 +20,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("deepfry")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
     public Task DeepFry(CommandContext ctx, DiscordEmoji emoji)
     {
         var request = new TransformImageEmoteRequest(ctx, emoji, TransformImageEffect.DeepFry);
@@ -27,7 +28,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("deepfry")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
     public Task DeepFry(CommandContext ctx, DiscordUser user)
     {
         var request = new TransformImageUserRequest(ctx, user, TransformImageEffect.DeepFry);
@@ -35,7 +36,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("deepfry")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
 #pragma warning disable SA1313 // Parameter names should begin with lower-case letter
     public Task DeepFry(CommandContext ctx, string _ = "")
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
@@ -45,7 +46,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("oilpaint")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
     public Task OilPaint(CommandContext ctx, DiscordEmoji emoji)
     {
         var request = new TransformImageEmoteRequest(ctx, emoji, TransformImageEffect.OilPaint);
@@ -54,7 +55,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("oilpaint")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
     public Task OilPaint(CommandContext ctx, DiscordUser user)
     {
         var request = new TransformImageUserRequest(ctx, user, TransformImageEffect.OilPaint);
@@ -62,7 +63,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("oilpaint")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
 #pragma warning disable SA1313 // Parameter names should begin with lower-case letter
     public Task OilPaint(CommandContext ctx, string _ = "")
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
@@ -72,7 +73,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("twirl")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
     public Task Twirl(CommandContext ctx, DiscordEmoji emoji)
     {
         var request = new TransformImageEmoteRequest(ctx, emoji, TransformImageEffect.Twirl);
@@ -81,7 +82,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("twirl")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
     public Task Twirl(CommandContext ctx, DiscordUser user)
     {
         var request = new TransformImageUserRequest(ctx, user, TransformImageEffect.Twirl);
@@ -89,7 +90,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("twirl")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
 #pragma warning disable SA1313 // Parameter names should begin with lower-case letter
     public Task Twirl(CommandContext ctx, string _ = "")
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
@@ -99,7 +100,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("pet")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
     public Task Pet(CommandContext ctx, DiscordEmoji emoji, string? speed = null)
     {
         var request = new PetEmoteRequest(ctx, emoji, speed);
@@ -108,7 +109,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("pet")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
     public Task Pet(CommandContext ctx, DiscordUser user, string? speed = null)
     {
         var request = new PetUserRequest(ctx, user, speed);
@@ -117,7 +118,7 @@ public class ImageModule : BaseCommandModule
     }
 
     [Command("pet")]
-    [Cooldown(5, 10, CooldownBucketType.Global)]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
     public Task Pet(CommandContext ctx, string? speed = null)
     {
         var request = new PetImageRequest(ctx, speed);
@@ -125,40 +126,38 @@ public class ImageModule : BaseCommandModule
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
-    [Command("dalle")]
-    [Cooldown(5, 30, CooldownBucketType.Global)]
-    public Task Dalle(CommandContext ctx, [RemainingText] string prompt)
+    [Command("gpt-image")]
+    [Cooldown(maxUses: 5, resetAfter: 30, CooldownBucketType.Global)]
+    public Task GptImage(CommandContext ctx, [RemainingText] string prompt)
     {
-        var request = new DallePromptCommand(ctx, prompt);
+        if (string.IsNullOrWhiteSpace(prompt))
+            throw new ArgumentException("Prompt cannot be empty", nameof(prompt));
+
+        var request = new GptImageCommand(ctx, prompt);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
-    [Command("dallify")]
-    [Cooldown(5, 30, CooldownBucketType.Global)]
-    public Task Dallify(CommandContext ctx, DiscordEmoji emoji)
+    [Command("gpt-image-avatar")]
+    [Cooldown(maxUses: 5, resetAfter: 30, CooldownBucketType.Global)]
+    public Task GptImageAvatar(CommandContext ctx, DiscordUser user, [RemainingText] string prompt)
     {
-        var request = new DallifyImageEmoteRequest(ctx, emoji);
+        if (string.IsNullOrWhiteSpace(prompt))
+            throw new ArgumentException("Prompt cannot be empty", nameof(prompt));
+
+        var request = new GptImageAvatarCommand(ctx, user, prompt);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
-    [Command("dallify")]
-    [Cooldown(5, 30, CooldownBucketType.Global)]
-    public Task Dallify(CommandContext ctx, DiscordUser user)
+    [Command("gpt-image-emote")]
+    [Cooldown(maxUses: 5, resetAfter: 30, CooldownBucketType.Global)]
+    public Task GptImageEmote(CommandContext ctx, DiscordEmoji emoji, [RemainingText] string prompt)
     {
-        var request = new DallifyImageUserRequest(ctx, user);
+        if (string.IsNullOrWhiteSpace(prompt))
+            throw new ArgumentException("Prompt cannot be empty", nameof(prompt));
 
-        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
-    }
-
-    [Command("dallify")]
-    [Cooldown(5, 30, CooldownBucketType.Global)]
-#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
-    public Task Dallify(CommandContext ctx, string _ = "")
-#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
-    {
-        var request = new DallifyImageMessageRequest(ctx);
+        var request = new GptImageEmoteCommand(ctx, emoji, prompt);
 
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }

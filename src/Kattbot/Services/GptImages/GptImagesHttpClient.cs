@@ -4,18 +4,19 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using Kattbot.Common.Models.KattGpt;
 using Kattbot.Config;
 using Microsoft.Extensions.Options;
 
-namespace Kattbot.Services.Dalle;
+namespace Kattbot.Services.GptImages;
 
-public class DalleHttpClient
+public class GptImagesHttpClient
 {
     private readonly HttpClient _client;
 
-    public DalleHttpClient(HttpClient client, IOptions<BotOptions> options)
+    public GptImagesHttpClient(HttpClient client, IOptions<BotOptions> options)
     {
         _client = client;
 
@@ -23,7 +24,9 @@ public class DalleHttpClient
         _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {options.Value.OpenAiApiKey}");
     }
 
-    public async Task<CreateImageResponse> CreateImage(CreateImageRequest request)
+    public async Task<CreateImageResponse> CreateImage(
+        CreateImageRequest request,
+        CancellationToken cancellationToken = default)
     {
         var opts = new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
 
@@ -31,14 +34,20 @@ public class DalleHttpClient
 
         try
         {
-            HttpResponseMessage response = await _client.PostAsJsonAsync("generations", request, opts);
+            HttpResponseMessage response = await _client.PostAsJsonAsync(
+                "generations",
+                request,
+                opts,
+                cancellationToken);
 
-            responseContentStream = await response.Content.ReadAsStreamAsync();
+            responseContentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
             CreateImageResponse parsedResponse =
-                await JsonSerializer.DeserializeAsync<CreateImageResponse>(responseContentStream)
+                await JsonSerializer.DeserializeAsync<CreateImageResponse>(
+                    responseContentStream,
+                    cancellationToken: cancellationToken)
                 ?? throw new Exception("Failed to parse response");
 
             return parsedResponse;
@@ -46,7 +55,9 @@ public class DalleHttpClient
         catch (HttpRequestException) when (responseContentStream != null)
         {
             ChatCompletionResponseErrorWrapper parsedResponse =
-                await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(responseContentStream)
+                await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(
+                    responseContentStream,
+                    cancellationToken: cancellationToken)
                 ?? throw new Exception("Failed to parse error response");
 
             throw new Exception(parsedResponse.Error.Message);
@@ -57,23 +68,33 @@ public class DalleHttpClient
         }
     }
 
-    public async Task<CreateImageResponse> CreateImageVariation(CreateImageVariationRequest request, string fileName)
+    public async Task<CreateImageResponse> CreateImageEdit(
+        CreateImageEditRequest request,
+        string fileName,
+        CancellationToken cancellationToken = default)
     {
         var postBody = new MultipartFormDataContent();
+
+        postBody.Add(new StringContent(request.Prompt), "prompt");
+
+        if (request.Model != null)
+        {
+            postBody.Add(new StringContent(request.Model), "model");
+        }
 
         if (request.N.HasValue)
         {
             postBody.Add(new StringContent(request.N.ToString()!), "n");
         }
 
+        if (request.Quality != null)
+        {
+            postBody.Add(new StringContent(request.Quality), "quality");
+        }
+
         if (request.Size != null)
         {
             postBody.Add(new StringContent(request.Size), "size");
-        }
-
-        if (request.ResponseFormat != null)
-        {
-            postBody.Add(new StringContent(request.ResponseFormat), "response_format");
         }
 
         if (request.User != null)
@@ -87,14 +108,16 @@ public class DalleHttpClient
 
         try
         {
-            HttpResponseMessage? response = await _client.PostAsync("variations", postBody);
+            HttpResponseMessage response = await _client.PostAsync("edits", postBody, cancellationToken);
 
-            responseContentStream = await response.Content.ReadAsStreamAsync();
+            responseContentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
             CreateImageResponse parsedResponse =
-                await JsonSerializer.DeserializeAsync<CreateImageResponse>(responseContentStream)
+                await JsonSerializer.DeserializeAsync<CreateImageResponse>(
+                    responseContentStream,
+                    cancellationToken: cancellationToken)
                 ?? throw new Exception("Failed to parse response");
 
             return parsedResponse;
@@ -102,7 +125,9 @@ public class DalleHttpClient
         catch (HttpRequestException) when (responseContentStream != null)
         {
             ChatCompletionResponseErrorWrapper parsedResponse =
-                await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(responseContentStream)
+                await JsonSerializer.DeserializeAsync<ChatCompletionResponseErrorWrapper>(
+                    responseContentStream,
+                    cancellationToken: cancellationToken)
                 ?? throw new Exception("Failed to parse error response");
 
             throw new Exception(parsedResponse.Error.Message);

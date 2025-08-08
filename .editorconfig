@@ -15,7 +15,7 @@ max_line_length = 120
 end_of_line = crlf
 insert_final_newline = true
 
-# Visual Studio
+# Visual Studio 
 csharp_style_namespace_declarations = file_scoped # Use file scoped namespace by default for new class files
 
 ### Naming styles ###
@@ -46,11 +46,11 @@ dotnet_naming_symbols.private_or_internal_static_field.required_modifiers = stat
 
 dotnet_naming_symbols.private_or_internal_field.applicable_kinds = field
 dotnet_naming_symbols.private_or_internal_field.applicable_accessibilities = internal, private, private_protected
-dotnet_naming_symbols.private_or_internal_field.required_modifiers = 
+dotnet_naming_symbols.private_or_internal_field.required_modifiers =
 
 dotnet_naming_symbols.local.applicable_kinds = local
 dotnet_naming_symbols.local.applicable_accessibilities = local
-dotnet_naming_symbols.local.required_modifiers = 
+dotnet_naming_symbols.local.required_modifiers =
 
 dotnet_naming_symbols.constant_field.applicable_kinds = field
 dotnet_naming_symbols.constant_field.applicable_accessibilities = *
@@ -59,18 +59,18 @@ dotnet_naming_symbols.constant_field.required_modifiers = const
 # Naming styles
 
 dotnet_naming_style._fieldname.required_prefix = _
-dotnet_naming_style._fieldname.required_suffix = 
-dotnet_naming_style._fieldname.word_separator = 
+dotnet_naming_style._fieldname.required_suffix =
+dotnet_naming_style._fieldname.word_separator =
 dotnet_naming_style._fieldname.capitalization = camel_case
 
-dotnet_naming_style.camelcase.required_prefix = 
-dotnet_naming_style.camelcase.required_suffix = 
-dotnet_naming_style.camelcase.word_separator = 
+dotnet_naming_style.camelcase.required_prefix =
+dotnet_naming_style.camelcase.required_suffix =
+dotnet_naming_style.camelcase.word_separator =
 dotnet_naming_style.camelcase.capitalization = camel_case
 
-dotnet_naming_style.pascal_case.required_prefix = 
-dotnet_naming_style.pascal_case.required_suffix = 
-dotnet_naming_style.pascal_case.word_separator = 
+dotnet_naming_style.pascal_case.required_prefix =
+dotnet_naming_style.pascal_case.required_suffix =
+dotnet_naming_style.pascal_case.word_separator =
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 
 ### Stylecop rules ###
@@ -87,6 +87,7 @@ dotnet_diagnostic.sa1101.severity = none # Prefix local calls with this
 dotnet_diagnostic.sa1200.severity = none # Using directive should appear within a namespace declaration
 dotnet_diagnostic.sa1201.severity = suggestion # Elements should appear in the correct order
 dotnet_diagnostic.sa1202.severity = suggestion # Elements should be ordered by access
+dotnet_diagnostic.sa1204.severity = suggestion # Static members should appear before non-static members
 
 # Naming
 
@@ -102,6 +103,7 @@ dotnet_diagnostic.sa1402.severity = suggestion # File may only contain a single 
 dotnet_diagnostic.sa1502.severity = none # Element should not be on a single line
 dotnet_diagnostic.sa1503.severity = none # Braces should not be omitted
 dotnet_diagnostic.sa1515.severity = suggestion # Single-line comment should be preceded by blank line
+
 # Documentation
 
 dotnet_diagnostic.sa1600.severity = none # Elements should be documented
@@ -109,6 +111,8 @@ dotnet_diagnostic.sa1601.severity = none # Partial elements should be documented
 dotnet_diagnostic.sa1602.severity = none # Enumeration items should be documented
 dotnet_diagnostic.sa1611.severity = none # Element parameter should be documented
 dotnet_diagnostic.sa1615.severity = none # Element return value should be documented
+dotnet_diagnostic.sa1623.severity = none # The property's documentation summary text should begin with: 'Gets or sets'
+dotnet_diagnostic.sa1629.severity = none # Documentation text should end with a period
 dotnet_diagnostic.sa1633.severity = none # File should have header
 dotnet_diagnostic.sa1649.severity = none # File name should match first type name
 
@@ -186,7 +190,7 @@ resharper_csharp_wrap_extends_list_style = chop_always
 resharper_csharp_wrap_parameters_style = chop_if_long
 resharper_for_built_in_types = use_var_when_evident
 resharper_for_other_types = use_var_when_evident
-resharper_instance_members_qualify_declared_in = 
+resharper_instance_members_qualify_declared_in =
 resharper_keep_existing_embedded_block_arrangement = false
 resharper_keep_existing_enum_arrangement = false
 resharper_nested_ternary_style = expanded
