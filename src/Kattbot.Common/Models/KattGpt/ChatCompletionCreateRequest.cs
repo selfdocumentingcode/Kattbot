@@ -103,13 +103,22 @@ public record ChatCompletionCreateRequest
     public bool? Stream { get; set; }
 
     /// <summary>
-    ///     Gets or sets the maximum number of tokens to generate in the chat completion.
-    ///     The total length of input tokens and generated tokens is limited by the model's context length.
+    ///     An upper bound for the number of tokens that can be generated for a completion,
+    ///     including visible output tokens and reasoning tokens.
     ///     Defaults to inf.
-    ///     https://platform.openai.com/docs/api-reference/chat/create#chat/create-max_tokens.
+    ///     https://platform.openai.com/docs/api-reference/chat/create#chat_create-max_completion_tokens
     /// </summary>
-    [JsonPropertyName("max_tokens")]
-    public int? MaxTokens { get; set; }
+    [JsonPropertyName("max_completion_tokens")]
+    public int? MaxCompletionTokens { get; set; }
+
+    /// <summary>
+    ///     Constrains effort on reasoning for reasoning models.
+    ///     Currently supported values are minimal, low, medium, and high
+    ///     Defaults to medium.
+    ///     https://platform.openai.com/docs/api-reference/chat/create#chat_create-reasoning_effort
+    /// </summary>
+    [JsonPropertyName("reasoning_effort")]
+    public string? ReasoningEffort { get; set; }
 
     /// <summary>
     ///     Gets or sets number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the
@@ -130,9 +139,10 @@ public record ChatCompletionCreateRequest
     public float? FrequencyPenalty { get; set; }
 
     /// <summary>
-    ///     Gets or sets a unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
-    ///     https://platform.openai.com/docs/api-reference/chat/create#chat/create-user.
+    ///     A stable identifier used to help detect users of your application that may be violating OpenAI's
+    ///     usage policies. The IDs should be a string that uniquely identifies each user.
+    ///     https://platform.openai.com/docs/api-reference/chat/create#chat_create-safety_identifier
     /// </summary>
-    [JsonPropertyName("user")]
-    public string? User { get; set; }
+    [JsonPropertyName("safety_identifier")]
+    public string? SafetyIdentifier { get; set; }
 }
