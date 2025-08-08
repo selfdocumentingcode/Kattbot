@@ -23,8 +23,9 @@ namespace Kattbot.NotificationHandlers;
 public class KattGptMessageHandler : BaseNotificationHandler,
     INotificationHandler<MessageCreatedNotification>
 {
-    private const string ChatGptModel = "gpt-4o";
-    private const string TokenizerModel = "gpt-4o";
+    private const string ChatGptModel = "gpt-5";
+    private const string TokenizerModel = "gpt-4o"; // TODO update to gpt5 when available
+    private const string DefaultReasoningEffort = "minimal";
 
     private const float DefaultTemperature = 1.1f;
     private const int MaxTotalTokens = 24_576;
@@ -172,8 +173,8 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         {
             Model = ChatGptModel,
             Messages = requestMessages.ToArray(),
-            Temperature = DefaultTemperature,
-            MaxTokens = MaxTokensToGenerate,
+            MaxCompletionTokens = MaxTokensToGenerate,
+            ReasoningEffort = DefaultReasoningEffort,
             Tools = chatCompletionTools,
             ParallelToolCalls = parallelToolCalls,
         };
@@ -343,7 +344,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
         int remainingTokensForContextMessages = MaxTotalTokens - MaxTokensToGenerate - reservedTokenCount;
 
-        var tokenizer = new KattGptTokenizer(ChatGptModel);
+        var tokenizer = new KattGptTokenizer(TokenizerModel);
 
         channelContext = new KattGptChannelContext(remainingTokensForContextMessages, tokenizer);
 
