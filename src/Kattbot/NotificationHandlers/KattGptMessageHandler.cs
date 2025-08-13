@@ -144,7 +144,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         catch (Exception ex)
         {
             await SendTextReply($"Something went wrong: {ex.Message}", message);
-            _discordErrorLogger.LogError(ex.Message);
+            _discordErrorLogger.LogError(ex, ex.Message);
         }
     }
 
