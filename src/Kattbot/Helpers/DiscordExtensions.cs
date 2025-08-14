@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -69,8 +70,12 @@ public static class DiscordExtensions
             newMessageContent = newMessageContent.Replace(role.Mention, role.Name);
         }
 
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(message.MentionedChannels);
         foreach (DiscordChannel channel in message.MentionedChannels)
         {
+            ArgumentNullException.ThrowIfNull(channel.Mention);
+            ArgumentNullException.ThrowIfNull(channel.Name);
             newMessageContent = newMessageContent.Replace(channel.Mention, $"#{channel.Name}");
         }
 
