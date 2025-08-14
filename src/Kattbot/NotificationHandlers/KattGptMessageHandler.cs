@@ -143,7 +143,11 @@ public class KattGptMessageHandler : BaseNotificationHandler,
         }
         catch (Exception ex)
         {
-            await SendTextReply($"Something went wrong: {ex.Message}", message);
+            if (ex is not NullReferenceException)
+            {
+                await SendTextReply($"Something went wrong: {ex.Message}", message);
+            }
+
             _discordErrorLogger.LogError(ex, ex.Message);
         }
     }
