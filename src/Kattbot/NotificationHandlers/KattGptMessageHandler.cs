@@ -29,9 +29,9 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
     private const int MaxTotalTokens = 24_576;
     private const int MaxTokensToGenerate = 960; // Roughly the limit of 2 Discord messages
+
     private const string MessageSplitToken = "[cont.] ";
-    private const string RecipientMarkerToYou = "[to you]";
-    private const string RecipientMarkerToOthers = "[to others]";
+
     private const string MessageToolUseTemplate = "`Kattbot used: {0}`";
 
     private const string GptImageModel = "gpt-image-1";
@@ -85,26 +85,16 @@ public class KattGptMessageHandler : BaseNotificationHandler,
                 systemPromptsMessages,
                 chatCompletionFunction);
 
-            bool shouldReplyToMessage = ShouldReplyToMessage(message);
-
-            string recipientMarker = shouldReplyToMessage
-                ? RecipientMarkerToYou
-                : RecipientMarkerToOthers;
-
             // Add the new message from notification
             string newMessageUser = author.GetDisplayName();
             string newMessageContent = message.SubstituteMentions();
 
             ChatCompletionMessage newUserMessage =
-                ChatCompletionMessage.AsUser($"{newMessageUser}{recipientMarker}: {newMessageContent}");
+                ChatCompletionMessage.AsUser($"{newMessageUser}: {newMessageContent}");
 
             newContextMessages.Add(newUserMessage);
 
-            if (!shouldReplyToMessage)
-            {
-                channelContext.AddMessages(newContextMessages);
-                return;
-            }
+            channelContext.AddMessages(newContextMessages);
 
             await channel.TriggerTypingAsync();
 
@@ -379,31 +369,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
         if (channelOptions == null) return false;
 
-        // if the channel is not always on, handle the message
-        if (!channelOptions.AlwaysOn) return true;
-
-        // otherwise check if the message does not start with the MetaMessagePrefix
-        string[] metaMessagePrefixes = _kattGptOptions.AlwaysOnIgnoreMessagePrefixes;
-        bool messageStartsWithMetaMessagePrefix = metaMessagePrefixes.Any(messageContent.StartsWith);
-
-        // if it does, return false
-        return !messageStartsWithMetaMessagePrefix;
-    }
-
-    /// <summary>
-    ///     Checks if KattGpt should reply to the message.
-    /// </summary>
-    /// <param name="message">The message.</param>
-    /// <returns>True if KattGpt should reply.</returns>
-    private bool ShouldReplyToMessage(DiscordMessage message)
-    {
-        DiscordChannel channel = message.Channel!;
-
-        ChannelOptions? channelOptions = _kattGptService.GetChannelOptions(channel);
-
-        if (channelOptions == null) return false;
-
-        // if the channel is not always on
+        // if the channel is not always on i.e. requires @mention or Reply
         if (!channelOptions.AlwaysOn)
         {
             // check if the current message is a reply to kattbot
@@ -419,7 +385,7 @@ public class KattGptMessageHandler : BaseNotificationHandler,
 
         // otherwise check if the message does not start with the MetaMessagePrefix
         string[] metaMessagePrefixes = _kattGptOptions.AlwaysOnIgnoreMessagePrefixes;
-        bool messageStartsWithMetaMessagePrefix = metaMessagePrefixes.Any(message.Content.TrimStart().StartsWith);
+        bool messageStartsWithMetaMessagePrefix = metaMessagePrefixes.Any(messageContent.StartsWith);
 
         // if it does, return false
         return !messageStartsWithMetaMessagePrefix;
