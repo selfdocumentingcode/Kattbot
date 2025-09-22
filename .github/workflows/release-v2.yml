@@ -249,6 +249,7 @@ jobs:
         env:
           COMMIT_SHA: ${{ env.COMMIT_SHA }}
       
+      # Generate a token with "create release" permission (the default token has no such permission)
       - uses: actions/create-github-app-token@v1
         id: app-token
         with:
@@ -260,7 +261,6 @@ jobs:
           gh release create $SEMVER_TAG \
           --target $COMMIT_SHA \
           --title $SEMVER_TAG \
-          --draft \
           --repo $REPOSITORY
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
