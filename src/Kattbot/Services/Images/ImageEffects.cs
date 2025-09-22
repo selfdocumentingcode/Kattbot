@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
@@ -25,14 +26,13 @@ public static class ImageEffects
 
     public static Image DeepFryImage(Image image)
     {
-        image.Mutate(
-            i =>
-            {
-                i.Contrast(5f);
-                i.Brightness(1.5f);
-                i.GaussianSharpen(5f);
-                i.Saturate(5f);
-            });
+        image.Mutate(i =>
+        {
+            i.Contrast(5f);
+            i.Brightness(1.5f);
+            i.GaussianSharpen(5f);
+            i.Saturate(5f);
+        });
 
         return image;
     }
@@ -119,20 +119,19 @@ public static class ImageEffects
             imageAsPngWithTransparency = image;
         }
 
-        Image<TPixel> cloned = imageAsPngWithTransparency.Clone(
-            i =>
+        Image<TPixel> cloned = imageAsPngWithTransparency.Clone(i =>
+        {
+            var opts = new DrawingOptions
             {
-                var opts = new DrawingOptions
+                GraphicsOptions = new GraphicsOptions
                 {
-                    GraphicsOptions = new GraphicsOptions
-                    {
-                        Antialias = true,
-                        AlphaCompositionMode = PixelAlphaCompositionMode.DestIn,
-                    },
-                };
+                    Antialias = true,
+                    AlphaCompositionMode = PixelAlphaCompositionMode.DestIn,
+                },
+            };
 
-                i.Fill(opts, Color.Black, ellipsePath);
-            });
+            i.Fill(opts, Color.Black, ellipsePath);
+        });
 
         return cloned;
     }
@@ -185,32 +184,31 @@ public static class ImageEffects
         float[] squishFactors = [0.9f, 0.8f, 0.75f, 0.8f, 0.85f];
 
         // Resize the input image to match the frame size
-        Image<Rgba32> resizedImage = inputImage.Clone(
-            ctx =>
-            {
-                // Crop the image to a square
-                ctx.Crop(
-                    Math.Min(inputImage.Width, inputImage.Height),
-                    Math.Min(inputImage.Width, inputImage.Height));
+        Image<Rgba32> resizedImage = inputImage.Clone(ctx =>
+        {
+            // Crop the image to a square
+            ctx.Crop(
+                Math.Min(inputImage.Width, inputImage.Height),
+                Math.Min(inputImage.Width, inputImage.Height));
 
-                // Downscale the image to the frame size and then some
-                const int newWidth = (int)(frameSize * scale);
-                const int newHeight = (int)(frameSize * scale);
+            // Downscale the image to the frame size and then some
+            const int newWidth = (int)(frameSize * scale);
+            const int newHeight = (int)(frameSize * scale);
 
-                ctx.Resize(
-                    new ResizeOptions
-                    {
-                        Size = new Size(newWidth, newHeight),
-                        Sampler = KnownResamplers.Hermite,
-                    });
-            });
+            ctx.Resize(
+                new ResizeOptions
+                {
+                    Size = new Size(newWidth, newHeight),
+                    Sampler = KnownResamplers.Hermite,
+                });
+        });
 
         // Optimize transparency by clipping pixels with low alpha values in order to reduce dithering artifacts
         resizedImage.ProcessPixelRows(a => ImageProcessors.ClipTransparencyProcessor(a, alphaThreshold));
 
         for (var i = 0; i < frameCount; i++)
         {
-            var overlayFrameRectangle = new Rectangle(i * overlayWidth, 0, overlayWidth, overlayHeight);
+            var overlayFrameRectangle = new Rectangle(i * overlayWidth, y: 0, overlayWidth, overlayHeight);
 
             Image<Rgba32> overlayFrame = overlaySpriteSheet.Clone(ctx => ctx.Crop(overlayFrameRectangle));
 
@@ -220,23 +218,24 @@ public static class ImageEffects
             Image<Rgba32> squishedFrame =
                 resizedImage.Clone(x => x.Resize(resizedImage.Width, (int)(resizedImage.Height * frameSquishFactor)));
 #if DEBUG
+
             // temporarily save the frame to disk
             squishedFrame.SaveAsPng(Path.Combine(Path.GetTempPath(), "kattbot", $"a_squished_frame_{i}.png"));
 #endif
             var outputFrame = new Image<Rgba32>(frameSize, frameSize);
 
             // Draw the resized input frame in the bottom right corner
-            outputFrame.Mutate(
-                x =>
-                {
-                    int newFrameOffsetX = frameSize - squishedFrame.Width;
-                    int newFrameOffsetY = frameSize - squishedFrame.Height;
-                    x.DrawImage(squishedFrame, new Point(newFrameOffsetX, newFrameOffsetY), 1f);
-                });
+            outputFrame.Mutate(x =>
+            {
+                int newFrameOffsetX = frameSize - squishedFrame.Width;
+                int newFrameOffsetY = frameSize - squishedFrame.Height;
+                x.DrawImage(squishedFrame, new Point(newFrameOffsetX, newFrameOffsetY), opacity: 1f);
+            });
 
             // Draw the overlay frame
-            outputFrame.Mutate(x => x.DrawImage(overlayFrame, new Point(0, overlayY), 1f));
+            outputFrame.Mutate(x => x.DrawImage(overlayFrame, new Point(x: 0, overlayY), opacity: 1f));
 #if DEBUG
+
             // temporarily save the frame to disk
             outputFrame.SaveAsPng(Path.Combine(Path.GetTempPath(), "kattbot", $"b_frame_{i}.png"));
 #endif
@@ -266,5 +265,83 @@ public static class ImageEffects
         gifMetadata.ColorTableMode = GifColorTableMode.Global;
 
         return outputGif;
+    }
+
+    public static Image FillMaskWithTiledImage(
+        Image<Rgba32> targetImage,
+        Image<Rgba32> maskImage,
+        Image<Rgba32> tileImage)
+    {
+        Image<Rgba32> result = targetImage.Clone();
+        var random = new Random();
+
+        // Resize tile image based on target image width ratio (1/40 for 32px tiles on 1280px width)
+        const double tileRatio = 1.0 / 40.0;
+        var desiredTileSize = (int)(targetImage.Width * tileRatio);
+
+        // Resize the tile image to maintain square aspect ratio
+        Image<Rgba32> resizedTileImage = tileImage.Clone(ctx =>
+            ctx.Resize(desiredTileSize, desiredTileSize, KnownResamplers.Hermite));
+
+        // Calculate tile placement parameters
+        int tileWidth = resizedTileImage.Width;
+        int tileHeight = resizedTileImage.Height;
+        int maxJitterX = tileWidth / 4;
+        int maxJitterY = tileHeight / 4;
+
+        // Create a list of mask regions to fill
+        var maskRegions = new List<Point>();
+
+        // Scan for white pixels in the mask (sampling at intervals)
+        for (var y = 0; y < maskImage.Height; y += tileHeight / 2)
+        {
+            for (var x = 0; x < maskImage.Width; x += tileWidth / 2)
+            {
+                if (x < maskImage.Width && y < maskImage.Height)
+                {
+                    Rgba32 pixel = maskImage[x, y];
+
+                    // Check if pixel is white (high RGB values)
+                    if (pixel.R > 200 && pixel.G > 200 && pixel.B > 200)
+                    {
+                        maskRegions.Add(new Point(x, y));
+                    }
+                }
+            }
+        }
+
+        // Place tiles randomly over mask regions
+        foreach (Point region in maskRegions)
+        {
+            // Add random jitter to tile placement
+            int jitterX = random.Next(-maxJitterX, maxJitterX);
+            int jitterY = random.Next(-maxJitterY, maxJitterY);
+
+            // Center the tile on the detected mask pixel
+            int tileX = (region.X + jitterX) - (tileWidth / 2);
+            int tileY = (region.Y + jitterY) - (tileHeight / 2);
+
+            // Only draw if the tile center would be within the mask area
+            int centerX = tileX + (tileWidth / 2);
+            int centerY = tileY + (tileHeight / 2);
+
+            if (centerX >= 0 && centerX < maskImage.Width &&
+                centerY >= 0 && centerY < maskImage.Height)
+            {
+                Rgba32 centerPixel = maskImage[centerX, centerY];
+                if (centerPixel.R > 200 && centerPixel.G > 200 && centerPixel.B > 200)
+                {
+                    // Ensure tile placement is within target image bounds
+                    tileX = Math.Max(val1: 0, Math.Min(tileX, targetImage.Width - tileWidth));
+                    tileY = Math.Max(val1: 0, Math.Min(tileY, targetImage.Height - tileHeight));
+
+                    // Draw the tile image at the calculated position
+                    result.Mutate(ctx => { ctx.DrawImage(resizedTileImage, new Point(tileX, tileY), opacity: 1f); });
+                }
+            }
+        }
+
+        resizedTileImage.Dispose();
+        return result;
     }
 }
