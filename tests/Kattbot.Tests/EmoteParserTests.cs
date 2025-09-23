@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Kattbot.Helpers;
 using Kattbot.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -7,23 +8,15 @@ namespace Kattbot.Tests;
 [TestClass]
 public class EmoteParserTests
 {
-    private EmoteParser _sut = null!;
-
-    [TestInitialize]
-    public void Initialize()
-    {
-        _sut = new EmoteParser();
-    }
-
     [TestMethod]
     public void ParseEmotes_WithMessageContaingEmotes_ReturnEmote()
     {
         const string testMessage = "Some text <:emoji_1:123123123>";
 
-        List<string> emotes = _sut.ExtractEmotesFromMessage(testMessage);
+        List<string> emotes = EmoteHelper.ExtractEmotesFromMessage(testMessage);
 
-        Assert.AreEqual(emotes.Count, actual: 1);
-        Assert.AreEqual(emotes[0], "<:emoji_1:123123123>");
+        Assert.HasCount(expected: 1, emotes);
+        Assert.AreEqual("<:emoji_1:123123123>", emotes[0]);
     }
 
     [TestMethod]
@@ -31,8 +24,8 @@ public class EmoteParserTests
     {
         const string testMessage = "Some text <:emoji_1:123123123> other <:emoji_2:123123123><:emoji_3:123123123>";
 
-        List<string> emotes = _sut.ExtractEmotesFromMessage(testMessage);
+        List<string> emotes = EmoteHelper.ExtractEmotesFromMessage(testMessage);
 
-        Assert.AreEqual(emotes.Count, actual: 3);
+        Assert.HasCount(expected: 3, emotes);
     }
 }

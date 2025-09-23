@@ -9,41 +9,33 @@ namespace Kattbot.Services;
 
 public class EmoteEntityBuilder
 {
-    private readonly EmoteParser _emoteParser;
-
-    public EmoteEntityBuilder(EmoteParser emoteParser)
-    {
-        _emoteParser = emoteParser;
-    }
-
     public List<EmoteEntity> BuildFromSocketUserMessage(DiscordMessage message, ulong guildId)
     {
-        List<string> emojiStrings = _emoteParser.ExtractEmotesFromMessage(message.Content);
+        List<string> emojiStrings = EmoteHelper.ExtractEmotesFromMessage(message.Content);
 
-        List<EmoteEntity> emotes = emojiStrings.Select(
-                s =>
+        List<EmoteEntity> emotes = emojiStrings.Select(s =>
+            {
+                TempEmote? parsedEmote = EmoteHelper.Parse(s);
+
+                if (parsedEmote == null)
                 {
-                    TempEmote? parsedEmote = EmoteHelper.Parse(s);
+                    throw new Exception($"{s} is not a valid emote string");
+                }
 
-                    if (parsedEmote == null)
-                    {
-                        throw new Exception($"{s} is not a valid emote string");
-                    }
+                var emoteEntity = new EmoteEntity
+                {
+                    EmoteId = parsedEmote.Id,
+                    EmoteName = parsedEmote.Name,
+                    EmoteAnimated = parsedEmote.Animated,
+                    DateTime = DateTimeOffset.UtcNow,
+                    UserId = message.Author.Id,
+                    MessageId = message.Id,
+                    GuildId = guildId,
+                    Source = EmoteSource.Message,
+                };
 
-                    var emoteEntitiy = new EmoteEntity
-                    {
-                        EmoteId = parsedEmote.Id,
-                        EmoteName = parsedEmote.Name,
-                        EmoteAnimated = parsedEmote.Animated,
-                        DateTime = DateTimeOffset.UtcNow,
-                        UserId = message.Author.Id,
-                        MessageId = message.Id,
-                        GuildId = guildId,
-                        Source = EmoteSource.Message,
-                    };
-
-                    return emoteEntitiy;
-                })
+                return emoteEntity;
+            })
             .ToList();
 
         return emotes;
