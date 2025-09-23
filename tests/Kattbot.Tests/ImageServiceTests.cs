@@ -1,19 +1,22 @@
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Kattbot.Services.Images;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NSubstitute;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
 
 namespace Kattbot.Tests;
 
 [TestClass]
-[Ignore] // Can't save to /tmp on GitHub Actions. TODO: fix
 public class ImageServiceTests
 {
+    private readonly TestContext _testContext;
+
+    public ImageServiceTests(TestContext testContext)
+    {
+        _testContext = testContext;
+    }
+
     [TestMethod]
     [DataRow("cute_cat.jpg")]
     [DataRow("froge.png")]
@@ -23,13 +26,13 @@ public class ImageServiceTests
 
         string inputFile = Path.Combine("Resources", inputFilename);
 
-        Image inputImage = await Image.LoadAsync(inputFile);
+        Image inputImage = await Image.LoadAsync(inputFile, _testContext.CancellationTokenSource.Token);
 
         Image resizedImage = await ImageService.EnsureMaxImageFileSize(inputImage, maxSizeMb);
 
         double resizedImageSize = await ImageService.GetImageSizeInMb(resizedImage);
 
-        Assert.IsTrue(resizedImageSize <= maxSizeMb);
+        Assert.IsLessThanOrEqualTo(maxSizeMb, resizedImageSize);
     }
 
     [TestMethod]
@@ -46,7 +49,7 @@ public class ImageServiceTests
 
         string inputFile = Path.Combine("Resources", inputFilename);
 
-        Image inputImage = await Image.LoadAsync(inputFile);
+        Image inputImage = await Image.LoadAsync(inputFile, _testContext.CancellationTokenSource.Token);
 
         Image convertedImage = await ImageService.EnsureSupportedImageFormatOrPng(inputImage, supportedFileTypes);
 
