@@ -6,6 +6,7 @@ updates:
       interval: "daily"
     ignore:
       - dependency-name: "DSharpPlus*"
+      - dependency-name: "MediatR" # Dependabot can't version ranges
     groups:
       minor-and-patch:
         patterns:
