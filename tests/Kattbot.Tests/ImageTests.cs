@@ -1,6 +1,8 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Kattbot.Services.Images;
+using Kattbot.Tests.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -8,9 +10,16 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace Kattbot.Tests;
 
 [TestClass]
-[Ignore] // Can't save to /tmp on GitHub Actions. TODO: fix
+[TestCategory("ShittyTests")]
 public class ImageTests
 {
+    private readonly TestContext _testContext;
+
+    public ImageTests(TestContext testContext)
+    {
+        _testContext = testContext;
+    }
+
     [TestMethod]
     [DataRow("froge.png")]
     public async Task PetPetTest(string inputFilename)
@@ -21,9 +30,9 @@ public class ImageTests
 
         Image result = ImageEffects.PetPet(image);
 
-        string outputFile = Path.Combine(Path.GetTempPath(), "kattbot", "z_output_petpet_froge.gif");
+        string outputFile = Path.Combine(PathUtils.TryGetTempPathFromEnv(), "kattbot", "z_output_petpet_froge.gif");
 
-        await result.SaveAsGifAsync(outputFile);
+        await result.SaveAsGifAsync(outputFile, _testContext.CancellationTokenSource.Token);
 
         Assert.IsTrue(File.Exists(outputFile));
     }
@@ -33,13 +42,13 @@ public class ImageTests
     public async Task CropToCircle(string inputFilename)
     {
         string inputFile = Path.Combine("Resources", inputFilename);
-        string outputFile = Path.Combine(Path.GetTempPath(), "kattbot", $"cropped_{inputFilename}");
+        string outputFile = Path.Combine(PathUtils.TryGetTempPathFromEnv(), "kattbot", $"cropped_{inputFilename}");
 
         using Image<Rgba32> image = Image.Load<Rgba32>(inputFile);
 
         Image<Rgba32> croppedImage = ImageEffects.CropToCircle(image);
 
-        await croppedImage.SaveAsPngAsync(outputFile);
+        await croppedImage.SaveAsPngAsync(outputFile, _testContext.CancellationTokenSource.Token);
 
         Assert.IsTrue(File.Exists(outputFile));
     }
@@ -49,26 +58,25 @@ public class ImageTests
     public async Task Twirl(string inputFilename)
     {
         string inputFile = Path.Combine("Resources", inputFilename);
-        string outputFile = Path.Combine(Path.GetTempPath(), "kattbot", $"twirled_{inputFilename}");
+        string outputFile = Path.Combine(PathUtils.TryGetTempPathFromEnv(), "kattbot", $"twirled_{inputFilename}");
 
         using Image<Rgba32> image = Image.Load<Rgba32>(inputFile);
 
         Image croppedImage = ImageEffects.TwirlImage(image);
 
-        await croppedImage.SaveAsPngAsync(outputFile);
+        await croppedImage.SaveAsPngAsync(outputFile, _testContext.CancellationTokenSource.Token);
 
         Assert.IsTrue(File.Exists(outputFile));
     }
 
     [TestMethod]
-    [DataRow("froge.png")]
-    [DataRow("madjoy.png")]
+    [DynamicData(nameof(GetTileImageFiles), DynamicDataSourceType.Method)]
     public async Task FillMaskWithTiledImage(string tileImageFilename)
     {
         string targetImageFile = Path.Combine("Resources", "dumptruck_v1.png");
         string maskImageFile = Path.Combine("Resources", "dumptruck_v1_mask.png");
-        string tileImageFile = Path.Combine("Resources", tileImageFilename);
-        string outputDir = Path.Combine(Path.GetTempPath(), "kattbot");
+        string tileImageFile = Path.Combine("Resources", "DumpTruckTiles", tileImageFilename);
+        string outputDir = Path.Combine(PathUtils.TryGetTempPathFromEnv(), "kattbot");
         string outputFile = Path.Combine(outputDir, $"mask_filled_{tileImageFilename}");
 
         Directory.CreateDirectory(outputDir);
@@ -79,8 +87,25 @@ public class ImageTests
 
         Image filledImage = ImageEffects.FillMaskWithTiledImage(targetImage, maskImage, tileImage);
 
-        await filledImage.SaveAsPngAsync(outputFile);
+        await filledImage.SaveAsPngAsync(outputFile, _testContext.CancellationTokenSource.Token);
 
         Assert.IsTrue(File.Exists(outputFile));
+    }
+
+    private static IEnumerable<object[]> GetTileImageFiles()
+    {
+        string tilesDirectory = Path.Combine("Resources", "DumpTruckTiles");
+
+        if (!Directory.Exists(tilesDirectory))
+        {
+            yield break;
+        }
+
+        string[] imageFiles = Directory.GetFiles(tilesDirectory, "*.png");
+
+        foreach (string filePath in imageFiles)
+        {
+            yield return [Path.GetFileName(filePath)];
+        }
     }
 }
