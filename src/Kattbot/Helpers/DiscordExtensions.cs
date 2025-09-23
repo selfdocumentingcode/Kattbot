@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
+using Kattbot.Common.Models.Emotes;
 using Microsoft.Extensions.Logging;
 
 namespace Kattbot.Helpers;
@@ -108,6 +108,17 @@ public static class DiscordExtensions
                     imageUrl,
                     referencedMessage.Id);
                 return imageUrl;
+            }
+
+            TempEmote? singleEmojiParsedFromMessage = EmoteHelper.Parse(referencedMessage.Content.Trim());
+
+            if (singleEmojiParsedFromMessage != null)
+            {
+                logger?.LogDebug(
+                    "Found single emoji image url {ImageUrl} in referenced message {ReferencedMessageId}",
+                    singleEmojiParsedFromMessage.ImageUrl,
+                    referencedMessage.Id);
+                return singleEmojiParsedFromMessage.ImageUrl;
             }
         }
 

@@ -7,4 +7,6 @@ public class TempEmote
     public string Name { get; set; } = null!;
 
     public bool Animated { get; set; }
+
+    public string ImageUrl { get; set; } = null!;
 }

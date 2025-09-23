@@ -68,7 +68,6 @@ public class Program
     {
         services.AddTransient<EmoteEntityBuilder>();
         services.AddTransient<DateTimeProvider>();
-        services.AddTransient<EmoteParser>();
         services.AddTransient<GuildSettingsService>();
         services.AddTransient<ImageService>();
         services.AddTransient<DiscordErrorLogger>();
