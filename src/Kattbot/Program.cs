@@ -61,8 +61,7 @@ public class Program
                 services.AddDbContext(configuration);
 
                 services.AddDiscordClient(configuration);
-            })
-            .UseSystemd();
+            });
     }
 
     private static void AddInternalServices(IServiceCollection services)
