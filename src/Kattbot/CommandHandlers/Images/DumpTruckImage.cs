@@ -23,11 +23,30 @@ public class DumpTruckEmoteRequest : CommandRequest
     }
 
     public DiscordEmoji Emoji { get; set; }
-
-    public string? Speed { get; set; }
 }
 
-public class DumpTruckImageHandlers : IRequestHandler<DumpTruckEmoteRequest>
+public class DumpTruckUserRequest : CommandRequest
+{
+    public DumpTruckUserRequest(CommandContext ctx, DiscordUser user)
+        : base(ctx)
+    {
+        User = user;
+    }
+
+    public DiscordUser User { get; set; }
+}
+
+public class DumpTruckImageRequest : CommandRequest
+{
+    public DumpTruckImageRequest(CommandContext ctx)
+        : base(ctx)
+    {
+    }
+}
+
+public class DumpTruckImageHandlers : IRequestHandler<DumpTruckEmoteRequest>,
+    IRequestHandler<DumpTruckUserRequest>,
+    IRequestHandler<DumpTruckImageRequest>
 {
     private readonly DiscordResolver _discordResolver;
     private readonly ImageService _imageService;
@@ -61,6 +80,62 @@ public class DumpTruckImageHandlers : IRequestHandler<DumpTruckEmoteRequest>
         await ctx.RespondAsync(responseBuilder);
     }
 
+    public async Task Handle(DumpTruckUserRequest request, CancellationToken cancellationToken)
+    {
+        CommandContext ctx = request.Ctx;
+        DiscordUser user = request.User;
+        DiscordGuild guild = ctx.Guild;
+
+        DiscordMember userAsMember = await _discordResolver.ResolveGuildMember(guild, user.Id) ??
+                                     throw new Exception("Invalid user");
+
+        string imageUrl = userAsMember.GuildAvatarUrl
+                          ?? userAsMember.AvatarUrl
+                          ?? throw new Exception("Couldn't load user avatar");
+
+        ImageStreamResult imageStreamResult = await DumpTruckImage(
+            imageUrl,
+            ImageEffects.CropToCircle);
+
+        using MemoryStream imageStream = imageStreamResult.MemoryStream;
+        string fileExtension = imageStreamResult.FileExtension;
+
+        string imageFilename = userAsMember.DisplayName.ToSafeFilename(fileExtension);
+
+        var responseBuilder = new DiscordMessageBuilder();
+
+        responseBuilder.AddFile(imageFilename, imageStreamResult.MemoryStream);
+
+        await ctx.RespondAsync(responseBuilder);
+    }
+
+    public async Task Handle(DumpTruckImageRequest request, CancellationToken cancellationToken)
+    {
+        CommandContext ctx = request.Ctx;
+        DiscordMessage message = ctx.Message;
+
+        string? imageUrl = await message.GetImageUrlFromMessage();
+
+        if (imageUrl == null)
+        {
+            await ctx.RespondAsync("I didn't find any images.");
+            return;
+        }
+
+        ImageStreamResult imageStreamResult = await DumpTruckImage(imageUrl);
+
+        using MemoryStream imageStream = imageStreamResult.MemoryStream;
+        string fileExtension = imageStreamResult.FileExtension;
+
+        var imageFilename = $"{Guid.NewGuid()}.{fileExtension}";
+
+        var responseBuilder = new DiscordMessageBuilder();
+
+        responseBuilder.AddFile(imageFilename, imageStreamResult.MemoryStream);
+
+        await ctx.RespondAsync(responseBuilder);
+    }
+
     private async Task<ImageStreamResult> DumpTruckImage(
         string imageUrl,
         ImageTransformDelegate<Rgba32>? preTransform = null)
@@ -77,9 +152,9 @@ public class DumpTruckImageHandlers : IRequestHandler<DumpTruckEmoteRequest>
         string dumpTruckMaskFile = Path.Combine("Resources", "dumptruck_v1_mask.png");
         using Image<Rgba32> dumpTruckMaskImage = Image.Load<Rgba32>(dumpTruckMaskFile);
 
-        Image petImage = ImageEffects.FillMaskWithTiledImage(dumpTruckImage, dumpTruckMaskImage, inputImage);
+        Image resultImage = ImageEffects.FillMaskWithTiledImage(dumpTruckImage, dumpTruckMaskImage, inputImage);
 
-        ImageStreamResult outputImageStream = await ImageService.GetImageStream(petImage);
+        ImageStreamResult outputImageStream = await ImageService.GetImageStream(resultImage);
 
         return outputImageStream;
     }
