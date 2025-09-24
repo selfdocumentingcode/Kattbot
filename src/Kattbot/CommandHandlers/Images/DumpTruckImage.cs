@@ -149,10 +149,10 @@ public class DumpTruckImageHandlers : IRequestHandler<DumpTruckEmoteRequest>,
 
         string dumpTruckFile = Path.Combine("Resources", "dumptruck_v1.png");
         using Image<Rgba32> dumpTruckImage = Image.Load<Rgba32>(dumpTruckFile);
-        string dumpTruckMaskFile = Path.Combine("Resources", "dumptruck_v1_mask.png");
+        string dumpTruckMaskFile = Path.Combine("Resources", "dumptruck_v1_double_mask.png");
         using Image<Rgba32> dumpTruckMaskImage = Image.Load<Rgba32>(dumpTruckMaskFile);
 
-        Image resultImage = ImageEffects.FillMaskWithTiledImage(dumpTruckImage, dumpTruckMaskImage, inputImage);
+        Image resultImage = FillMaskWithTilesEffect.ApplyEffect(dumpTruckImage, dumpTruckMaskImage, inputImage);
 
         ImageStreamResult outputImageStream = await ImageService.GetImageStream(resultImage);
 
