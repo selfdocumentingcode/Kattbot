@@ -48,7 +48,7 @@
         <None Update="Resources\dumptruck_v1.png">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Resources\dumptruck_v1_mask.png">
+        <None Update="Resources\dumptruck_v1_double_mask.png">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

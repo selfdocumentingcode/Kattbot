@@ -74,7 +74,7 @@ public class ImageTests
     public async Task FillMaskWithTiledImage(string tileImageFilename)
     {
         string targetImageFile = Path.Combine("Resources", "dumptruck_v1.png");
-        string maskImageFile = Path.Combine("Resources", "dumptruck_v1_mask.png");
+        string maskImageFile = Path.Combine("Resources", "dumptruck_v1_double_mask.png");
         string tileImageFile = Path.Combine("Resources", "DumpTruckTiles", tileImageFilename);
         string outputDir = Path.Combine(PathUtils.TryGetTempPathFromEnv(), "kattbot");
         string outputFile = Path.Combine(outputDir, $"mask_filled_{tileImageFilename}");
@@ -85,7 +85,7 @@ public class ImageTests
         using Image<Rgba32> maskImage = Image.Load<Rgba32>(maskImageFile);
         using Image<Rgba32> tileImage = Image.Load<Rgba32>(tileImageFile);
 
-        Image filledImage = ImageEffects.FillMaskWithTiledImage(targetImage, maskImage, tileImage);
+        Image filledImage = FillMaskWithTilesEffect.ApplyEffect(targetImage, maskImage, tileImage);
 
         await filledImage.SaveAsPngAsync(outputFile, _testContext.CancellationTokenSource.Token);
 
