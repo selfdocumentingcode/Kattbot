@@ -13,6 +13,8 @@ public class EmoteEntityBuilder
     {
         List<string> emojiStrings = EmoteHelper.ExtractEmotesFromMessage(message.Content);
 
+        if (message.Author is null) throw new Exception("Message author is null");
+
         List<EmoteEntity> emotes = emojiStrings.Select(s =>
             {
                 TempEmote? parsedEmote = EmoteHelper.Parse(s);

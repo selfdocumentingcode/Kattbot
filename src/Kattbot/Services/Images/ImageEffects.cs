@@ -161,7 +161,7 @@ public static class ImageEffects
         const int alphaThreshold = 120;
 
         // TODO implement squishFactor
-        const float squishFactor = 1f;
+        ////const float squishFactor = 1f;
 
         // The maximum fps of 50 results in a delay of 20ms between frames
         // which is the minimum delay for a gif in most renderers.

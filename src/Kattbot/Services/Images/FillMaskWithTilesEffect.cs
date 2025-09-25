@@ -300,6 +300,7 @@ public static class FillMaskWithTilesEffect
                 // Draw drop shadow first
                 result.Mutate(ctx =>
                 {
+                    // ReSharper disable once AccessToDisposedClosure - It's fiiine
                     using Image<Rgba32> shadowImage = resizedTileImage.Clone(shadowCtx =>
                     {
                         shadowCtx.Brightness(0.2f);
@@ -312,6 +313,7 @@ public static class FillMaskWithTilesEffect
                 });
 
                 // Draw the actual tile
+                // ReSharper disable once AccessToDisposedClosure - It's fiiine
                 result.Mutate(ctx => { ctx.DrawImage(resizedTileImage, new Point(tileX, tileY), opacity: 1f); });
             }
         }
@@ -388,17 +390,16 @@ public static class FillMaskWithTilesEffect
             for (var y = 0; y < accessor.Height; y++)
             {
                 Span<Rgba32> pixelRow = accessor.GetRowSpan(y);
-                for (var x = 0; x < pixelRow.Length; x++)
+                foreach (Rgba32 pixel in pixelRow)
                 {
-                    Rgba32 pixel = pixelRow[x];
-                    if (pixel.A > 0) // Only count non-transparent pixels
-                    {
-                        totalR += pixel.R;
-                        totalG += pixel.G;
-                        totalB += pixel.B;
-                        totalA += pixel.A;
-                        pixelCount++;
-                    }
+                    // Only count non-transparent pixels
+                    if (pixel.A <= 0) continue;
+
+                    totalR += pixel.R;
+                    totalG += pixel.G;
+                    totalB += pixel.B;
+                    totalA += pixel.A;
+                    pixelCount++;
                 }
             }
         });

@@ -20,7 +20,8 @@ public class GetGuildEmoteStats
     {
         public GetGuildEmoteStatsRequest(CommandContext ctx)
             : base(ctx)
-        { }
+        {
+        }
 
         public SortDirection SortDirection { get; set; }
 
@@ -54,13 +55,12 @@ public class GetGuildEmoteStats
 
             int pageOffset = page - 1;
 
-            List<TempEmote> mappedGuildEmotes = guildEmotes.Select(
-                    kv => new TempEmote
-                    {
-                        Id = kv.Key,
-                        Name = kv.Value.Name,
-                        Animated = kv.Value.IsAnimated,
-                    })
+            List<TempEmote> mappedGuildEmotes = guildEmotes.Select(kv => new TempEmote
+                {
+                    Id = kv.Key,
+                    Name = kv.Value.Name,
+                    Animated = kv.Value.IsAnimated,
+                })
                 .ToList();
 
             PaginatedResult<Common.Models.Emotes.EmoteStats> emoteUsageResult =
@@ -84,7 +84,7 @@ public class GetGuildEmoteStats
                 return;
             }
 
-            string bestOrWorst = direction == SortDirection.ASC ? "worst" : "best";
+            string bestOrWorst = direction == SortDirection.Asc ? "worst" : "best";
 
             string rangeText;
 

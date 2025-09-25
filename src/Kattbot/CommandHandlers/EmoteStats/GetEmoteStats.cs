@@ -20,7 +20,8 @@ public class GetEmoteStats
     {
         public GetEmoteStatsRequest(CommandContext ctx)
             : base(ctx)
-        { }
+        {
+        }
 
         public TempEmote Emote { get; set; } = null!;
 
@@ -49,7 +50,7 @@ public class GetEmoteStats
             EmoteUsageResult emoteUsageResult =
                 await _emoteStatsRepo.GetSingleEmoteStats(guildId, emote, MaxUserCount, fromDate);
 
-            if (emoteUsageResult == null)
+            if (emoteUsageResult.EmoteStats == null)
             {
                 await ctx.RespondAsync("No stats yet");
                 return;
@@ -76,13 +77,12 @@ public class GetEmoteStats
             if (emoteUsers.Count > 0)
             {
                 List<ExtendedEmoteUser> extendedEmoteUsers = emoteUsers
-                    .Select(
-                        r => new ExtendedEmoteUser
-                        {
-                            UserId = r.UserId,
-                            Usage = r.Usage,
-                            PercentageOfTotal = (double)r.Usage / totalUsage,
-                        })
+                    .Select(r => new ExtendedEmoteUser
+                    {
+                        UserId = r.UserId,
+                        Usage = r.Usage,
+                        PercentageOfTotal = (double)r.Usage / totalUsage,
+                    })
                     .ToList();
 
                 // Resolve display names
@@ -90,9 +90,9 @@ public class GetEmoteStats
                 {
                     DiscordMember member;
 
-                    if (ctx.Guild.Members.ContainsKey(emoteUser.UserId))
+                    if (ctx.Guild.Members.TryGetValue(emoteUser.UserId, out DiscordMember? guildMember))
                     {
-                        member = ctx.Guild.Members[emoteUser.UserId];
+                        member = guildMember;
                     }
                     else
                     {
@@ -112,7 +112,7 @@ public class GetEmoteStats
                 result.AppendLine();
                 result.AppendLine("Top users");
 
-                List<string> lines = FormattedResultHelper.FormatExtendedEmoteUsers(extendedEmoteUsers, 0);
+                List<string> lines = FormattedResultHelper.FormatExtendedEmoteUsers(extendedEmoteUsers, rankOffset: 0);
 
                 lines.ForEach(l => result.AppendLine(l));
             }

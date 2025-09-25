@@ -40,7 +40,7 @@ public class KattGptTokenizer
     public int GetTokenCount(IEnumerable<ChatCompletionMessage> systemMessage)
     {
         int totalTokenCountForSystemMessages =
-            systemMessage.Select(x => x.Content).Sum(m => _tokenizer.Encode(m).Count);
+            systemMessage.Select(x => x.Content).Sum(m => _tokenizer.Encode(m ?? string.Empty).Count);
 
         return totalTokenCountForSystemMessages;
     }
