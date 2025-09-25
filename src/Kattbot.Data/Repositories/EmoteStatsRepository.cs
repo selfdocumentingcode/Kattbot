@@ -66,7 +66,7 @@ public class EmoteStatsRepository
 
         if (totalPages > 0)
         {
-            items = emotes
+            items = emotesResult
                 .Skip(safePageOffset * perPage)
                 .Take(perPage)
                 .ToList();
