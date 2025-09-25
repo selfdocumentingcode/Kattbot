@@ -43,7 +43,7 @@ public class StatsCommandModule : BaseCommandModule
 
         IReadOnlyDictionary<ulong, DiscordEmoji> guildEmotes = ctx.Guild.Emojis;
 
-        return GetRankedEmotes(ctx, SortDirection.DESC, args.Page, args.Interval, guildEmotes);
+        return GetRankedEmotes(ctx, SortDirection.Desc, args.Page, args.Interval, guildEmotes);
     }
 
     [Command("worst")]
@@ -54,7 +54,7 @@ public class StatsCommandModule : BaseCommandModule
 
         IReadOnlyDictionary<ulong, DiscordEmoji> guildEmotes = ctx.Guild.Emojis;
 
-        return GetRankedEmotes(ctx, SortDirection.ASC, args.Page, args.Interval, guildEmotes);
+        return GetRankedEmotes(ctx, SortDirection.Asc, args.Page, args.Interval, guildEmotes);
     }
 
     private Task GetRankedEmotes(

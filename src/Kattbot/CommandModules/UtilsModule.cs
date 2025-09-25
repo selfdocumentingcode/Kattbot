@@ -67,7 +67,7 @@ public class UtilsModule : BaseCommandModule
     public Task GetAvatarUrl(CommandContext ctx, DiscordMember member)
     {
         string memberAvatarUrl = member.AvatarUrl;
-        string memberGuildAvatarUrl = member.GuildAvatarUrl;
+        string? memberGuildAvatarUrl = member.GuildAvatarUrl;
 
         var response = $"User avatar: {memberAvatarUrl}";
         if (!string.IsNullOrEmpty(memberGuildAvatarUrl))
