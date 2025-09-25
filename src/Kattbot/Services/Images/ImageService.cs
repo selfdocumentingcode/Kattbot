@@ -100,21 +100,6 @@ public class ImageService
         return Image.Load<TPixel>(bytes);
     }
 
-    public async Task<string> SaveImageToTempPath(Image image, string filename)
-    {
-        IImageFormat format = image.Metadata.GetFormatOrDefault();
-
-        string extensionName = format.FileExtensions.First();
-
-        IImageEncoder encoder = GetImageEncoderByFileType(extensionName);
-
-        string tempFilePath = Path.Combine(Path.GetTempPath(), $"{filename}.{extensionName}");
-
-        await image.SaveAsync(tempFilePath, encoder);
-
-        return tempFilePath;
-    }
-
     public static async Task<ImageStreamResult> GetImageStream(Image image)
     {
         var outputStream = new MemoryStream();
@@ -165,42 +150,6 @@ public class ImageService
         {
             throw new Exception("Couldn't download image");
         }
-    }
-
-    public async Task<ImageStreamResult> TransformImage(
-        string imageUrl,
-        TransformImageEffect effect,
-        ImageTransformDelegate<Rgba32>? preTransform = null)
-    {
-        Image<Rgba32> inputImage = await DownloadImage<Rgba32>(imageUrl);
-
-        if (preTransform != null)
-        {
-            inputImage = preTransform(inputImage);
-        }
-
-        Image imageResult;
-
-        if (effect == TransformImageEffect.DeepFry)
-        {
-            imageResult = ImageEffects.DeepFryImage(inputImage);
-        }
-        else if (effect == TransformImageEffect.OilPaint)
-        {
-            imageResult = ImageEffects.OilPaintImage(inputImage);
-        }
-        else if (effect == TransformImageEffect.Twirl)
-        {
-            imageResult = ImageEffects.TwirlImage(inputImage, angleDeg: 90);
-        }
-        else
-        {
-            throw new InvalidOperationException($"Unknown effect: {effect}");
-        }
-
-        ImageStreamResult imageStreamResult = await GetImageStream(imageResult);
-
-        return imageStreamResult;
     }
 
     private static IImageEncoder GetImageEncoder(Image image)
