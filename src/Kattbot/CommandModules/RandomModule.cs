@@ -26,23 +26,10 @@ public class RandomModule : BaseCommandModule
 
         if (result == 0)
         {
-            return ctx.RespondAsync("Woof!\r\nOops.. I mean... meow? :grimacing:");
+            return ctx.Channel.SendMessageAsync("https://tenor.com/view/arf-cute-puppy-dog-bark-gif-16685500");
         }
 
-        return ctx.RespondAsync("Meow!");
-    }
-
-    [Command("mjau")]
-    public Task Mjau(CommandContext ctx)
-    {
-        int result = new Random().Next(minValue: 0, maxValue: 10);
-
-        if (result == 0)
-        {
-            return ctx.RespondAsync("Voff!\r\nOi.. Fytti katta... mjau? :grimacing:");
-        }
-
-        return ctx.RespondAsync("Mjau!");
+        return ctx.Channel.SendMessageAsync("https://tenor.com/view/7tv-emotes-gif-2384164572110866110");
     }
 
     [Command("prep")]

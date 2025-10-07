@@ -25,11 +25,12 @@ public class EmoteStatsRepository
         int perPage,
         DateTime? fromDate)
     {
+        var emotesResult = new List<EmoteStats>();
+
         List<EmoteStats> emotes = await _dbContext.Emotes
             .AsQueryable()
-            .Where(
-                e => e.GuildId == guildId
-                     && (!fromDate.HasValue || e.DateTime > fromDate.Value))
+            .Where(e => e.GuildId == guildId
+                        && (!fromDate.HasValue || e.DateTime > fromDate.Value))
             .GroupBy(
                 e => new { e.EmoteId, e.EmoteAnimated },
                 (key, value) => new EmoteStats
@@ -40,38 +41,32 @@ public class EmoteStatsRepository
                 })
             .ToListAsync();
 
+        emotesResult.AddRange(emotes);
+
         IEnumerable<EmoteStats> placeholders = guildEmotes
             .Where(a => !emotes.Select(e => e.EmoteId).Contains(a.Id))
-            .Select(
-                e => new EmoteStats
-                {
-                    EmoteId = e.Id,
-                    IsAnimated = e.Animated,
-                    Usage = 0,
-                });
+            .Select(e => new EmoteStats
+            {
+                EmoteId = e.Id,
+                IsAnimated = e.Animated,
+                Usage = 0,
+            });
 
-        emotes.AddRange(placeholders);
+        emotesResult.AddRange(placeholders);
 
-        if (direction == SortDirection.ASC)
-        {
-            emotes = emotes.OrderBy(u => u.Usage).ToList();
-        }
-        else
-        {
-            emotes = emotes.OrderByDescending(u => u.Usage).ToList();
-        }
+        emotesResult = direction == SortDirection.Asc
+            ? emotesResult.OrderBy(u => u.Usage).ToList()
+            : emotesResult.OrderByDescending(u => u.Usage).ToList();
 
-        int totalCount = emotes.Count();
+        var totalPages = (int)Math.Ceiling((double)emotesResult.Count / perPage);
 
-        var totalPages = (int)Math.Ceiling((double)totalCount / perPage);
-
-        int safePageOffset = Math.Max(0, Math.Min(pageOffset, totalPages - 1));
+        int safePageOffset = Math.Max(val1: 0, Math.Min(pageOffset, totalPages - 1));
 
         var items = new List<EmoteStats>();
 
         if (totalPages > 0)
         {
-            items = emotes
+            items = emotesResult
                 .Skip(safePageOffset * perPage)
                 .Take(perPage)
                 .ToList();
@@ -82,7 +77,7 @@ public class EmoteStatsRepository
             Items = items,
             PageOffset = safePageOffset,
             PageCount = totalPages,
-            TotalCount = totalCount,
+            TotalCount = emotesResult.Count,
         };
 
         return result;
@@ -97,10 +92,9 @@ public class EmoteStatsRepository
     {
         IOrderedQueryable<EmoteStats> mainQuery = _dbContext.Emotes
             .AsQueryable()
-            .Where(
-                e => e.GuildId == guildId
-                     && e.UserId == userId
-                     && (!fromDate.HasValue || e.DateTime > fromDate.Value))
+            .Where(e => e.GuildId == guildId
+                        && e.UserId == userId
+                        && (!fromDate.HasValue || e.DateTime > fromDate.Value))
             .GroupBy(
                 e => new { e.EmoteId, e.EmoteAnimated },
                 (key, value) => new EmoteStats
@@ -117,26 +111,24 @@ public class EmoteStatsRepository
 
         var items = new List<ExtendedStatsQueryResult>();
 
-        int safePageOffset = Math.Max(0, Math.Min(pageOffset, totalPages - 1));
+        int safePageOffset = Math.Max(val1: 0, Math.Min(pageOffset, totalPages - 1));
 
         if (totalPages > 0)
         {
             items = await mainQuery
                 .Skip(safePageOffset * perPage)
                 .Take(perPage)
-                .Select(
-                    e =>
-                        new ExtendedStatsQueryResult
-                        {
-                            EmoteId = e.EmoteId,
-                            Usage = e.Usage,
-                            IsAnimated = e.IsAnimated,
-                            TotalUsage = _dbContext.Emotes
-                                .Count(
-                                    inner => inner.GuildId == guildId
-                                             && inner.EmoteId == e.EmoteId
-                                             && (!fromDate.HasValue || inner.DateTime > fromDate.Value)),
-                        })
+                .Select(e =>
+                    new ExtendedStatsQueryResult
+                    {
+                        EmoteId = e.EmoteId,
+                        Usage = e.Usage,
+                        IsAnimated = e.IsAnimated,
+                        TotalUsage = _dbContext.Emotes
+                            .Count(inner => inner.GuildId == guildId
+                                            && inner.EmoteId == e.EmoteId
+                                            && (!fromDate.HasValue || inner.DateTime > fromDate.Value)),
+                    })
                 .ToListAsync();
         }
 
@@ -161,10 +153,9 @@ public class EmoteStatsRepository
 
         IQueryable<EmoteStats> query = _dbContext.Emotes
             .AsQueryable()
-            .Where(
-                e => e.GuildId == guildId
-                     && e.EmoteId == emoteId
-                     && (!fromDate.HasValue || e.DateTime > fromDate.Value))
+            .Where(e => e.GuildId == guildId
+                        && e.EmoteId == emoteId
+                        && (!fromDate.HasValue || e.DateTime > fromDate.Value))
             .GroupBy(
                 e => new { e.EmoteId, e.EmoteAnimated },
                 (key, value) => new EmoteStats
@@ -178,10 +169,9 @@ public class EmoteStatsRepository
 
         IQueryable<EmoteUser> usersQuery = _dbContext.Emotes
             .AsQueryable()
-            .Where(
-                e => e.GuildId == guildId
-                     && e.EmoteId == emoteId
-                     && (!fromDate.HasValue || e.DateTime > fromDate.Value))
+            .Where(e => e.GuildId == guildId
+                        && e.EmoteId == emoteId
+                        && (!fromDate.HasValue || e.DateTime > fromDate.Value))
             .GroupBy(
                 e => new { e.UserId },
                 (key, value) => new EmoteUser
@@ -206,6 +196,6 @@ public class EmoteStatsRepository
 
 public enum SortDirection
 {
-    ASC,
-    DESC,
+    Asc,
+    Desc,
 }

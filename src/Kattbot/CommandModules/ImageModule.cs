@@ -126,6 +126,33 @@ public class ImageModule : BaseCommandModule
         return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
     }
 
+    [Command("dumptruck")]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
+    public Task DumpTruck(CommandContext ctx, DiscordEmoji emoji)
+    {
+        var request = new DumpTruckEmoteRequest(ctx, emoji);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("dumptruck")]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
+    public Task DumpTruck(CommandContext ctx, DiscordUser user)
+    {
+        var request = new DumpTruckUserRequest(ctx, user);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
+    [Command("dumptruck")]
+    [Cooldown(maxUses: 5, resetAfter: 10, CooldownBucketType.Global)]
+    public Task DumpTruck(CommandContext ctx)
+    {
+        var request = new DumpTruckImageRequest(ctx);
+
+        return _commandParallelQueue.Writer.WriteAsync(request).AsTask();
+    }
+
     [Command("gpt-image")]
     [Cooldown(maxUses: 5, resetAfter: 30, CooldownBucketType.Global)]
     public Task GptImage(CommandContext ctx, [RemainingText] string prompt)

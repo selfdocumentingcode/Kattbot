@@ -24,34 +24,34 @@ public class ExtendedStatsQueryResult
 
 public class ExtendedEmoteStats
 {
-    public string EmoteCode { get; set; } = null!;
+    public string EmoteCode { get; init; } = null!;
 
-    public int Usage { get; set; }
+    public int Usage { get; init; }
 
-    public double PercentageOfTotal { get; set; }
+    public double PercentageOfTotal { get; init; }
 }
 
 public class EmoteUsageResult
 {
-    public EmoteStats EmoteStats { get; set; }
+    public EmoteStats? EmoteStats { get; init; }
 
-    public List<EmoteUser> EmoteUsers { get; set; }
+    public List<EmoteUser> EmoteUsers { get; init; } = [];
 }
 
 public class EmoteUser
 {
-    public ulong UserId { get; set; }
+    public ulong UserId { get; init; }
 
-    public int Usage { get; set; }
+    public int Usage { get; init; }
 }
 
 public class ExtendedEmoteUser
 {
-    public ulong UserId { get; set; }
+    public ulong UserId { get; init; }
 
-    public int Usage { get; set; }
+    public int Usage { get; init; }
 
-    public double PercentageOfTotal { get; set; }
+    public double PercentageOfTotal { get; init; }
 
     public string DisplayName { get; set; } = string.Empty;
 }

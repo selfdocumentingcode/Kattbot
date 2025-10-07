@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
@@ -25,14 +26,13 @@ public static class ImageEffects
 
     public static Image DeepFryImage(Image image)
     {
-        image.Mutate(
-            i =>
-            {
-                i.Contrast(5f);
-                i.Brightness(1.5f);
-                i.GaussianSharpen(5f);
-                i.Saturate(5f);
-            });
+        image.Mutate(i =>
+        {
+            i.Contrast(5f);
+            i.Brightness(1.5f);
+            i.GaussianSharpen(5f);
+            i.Saturate(5f);
+        });
 
         return image;
     }
@@ -119,20 +119,19 @@ public static class ImageEffects
             imageAsPngWithTransparency = image;
         }
 
-        Image<TPixel> cloned = imageAsPngWithTransparency.Clone(
-            i =>
+        Image<TPixel> cloned = imageAsPngWithTransparency.Clone(i =>
+        {
+            var opts = new DrawingOptions
             {
-                var opts = new DrawingOptions
+                GraphicsOptions = new GraphicsOptions
                 {
-                    GraphicsOptions = new GraphicsOptions
-                    {
-                        Antialias = true,
-                        AlphaCompositionMode = PixelAlphaCompositionMode.DestIn,
-                    },
-                };
+                    Antialias = true,
+                    AlphaCompositionMode = PixelAlphaCompositionMode.DestIn,
+                },
+            };
 
-                i.Fill(opts, Color.Black, ellipsePath);
-            });
+            i.Fill(opts, Color.Black, ellipsePath);
+        });
 
         return cloned;
     }
@@ -162,7 +161,7 @@ public static class ImageEffects
         const int alphaThreshold = 120;
 
         // TODO implement squishFactor
-        const float squishFactor = 1f;
+        ////const float squishFactor = 1f;
 
         // The maximum fps of 50 results in a delay of 20ms between frames
         // which is the minimum delay for a gif in most renderers.
@@ -185,32 +184,31 @@ public static class ImageEffects
         float[] squishFactors = [0.9f, 0.8f, 0.75f, 0.8f, 0.85f];
 
         // Resize the input image to match the frame size
-        Image<Rgba32> resizedImage = inputImage.Clone(
-            ctx =>
-            {
-                // Crop the image to a square
-                ctx.Crop(
-                    Math.Min(inputImage.Width, inputImage.Height),
-                    Math.Min(inputImage.Width, inputImage.Height));
+        Image<Rgba32> resizedImage = inputImage.Clone(ctx =>
+        {
+            // Crop the image to a square
+            ctx.Crop(
+                Math.Min(inputImage.Width, inputImage.Height),
+                Math.Min(inputImage.Width, inputImage.Height));
 
-                // Downscale the image to the frame size and then some
-                const int newWidth = (int)(frameSize * scale);
-                const int newHeight = (int)(frameSize * scale);
+            // Downscale the image to the frame size and then some
+            const int newWidth = (int)(frameSize * scale);
+            const int newHeight = (int)(frameSize * scale);
 
-                ctx.Resize(
-                    new ResizeOptions
-                    {
-                        Size = new Size(newWidth, newHeight),
-                        Sampler = KnownResamplers.Hermite,
-                    });
-            });
+            ctx.Resize(
+                new ResizeOptions
+                {
+                    Size = new Size(newWidth, newHeight),
+                    Sampler = KnownResamplers.Hermite,
+                });
+        });
 
         // Optimize transparency by clipping pixels with low alpha values in order to reduce dithering artifacts
         resizedImage.ProcessPixelRows(a => ImageProcessors.ClipTransparencyProcessor(a, alphaThreshold));
 
         for (var i = 0; i < frameCount; i++)
         {
-            var overlayFrameRectangle = new Rectangle(i * overlayWidth, 0, overlayWidth, overlayHeight);
+            var overlayFrameRectangle = new Rectangle(i * overlayWidth, y: 0, overlayWidth, overlayHeight);
 
             Image<Rgba32> overlayFrame = overlaySpriteSheet.Clone(ctx => ctx.Crop(overlayFrameRectangle));
 
@@ -220,23 +218,24 @@ public static class ImageEffects
             Image<Rgba32> squishedFrame =
                 resizedImage.Clone(x => x.Resize(resizedImage.Width, (int)(resizedImage.Height * frameSquishFactor)));
 #if DEBUG
+
             // temporarily save the frame to disk
             squishedFrame.SaveAsPng(Path.Combine(Path.GetTempPath(), "kattbot", $"a_squished_frame_{i}.png"));
 #endif
             var outputFrame = new Image<Rgba32>(frameSize, frameSize);
 
             // Draw the resized input frame in the bottom right corner
-            outputFrame.Mutate(
-                x =>
-                {
-                    int newFrameOffsetX = frameSize - squishedFrame.Width;
-                    int newFrameOffsetY = frameSize - squishedFrame.Height;
-                    x.DrawImage(squishedFrame, new Point(newFrameOffsetX, newFrameOffsetY), 1f);
-                });
+            outputFrame.Mutate(x =>
+            {
+                int newFrameOffsetX = frameSize - squishedFrame.Width;
+                int newFrameOffsetY = frameSize - squishedFrame.Height;
+                x.DrawImage(squishedFrame, new Point(newFrameOffsetX, newFrameOffsetY), opacity: 1f);
+            });
 
             // Draw the overlay frame
-            outputFrame.Mutate(x => x.DrawImage(overlayFrame, new Point(0, overlayY), 1f));
+            outputFrame.Mutate(x => x.DrawImage(overlayFrame, new Point(x: 0, overlayY), opacity: 1f));
 #if DEBUG
+
             // temporarily save the frame to disk
             outputFrame.SaveAsPng(Path.Combine(Path.GetTempPath(), "kattbot", $"b_frame_{i}.png"));
 #endif

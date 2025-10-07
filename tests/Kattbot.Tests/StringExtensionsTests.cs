@@ -8,7 +8,7 @@ namespace Kattbot.Tests;
 [TestClass]
 public class StringExtensionsTests
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("This is a test string", 10, new[] { "This is a", "test", "string" })]
     [DataRow("This is a test string", 12, new[] { "This is a", "test string" })]
     [DataRow("This is another test string", 10, new[] { "This is", "another", "test", "string" })]
@@ -24,7 +24,7 @@ public class StringExtensionsTests
         CollectionAssert.AreEqual(expected.AsReadOnly(), actual);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("This is a test string", 10, new[] { "This is a", "[wat]test", "[wat]string" })]
     [DataRow("This is a test string", 12, new[] { "This is a", "[wat]test", "[wat]string" })]
     [DataRow("This is another test string", 10, new[] { "This is", "[wat]another", "[wat]test", "[wat]string" })]
@@ -34,7 +34,7 @@ public class StringExtensionsTests
         string[] expected)
     {
         // Arrange
-        var splitToken = "[wat]";
+        const string splitToken = "[wat]";
 
         // Act
         List<string> actual = input.SplitString(chunkLength, splitToken);
@@ -63,14 +63,15 @@ public class StringExtensionsTests
     {
         // Arrange
         var input = string.Empty;
-        var chunkLength = 1;
-        var expected = new List<string>();
-        var token = "ab";
+        const int chunkLength = 1;
+        const string token = "ab";
 
         // Act
         Func<List<string>> actual = () => input.SplitString(chunkLength, token);
 
         // Assert
+#pragma warning disable MSTEST0039
         Assert.ThrowsException<ArgumentException>(actual);
+#pragma warning restore MSTEST0039
     }
 }
