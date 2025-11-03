@@ -2,7 +2,7 @@ name: kattbot
 
 services:
   kattbot:
-    image: ghcr.io/selfdocumentingcode/kattbot:$IMAGE_TAG
+    image: ghcr.io/selfdocumentingcode/kattbot:${IMAGE_TAG}
     restart: unless-stopped
     tty: true
     extra_hosts:
@@ -11,3 +11,17 @@ services:
       Kattbot__BotToken: $BOT_TOKEN
       Kattbot__OpenAiApiKey: $OPENAI_API_KEY
       Kattbot__ConnectionString: $DB_CONNECTION_STRING
+    volumes:
+      - kattbot-diag-tmp:/tmp
+      
+  kattbot-diagnostics:
+    image: ghcr.io/selfdocumentingcode/dotnet-diag-tools:9.0
+    restart: unless-stopped
+    tty: true
+    pid: service:kattbot
+    volumes:
+      - kattbot-diag-tmp:/tmp
+      
+volumes:
+  kattbot-diag-tmp:
+    driver: local

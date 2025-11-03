@@ -8,12 +8,21 @@ services:
     tty: true
     environment:
       - DOTNET_ENVIRONMENT=Development
-    env_file:
-      - path: .env.local
-        required: false
     volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${HOME}/.microsoft/usersecrets:/home/app/.microsoft/usersecrets:ro
+      - kattbot-diag-tmp:/tmp
   
+  kattbot-diagnostics:
+    build:
+      context: ..
+      dockerfile: src/Kattbot/diag.Dockerfile
+    tty: true
+    pid: service:kattbot
+    volumes:
+      - kattbot-diag-tmp:/tmp
+    profiles:
+      - diagnostics
+      
   kattbot-pgsql:
     image: postgres:15.5
     ports:
@@ -41,4 +50,7 @@ services:
 
 volumes:
   kattbot-pgdata:
+    driver: local
+  kattbot-diag-tmp:
+    driver: local
     
