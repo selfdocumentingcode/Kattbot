@@ -23,19 +23,16 @@ namespace Kattbot.NotificationHandlers.Emotes;
 public class MessageCreatedNotificationHandler : BaseNotificationHandler,
     INotificationHandler<MessageCreatedNotification>
 {
-    private readonly EmoteEntityBuilder _emoteBuilder;
     private readonly EmotesRepository _kattbotRepo;
     private readonly IOptions<BotOptions> _botOptions;
     private readonly ILogger<MessageCreatedNotificationHandler> _logger;
 
     public MessageCreatedNotificationHandler(
         ILogger<MessageCreatedNotificationHandler> logger,
-        EmoteEntityBuilder emoteBuilder,
         EmotesRepository kattbotRepo,
         IOptions<BotOptions> botOptions)
     {
         _logger = logger;
-        _emoteBuilder = emoteBuilder;
         _kattbotRepo = kattbotRepo;
         _botOptions = botOptions;
     }
@@ -64,7 +61,7 @@ public class MessageCreatedNotificationHandler : BaseNotificationHandler,
 
         ulong guildId = guild.Id;
 
-        List<EmoteEntity> emotes = _emoteBuilder.BuildFromSocketUserMessage(message, guildId);
+        List<EmoteEntity> emotes = EmoteEntityBuilder.BuildFromSocketUserMessage(message, guildId);
 
         if (emotes.Count > 0)
         {

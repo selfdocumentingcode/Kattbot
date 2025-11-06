@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kattbot.CommandHandlers;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -11,14 +12,17 @@ namespace Kattbot.Workers;
 public class CommandQueueWorker : BackgroundService
 {
     private readonly CommandQueueChannel _channel;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<CommandQueueWorker> _logger;
-    private readonly IMediator _mediator;
 
-    public CommandQueueWorker(ILogger<CommandQueueWorker> logger, CommandQueueChannel channel, IMediator mediator)
+    public CommandQueueWorker(
+        ILogger<CommandQueueWorker> logger,
+        CommandQueueChannel channel,
+        IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
         _channel = channel;
-        _mediator = mediator;
+        _scopeFactory = scopeFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -35,7 +39,10 @@ public class CommandQueueWorker : BackgroundService
                     command.GetType().Name,
                     _channel.Reader.Count);
 
-                _ = Task.Run(() => _mediator.Send(command, stoppingToken), stoppingToken);
+                using var scope = _scopeFactory.CreateScope();
+                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+
+                _ = Task.Run(() => mediator.Send(command, stoppingToken), stoppingToken);
             }
         }
         catch (TaskCanceledException)

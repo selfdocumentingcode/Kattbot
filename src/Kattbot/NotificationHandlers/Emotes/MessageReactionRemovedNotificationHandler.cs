@@ -19,17 +19,14 @@ namespace Kattbot.NotificationHandlers.Emotes;
 public class MessageReactionRemovedNotificationHandler : BaseNotificationHandler,
     INotificationHandler<MessageReactionRemovedNotification>
 {
-    private readonly EmoteEntityBuilder _emoteBuilder;
     private readonly EmotesRepository _kattbotRepo;
     private readonly ILogger<MessageReactionRemovedNotificationHandler> _logger;
 
     public MessageReactionRemovedNotificationHandler(
         ILogger<MessageReactionRemovedNotificationHandler> logger,
-        EmoteEntityBuilder emoteBuilder,
         EmotesRepository kattbotRepo)
     {
         _logger = logger;
-        _emoteBuilder = emoteBuilder;
         _kattbotRepo = kattbotRepo;
     }
 
@@ -59,7 +56,7 @@ public class MessageReactionRemovedNotificationHandler : BaseNotificationHandler
             return Task.CompletedTask;
         }
 
-        EmoteEntity emoteEntity = _emoteBuilder.BuildFromUserReaction(message, emoji, userId, guild.Id);
+        EmoteEntity emoteEntity = EmoteEntityBuilder.BuildFromUserReaction(message, emoji, userId, guild.Id);
 
         _logger.LogDebug($"Removing reaction emote {emoteEntity}");
 

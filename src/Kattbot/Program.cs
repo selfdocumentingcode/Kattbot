@@ -16,87 +16,80 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Kattbot;
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+ConfigurationManager configuration = builder.Configuration;
+IServiceCollection services = builder.Services;
 
-public class Program
+services.Configure<BotOptions>(configuration.GetSection(BotOptions.OptionsKey));
+services.Configure<KattGptOptions>(configuration.GetSection(KattGptOptions.OptionsKey));
+
+services.AddHttpClient();
+services.AddHttpClient<ChatGptHttpClient>();
+services.AddHttpClient<SpeechHttpClient>();
+services.AddHttpClient<GptImagesHttpClient>();
+
+services.AddMediatR(cfg =>
 {
-    public static void Main(string[] args)
-    {
-        CreateHostBuilder(args).Build().Run();
-    }
+    cfg.RegisterServicesFromAssemblyContaining<Program>();
+    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
+});
 
-    public static IHostBuilder CreateHostBuilder(string[] args)
-    {
-        return Host.CreateDefaultBuilder(args)
-            .ConfigureServices((hostContext, services) =>
-            {
-                IConfiguration configuration = hostContext.Configuration;
+// Registered as Transient to match lifetime of MediatR
+services.AddTransient<NotificationPublisher>();
 
-                services.Configure<BotOptions>(hostContext.Configuration.GetSection(BotOptions.OptionsKey));
-                services.Configure<KattGptOptions>(hostContext.Configuration.GetSection(KattGptOptions.OptionsKey));
+AddWorkers(services);
 
-                services.AddHttpClient();
-                services.AddHttpClient<ChatGptHttpClient>();
-                services.AddHttpClient<SpeechHttpClient>();
-                services.AddHttpClient<GptImagesHttpClient>();
+AddChannels(services);
 
-                services.AddMediatR(cfg =>
-                {
-                    cfg.RegisterServicesFromAssemblyContaining<Program>();
-                    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(CommandRequestPipelineBehaviour<,>));
-                });
-                services.AddSingleton<NotificationPublisher>();
+AddInternalServices(services);
 
-                services.AddSingleton<SharedCache>();
-                services.AddSingleton<KattGptChannelCache>();
+AddRepositories(services);
 
-                AddWorkers(services);
+services.AddDbContext(configuration);
 
-                AddChannels(services);
+services.AddDiscordClient(configuration);
 
-                AddInternalServices(services);
+IHost app = builder.Build();
 
-                AddRepositories(services);
+app.Run();
 
-                services.AddDbContext(configuration);
+return;
 
-                services.AddDiscordClient(configuration);
-            });
-    }
+static void AddInternalServices(IServiceCollection services)
+{
+    services.AddSingleton<SharedCache>();
+    services.AddSingleton<KattGptChannelCache>();
 
-    private static void AddInternalServices(IServiceCollection services)
-    {
-        services.AddTransient<EmoteEntityBuilder>();
-        services.AddTransient<DateTimeProvider>();
-        services.AddTransient<GuildSettingsService>();
-        services.AddTransient<ImageService>();
-        services.AddTransient<DiscordErrorLogger>();
-        services.AddTransient<DiscordResolver>();
-        services.AddTransient<KattGptService>();
-    }
+    services.AddSingleton<DateTimeProvider>();
+    services.AddSingleton<DiscordErrorLogger>();
+    services.AddSingleton<DiscordResolver>();
 
-    private static void AddRepositories(IServiceCollection services)
-    {
-        services.AddTransient<EmotesRepository>();
-        services.AddTransient<EmoteStatsRepository>();
-        services.AddTransient<BotUserRolesRepository>();
-        services.AddTransient<GuildSettingsRepository>();
-    }
+    services.AddScoped<GuildSettingsService>();
+    services.AddScoped<ImageService>();
+    services.AddScoped<KattGptService>();
+}
 
-    private static void AddWorkers(IServiceCollection services)
-    {
-        services.AddHostedService<CommandQueueWorker>();
-        services.AddHostedService<EventQueueWorker>();
-        services.AddHostedService<DiscordLoggerWorker>();
-        services.AddHostedService<BotWorker>();
-    }
+static void AddRepositories(IServiceCollection services)
+{
+    services.AddScoped<EmotesRepository>();
+    services.AddScoped<EmoteStatsRepository>();
+    services.AddScoped<BotUserRolesRepository>();
+    services.AddScoped<GuildSettingsRepository>();
+}
 
-    private static void AddChannels(IServiceCollection services)
-    {
-        const int channelSize = 1024;
+static void AddWorkers(IServiceCollection services)
+{
+    services.AddHostedService<CommandQueueWorker>();
+    services.AddHostedService<EventQueueWorker>();
+    services.AddHostedService<DiscordLoggerWorker>();
+    services.AddHostedService<BotWorker>();
+}
 
-        services.AddSingleton(new CommandQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
-        services.AddSingleton(new EventQueueChannel(Channel.CreateBounded<INotification>(channelSize)));
-        services.AddSingleton(new DiscordLogChannel(Channel.CreateBounded<BaseDiscordLogItem>(channelSize)));
-    }
+static void AddChannels(IServiceCollection services)
+{
+    const int channelSize = 1024;
+
+    services.AddSingleton(new CommandQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
+    services.AddSingleton(new EventQueueChannel(Channel.CreateBounded<INotification>(channelSize)));
+    services.AddSingleton(new DiscordLogChannel(Channel.CreateBounded<BaseDiscordLogItem>(channelSize)));
 }

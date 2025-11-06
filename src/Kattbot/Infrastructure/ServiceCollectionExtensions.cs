@@ -42,28 +42,21 @@ public static class ServiceCollectionExtensions
 
         clientBuilder.RegisterEventHandlers();
 
-        // This replacement has to happen after the DiscordClientBuilder.CreateDefault call
-        // and before the DiscordClient is built.
-        services.Replace<IGatewayController, NoWayGateway>();
-
         // Calling build registers the DiscordClient as a singleton in the service collection
         clientBuilder.Build();
     }
 
     public static void AddDbContext(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<KattbotContext>(
-            builder =>
-            {
-                var dbConnString = configuration.GetValue<string>("Kattbot:ConnectionString");
-                var logLevel = configuration.GetValue<string>("Logging:LogLevel:Default");
+        services.AddDbContext<KattbotContext>(builder =>
+        {
+            var dbConnString = configuration.GetValue<string>("Kattbot:ConnectionString");
+            var logLevel = configuration.GetValue<string>("Logging:LogLevel:Default");
 
-                builder.EnableSensitiveDataLogging(logLevel == "Debug");
+            builder.EnableSensitiveDataLogging(logLevel == "Debug");
 
-                builder.UseNpgsql(dbConnString);
-            },
-            ServiceLifetime.Transient,
-            ServiceLifetime.Singleton);
+            builder.UseNpgsql(dbConnString);
+        });
     }
 
     private static void RegisterCommands(this DiscordClientBuilder builder, IConfiguration configuration)
@@ -95,28 +88,21 @@ public static class ServiceCollectionExtensions
 
     private static void RegisterEventHandlers(this DiscordClientBuilder builder)
     {
-        builder.ConfigureEventHandlers(
-            cfg =>
-            {
-                cfg.HandleMessageCreated(
-                    (client, args) =>
-                        client.WriteNotification(new MessageCreatedNotification(args)));
-                cfg.HandleMessageUpdated(
-                    (client, args) =>
-                        client.WriteNotification(new MessageUpdatedNotification(args)));
-                cfg.HandleMessageDeleted(
-                    (client, args) =>
-                        client.WriteNotification(new MessageDeletedNotification(args)));
-                cfg.HandleMessagesBulkDeleted(
-                    (client, args) =>
-                        client.WriteNotification(new MessageBulkDeletedNotification(args)));
-                cfg.HandleMessageReactionAdded(
-                    (client, args) =>
-                        client.WriteNotification(new MessageReactionAddedNotification(args)));
-                cfg.HandleMessageReactionRemoved(
-                    (client, args) =>
-                        client.WriteNotification(new MessageReactionRemovedNotification(args)));
-            });
+        builder.ConfigureEventHandlers(cfg =>
+        {
+            cfg.HandleMessageCreated((client, args) =>
+                client.WriteNotification(new MessageCreatedNotification(args)));
+            cfg.HandleMessageUpdated((client, args) =>
+                client.WriteNotification(new MessageUpdatedNotification(args)));
+            cfg.HandleMessageDeleted((client, args) =>
+                client.WriteNotification(new MessageDeletedNotification(args)));
+            cfg.HandleMessagesBulkDeleted((client, args) =>
+                client.WriteNotification(new MessageBulkDeletedNotification(args)));
+            cfg.HandleMessageReactionAdded((client, args) =>
+                client.WriteNotification(new MessageReactionAddedNotification(args)));
+            cfg.HandleMessageReactionRemoved((client, args) =>
+                client.WriteNotification(new MessageReactionRemovedNotification(args)));
+        });
     }
 
     private static async Task WriteNotification<T>(this DiscordClient client, T notification)
