@@ -12,10 +12,10 @@ namespace Kattbot.Services;
 
 public class DiscordErrorLogger
 {
-    private readonly DiscordLogChannel _channel;
+    private readonly DiscordLoggerChannel _channel;
     private readonly BotOptions _options;
 
-    public DiscordErrorLogger(IOptions<BotOptions> options, DiscordLogChannel channel)
+    public DiscordErrorLogger(IOptions<BotOptions> options, DiscordLoggerChannel channel)
     {
         _channel = channel;
         _options = options.Value;

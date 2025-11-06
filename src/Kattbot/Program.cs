@@ -91,5 +91,5 @@ static void AddChannels(IServiceCollection services)
 
     services.AddSingleton(new CommandQueueChannel(Channel.CreateBounded<CommandRequest>(channelSize)));
     services.AddSingleton(new EventQueueChannel(Channel.CreateBounded<INotification>(channelSize)));
-    services.AddSingleton(new DiscordLogChannel(Channel.CreateBounded<BaseDiscordLogItem>(channelSize)));
+    services.AddSingleton(new DiscordLoggerChannel(Channel.CreateBounded<BaseDiscordLogItem>(channelSize)));
 }
