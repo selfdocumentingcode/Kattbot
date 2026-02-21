@@ -70,7 +70,7 @@ public class ImageTests
     }
 
     [TestMethod]
-    [DynamicData(nameof(GetTileImageFiles), DynamicDataSourceType.Method)]
+    [DynamicData(nameof(GetTileImageFiles))]
     public async Task FillMaskWithTiledImage(string tileImageFilename)
     {
         string targetImageFile = Path.Combine("Resources", "dumptruck_v1.png");
