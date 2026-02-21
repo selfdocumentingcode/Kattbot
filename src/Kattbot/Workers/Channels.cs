@@ -48,9 +48,9 @@ public record BaseDiscordLogItem(ulong DiscordGuildId, ulong DiscordChannelId);
 public record DiscordLogItem<T>(T Message, ulong DiscordGuildId, ulong DiscordChannelId)
     : BaseDiscordLogItem(DiscordGuildId, DiscordChannelId);
 
-public class DiscordLogChannel : AbstractQueueChannel<BaseDiscordLogItem>
+public class DiscordLoggerChannel : AbstractQueueChannel<BaseDiscordLogItem>
 {
-    public DiscordLogChannel(Channel<BaseDiscordLogItem> channel)
+    public DiscordLoggerChannel(Channel<BaseDiscordLogItem> channel)
         : base(channel)
     { }
 }

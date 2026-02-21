@@ -24,7 +24,7 @@ public class NotificationPublisher
     /// <summary>
     ///     Sauce: https://github.com/jbogard/MediatR/blob/master/samples/MediatR.Examples.PublishStrategies/Publisher.cs.
     /// </summary>
-    private async Task SyncContinueOnException(
+    private static async Task SyncContinueOnException(
         IEnumerable<NotificationHandlerExecutor> handlers,
         INotification notification,
         CancellationToken cancellationToken)
@@ -41,7 +41,7 @@ public class NotificationPublisher
             {
                 exceptions.AddRange(ex.Flatten().InnerExceptions);
             }
-            catch (Exception ex) when (!(ex is OutOfMemoryException || ex is StackOverflowException))
+            catch (Exception ex) when (ex is not (OutOfMemoryException or StackOverflowException))
             {
                 exceptions.Add(ex);
             }

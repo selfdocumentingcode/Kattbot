@@ -21,17 +21,14 @@ namespace Kattbot.NotificationHandlers.Emotes;
 public class MessageUpdatedNotificationHandler : BaseNotificationHandler,
     INotificationHandler<MessageUpdatedNotification>
 {
-    private readonly EmoteEntityBuilder _emoteBuilder;
     private readonly EmotesRepository _kattbotRepo;
     private readonly ILogger<MessageUpdatedNotificationHandler> _logger;
 
     public MessageUpdatedNotificationHandler(
         ILogger<MessageUpdatedNotificationHandler> logger,
-        EmoteEntityBuilder emoteBuilder,
         EmotesRepository kattbotRepo)
     {
         _logger = logger;
-        _emoteBuilder = emoteBuilder;
         _kattbotRepo = kattbotRepo;
     }
 
@@ -58,7 +55,7 @@ public class MessageUpdatedNotificationHandler : BaseNotificationHandler,
 
         await _kattbotRepo.RemoveEmotesForMessage(messageId);
 
-        List<EmoteEntity> emotes = _emoteBuilder.BuildFromSocketUserMessage(message, guildId);
+        List<EmoteEntity> emotes = EmoteEntityBuilder.BuildFromSocketUserMessage(message, guildId);
 
         if (emotes.Count > 0)
         {

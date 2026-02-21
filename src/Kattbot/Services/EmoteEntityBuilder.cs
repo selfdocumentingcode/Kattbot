@@ -7,9 +7,9 @@ using Kattbot.Helpers;
 
 namespace Kattbot.Services;
 
-public class EmoteEntityBuilder
+public static class EmoteEntityBuilder
 {
-    public List<EmoteEntity> BuildFromSocketUserMessage(DiscordMessage message, ulong guildId)
+    public static List<EmoteEntity> BuildFromSocketUserMessage(DiscordMessage message, ulong guildId)
     {
         List<string> emojiStrings = EmoteHelper.ExtractEmotesFromMessage(message.Content);
 
@@ -43,7 +43,7 @@ public class EmoteEntityBuilder
         return emotes;
     }
 
-    public EmoteEntity BuildFromUserReaction(DiscordMessage message, DiscordEmoji emote, ulong userId, ulong guildId)
+    public static EmoteEntity BuildFromUserReaction(DiscordMessage message, DiscordEmoji emote, ulong userId, ulong guildId)
     {
         var emoteEntity = new EmoteEntity
         {

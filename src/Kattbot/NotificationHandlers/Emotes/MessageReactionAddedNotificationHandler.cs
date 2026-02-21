@@ -19,17 +19,14 @@ namespace Kattbot.NotificationHandlers.Emotes;
 public class MessageReactionAddedNotificationHandler : BaseNotificationHandler,
     INotificationHandler<MessageReactionAddedNotification>
 {
-    private readonly EmoteEntityBuilder _emoteBuilder;
     private readonly EmotesRepository _kattbotRepo;
     private readonly ILogger<MessageReactionAddedNotificationHandler> _logger;
 
     public MessageReactionAddedNotificationHandler(
         ILogger<MessageReactionAddedNotificationHandler> logger,
-        EmoteEntityBuilder emoteBuilder,
         EmotesRepository kattbotRepo)
     {
         _logger = logger;
-        _emoteBuilder = emoteBuilder;
         _kattbotRepo = kattbotRepo;
     }
 
@@ -59,7 +56,7 @@ public class MessageReactionAddedNotificationHandler : BaseNotificationHandler,
             return Task.CompletedTask;
         }
 
-        EmoteEntity emoteEntity = _emoteBuilder.BuildFromUserReaction(message, emoji, userId, guild.Id);
+        EmoteEntity emoteEntity = EmoteEntityBuilder.BuildFromUserReaction(message, emoji, userId, guild.Id);
 
         _logger.LogDebug($"Saving reaction emote {emoteEntity}");
 

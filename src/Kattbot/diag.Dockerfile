@@ -4,6 +4,7 @@ RUN dotnet tool install -g dotnet-counters && \
     dotnet tool install -g dotnet-monitor && \
     dotnet tool install -g dotnet-trace && \
     dotnet tool install -g dotnet-dump && \
+    dotnet tool install -g dotnet-gcdump && \
     dotnet tool install -g dotnet-stack
 
 ENV PATH="/root/.dotnet/tools:$PATH"
