@@ -20,9 +20,9 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="10.0.3" />
         <PackageReference Include="TiktokenSharp" Version="1.2.0" />
         <PackageReference Include="CommandLineArgumentsParser" Version="3.0.23" />
-        <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02542" />
-        <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-02542" />
-        <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02542" />
+        <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02572" />
+        <PackageReference Include="DSharpPlus.CommandsNext" Version="5.0.0-nightly-02572" />
+        <PackageReference Include="DSharpPlus.Interactivity" Version="5.0.0-nightly-02572" />
         <PackageReference Include="MediatR" Version="[12.5.0, 13)" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.3" />
