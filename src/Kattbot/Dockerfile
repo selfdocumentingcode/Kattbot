@@ -8,7 +8,7 @@ COPY ["src/Kattbot/Kattbot.csproj", "Kattbot/"]
 COPY ["src/Kattbot.Common/Kattbot.Common.csproj", "Kattbot.Common/"]
 COPY ["src/Kattbot.Data/Kattbot.Data.csproj", "Kattbot.Data/"]
 RUN dotnet restore "./Kattbot/Kattbot.csproj"
-COPY ["Kattbot.sln", "."]
+COPY ["Kattbot.slnx", "."]
 COPY ["stylecop.json", "."]
 COPY [".editorconfig", "."]
 COPY src .

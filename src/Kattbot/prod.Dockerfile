@@ -10,7 +10,7 @@ COPY [".config/dotnet-tools.json", ".config/"]
 RUN dotnet restore "./Kattbot/Kattbot.csproj"
 RUN dotnet restore "./Kattbot.Data.Migrations/Kattbot.Data.Migrations.csproj"
 RUN dotnet tool restore
-COPY ["Kattbot.sln", "."]
+COPY ["Kattbot.slnx", "."]
 COPY ["stylecop.json", "."]
 COPY [".editorconfig", "."]
 COPY ["scripts/kattbot-backup-db.sh", "."] 
