@@ -70,8 +70,6 @@ public class StringExtensionsTests
         Func<List<string>> actual = () => input.SplitString(chunkLength, token);
 
         // Assert
-#pragma warning disable MSTEST0039
-        Assert.ThrowsException<ArgumentException>(actual);
-#pragma warning restore MSTEST0039
+        Assert.Throws<ArgumentException>(actual);
     }
 }

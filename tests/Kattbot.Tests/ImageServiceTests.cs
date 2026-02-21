@@ -26,7 +26,7 @@ public class ImageServiceTests
 
         string inputFile = Path.Combine("Resources", inputFilename);
 
-        Image inputImage = await Image.LoadAsync(inputFile, _testContext.CancellationTokenSource.Token);
+        Image inputImage = await Image.LoadAsync(inputFile, _testContext.CancellationToken);
 
         Image resizedImage = await ImageService.EnsureMaxImageFileSize(inputImage, maxSizeMb);
 

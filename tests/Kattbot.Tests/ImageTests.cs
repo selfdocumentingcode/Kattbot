@@ -87,7 +87,7 @@ public class ImageTests
 
         Image filledImage = FillMaskWithTilesEffect.ApplyEffect(targetImage, maskImage, tileImage);
 
-        await filledImage.SaveAsPngAsync(outputFile, _testContext.CancellationTokenSource.Token);
+        await filledImage.SaveAsPngAsync(outputFile, _testContext.CancellationToken);
 
         Assert.IsTrue(File.Exists(outputFile));
     }
