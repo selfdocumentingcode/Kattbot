@@ -1,0 +1,30 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="NoVariablesDefault" />
+    <BuildType Name="Release" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/Kattbot.Common/Kattbot.Common.csproj">
+      <BuildType Solution="NoVariablesDefault|*" Project="Release" />
+    </Project>
+    <Project Path="src/Kattbot.Data.Migrations/Kattbot.Data.Migrations.csproj">
+      <BuildType Solution="NoVariablesDefault|*" Project="Release" />
+    </Project>
+    <Project Path="src/Kattbot.Data/Kattbot.Data.csproj">
+      <BuildType Solution="NoVariablesDefault|*" Project="Release" />
+    </Project>
+    <Project Path="src/Kattbot/Kattbot.csproj">
+      <BuildType Solution="NoVariablesDefault|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Kattbot.Tests/Kattbot.Tests.csproj">
+      <BuildType Solution="NoVariablesDefault|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Project Path="docker/docker.dcproj">
+    <BuildType Solution="NoVariablesDefault|*" Project="Release" />
+    <Build />
+  </Project>
+</Solution>

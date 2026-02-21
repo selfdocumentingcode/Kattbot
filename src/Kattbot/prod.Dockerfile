@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Directory.Build.props", "."]
@@ -10,7 +10,7 @@ COPY [".config/dotnet-tools.json", ".config/"]
 RUN dotnet restore "./Kattbot/Kattbot.csproj"
 RUN dotnet restore "./Kattbot.Data.Migrations/Kattbot.Data.Migrations.csproj"
 RUN dotnet tool restore
-COPY ["Kattbot.sln", "."]
+COPY ["Kattbot.slnx", "."]
 COPY ["stylecop.json", "."]
 COPY [".editorconfig", "."]
 COPY ["scripts/kattbot-backup-db.sh", "."] 
@@ -27,7 +27,7 @@ ARG BUILD_CONFIGURATION=Release
 RUN dotnet ef migrations script --no-build --configuration $BUILD_CONFIGURATION --idempotent -p Kattbot.Data.Migrations -o /output/migrations/database_migration.sql
 COPY --from=build /src/kattbot-backup-db.sh /output/migrations/
 
-FROM mcr.microsoft.com/dotnet/runtime:9.0 AS final
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS final
 WORKDIR /app
 COPY --from=publish /output/publish .
 COPY --from=migrations /output/migrations ./migrations/
